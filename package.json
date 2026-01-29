@@ -43,6 +43,8 @@
     "migration:help": "npx ts-node src/main/infrastructure/database/scripts/migration-cli.ts help"
   },
   "dependencies": {
+    "call-bind": "^1.0.8",
+    "call-bind-apply-helpers": "^1.0.2",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@emotion/react": "^11.14.0",
