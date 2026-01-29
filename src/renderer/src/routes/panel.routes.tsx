@@ -5,7 +5,12 @@ import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlin
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
-import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
+import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
+import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined';
+import SyncOutlinedIcon from '@mui/icons-material/SyncOutlined';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DrawerNavigator } from './components/DrawerNavigator';
 import { IDrawerItem } from '@renderer/types/drawer/drawerItem';
@@ -16,9 +21,15 @@ import { TransactionsPage } from '@renderer/pages/Transactions';
 import { AccountsPage } from '@renderer/pages/Accounts';
 import { CreditCardsPage } from '@renderer/pages/CreditCards';
 import { GoalsPage } from '@renderer/pages/Goals';
+import { CategoriesPage } from '@renderer/pages/Categories';
 import { AlertsPage } from '@renderer/pages/Settings/Alerts';
 import { ReportsPage } from '@renderer/pages/Reports';
-import { ImportPage } from '@renderer/pages/Settings/Import';
+import { BudgetPage } from '@renderer/pages/Budget';
+import { TransfersPage } from '@renderer/pages/Transfers';
+import { RecurringTransactionsPage } from '@renderer/pages/RecurringTransactions';
+import { CashFlowPage } from '@renderer/pages/CashFlow';
+import { AdvancedReportsPage } from '@renderer/pages/AdvancedReports';
+import { BankImportPage } from '@renderer/pages/BankImport';
 
 type WithRouteProps<T> = T & {
   routePath: string;
@@ -67,6 +78,14 @@ const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
     routePath: '/goals',
   },
   {
+    label: 'Categorias',
+    path: '/panel/categories',
+    icon: <CategoryOutlinedIcon />,
+    canAccess: true,
+    routeElement: <CategoriesPage />,
+    routePath: '/categories',
+  },
+  {
     label: 'Alertas',
     path: '/panel/alerts',
     icon: <NotificationsOutlinedIcon />,
@@ -83,12 +102,52 @@ const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
     routePath: '/reports',
   },
   {
-    label: 'Importar Dados',
-    path: '/panel/import',
-    icon: <FileUploadOutlinedIcon />,
+    label: 'Orçamento',
+    path: '/panel/budget',
+    icon: <CalculateOutlinedIcon />,
     canAccess: true,
-    routeElement: <ImportPage />,
-    routePath: '/import',
+    routeElement: <BudgetPage />,
+    routePath: '/budget',
+  },
+  {
+    label: 'Transferências',
+    path: '/panel/transfers',
+    icon: <SwapHorizOutlinedIcon />,
+    canAccess: true,
+    routeElement: <TransfersPage />,
+    routePath: '/transfers',
+  },
+  {
+    label: 'Recorrentes',
+    path: '/panel/recurring',
+    icon: <RepeatOutlinedIcon />,
+    canAccess: true,
+    routeElement: <RecurringTransactionsPage />,
+    routePath: '/recurring',
+  },
+  {
+    label: 'Fluxo de Caixa',
+    path: '/panel/cash-flow',
+    icon: <TimelineOutlinedIcon />,
+    canAccess: true,
+    routeElement: <CashFlowPage />,
+    routePath: '/cash-flow',
+  },
+  {
+    label: 'Relatórios Avançados',
+    path: '/panel/advanced-reports',
+    icon: <AssessmentOutlinedIcon />,
+    canAccess: true,
+    routeElement: <AdvancedReportsPage />,
+    routePath: '/advanced-reports',
+  },
+  {
+    label: 'Importar Transações',
+    path: '/panel/bank-import',
+    icon: <SyncOutlinedIcon />,
+    canAccess: true,
+    routeElement: <BankImportPage />,
+    routePath: '/bank-import',
   },
 ];
 

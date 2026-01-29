@@ -57,12 +57,8 @@ interface UpcomingBill {
   isOverdue: boolean;
   daysUntilDue: number;
 }
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { formatCurrency } from '@renderer/utils/currency';
+
 export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState(0);

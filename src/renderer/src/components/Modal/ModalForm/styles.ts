@@ -40,6 +40,7 @@ export const CustomDialog = styled(Dialog, {
   }) => ({
     '& .MuiDialog-paper': {
       borderRadius: '1rem',
+      minWidth: '400px',
       maxWidth: setMaxWidth ?? '60rem',
       margin: disableMargin ? '0' : '2rem',
       backgroundColor: backgroundColor || theme.palette.background.paper,
@@ -47,6 +48,10 @@ export const CustomDialog = styled(Dialog, {
       ...(width && { width }),
       ...(height && { height }),
       ...(setMaxHeight && { maxHeight: setMaxHeight }),
+      [`@media (max-width: 480px)`]: {
+        minWidth: 'calc(100vw - 2rem)',
+        margin: '1rem',
+      },
     },
     'div.MuiDialogContent-root': {
       padding: '1.5rem',

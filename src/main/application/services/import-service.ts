@@ -1,569 +1,663 @@
 import { logger } from '@main/infrastructure/log/logger';
 import type {
-  ParsedCSVRow,
+  ImportConfig,
+  CSVPreviewData,
   ImportPreview,
   ImportResult,
+  ParsedTransaction,
+  ColumnMapping,
 } from '@shared/interfaces/types/import.types';
 import { TransactionType } from '../entities/transaction.entity';
 import { repositoryCache } from '../repositories/repository-cache';
-interface SimpleCSVRow {
-  mesAno: string;
-  tipo: 'Receita' | 'Despesa';
-  categoria: string;
-  valor: number;
-  data: Date;
-}
+
 export class ImportService {
   constructor() {}
+
   private get accountRepository() {
     return repositoryCache.accountRepository;
   }
+
   private get categoryRepository() {
     return repositoryCache.categoryRepository;
   }
+
   private get transactionRepository() {
     return repositoryCache.transactionRepository;
   }
-  private detectFormat(csvContent: string): 'simple' | 'complete' {
-    const firstLine = csvContent.trim().split('\n')[0].toLowerCase();
-    if (
-      firstLine.includes('mês/ano') ||
-      firstLine.includes('mes/ano') ||
-      (firstLine.includes('tipo') &&
-        firstLine.includes('categoria') &&
-        firstLine.includes('valor'))
-    ) {
-      return 'simple';
-    }
-    return 'complete';
-  }
-  private parseSimpleCSV(csvContent: string): SimpleCSVRow[] {
-    const lines = csvContent.trim().split('\n');
-    const rows: SimpleCSVRow[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      const separator = line.includes(';') ? ';' : ',';
-      const values = line.split(separator);
-      if (values.length < 4) continue;
-      const mesAno = values[0].trim();
-      const tipo = values[1].trim() as 'Receita' | 'Despesa';
-      const categoria = values[2].trim();
-      const valorStr = values[3].trim().replace(',', '.');
-      const valor = parseFloat(valorStr) || 0;
-      if (valor === 0) continue;
-      const [mes, ano] = mesAno.split('/');
-      const data = new Date(parseInt(ano), parseInt(mes) - 1, 1);
-      rows.push({
-        mesAno,
-        tipo,
-        categoria,
-        valor,
-        data,
-      });
-    }
-    return rows;
-  }
-  private parseCompleteCSV(csvContent: string): ParsedCSVRow[] {
-    const lines = csvContent.trim().split('\n');
-    const rows: ParsedCSVRow[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      const values = line.split(';');
-      if (values.length < 10) continue;
-      const parseNumber = (val: string): number => {
-        const cleaned = val.replace(',', '.').trim();
-        return parseFloat(cleaned) || 0;
-      };
-      const salario = parseNumber(values[2]);
-      const dinheiroEmConta = parseNumber(values[3]);
-      const bonus = parseNumber(values[4]);
-      let cartaoBB: number,
-        cartaoSantander: number,
-        energia: number,
-        internetEscola: number,
-        aluguel: number;
-      if (values.length >= 13) {
-        cartaoBB = parseNumber(values[6]);
-        cartaoSantander = parseNumber(values[7]);
-        energia = parseNumber(values[8]);
-        internetEscola = parseNumber(values[9]);
-        aluguel = parseNumber(values[10]);
-      } else {
-        cartaoBB = parseNumber(values[5]);
-        cartaoSantander = parseNumber(values[6]);
-        energia = parseNumber(values[7]);
-        internetEscola = parseNumber(values[8]);
-        aluguel = parseNumber(values[9]);
+
+  /**
+   * Detect delimiter from CSV content
+   */
+  private detectDelimiter(content: string): string {
+    const firstLine = content.split('\n')[0];
+    const delimiters = [';', ',', '\t', '|'];
+    let maxCount = 0;
+    let detected = ',';
+
+    for (const delimiter of delimiters) {
+      const count = (firstLine.match(new RegExp(`\\${delimiter}`, 'g')) || [])
+        .length;
+      if (count > maxCount) {
+        maxCount = count;
+        detected = delimiter;
       }
-      const receitaTotal = salario + (bonus > 0 ? bonus : 0);
-      const despesaTotal =
-        cartaoBB + cartaoSantander + energia + internetEscola + aluguel;
-      const excedente = receitaTotal - despesaTotal;
-      rows.push({
-        mesRef: values[0],
-        dataReferencia: new Date(values[1]),
-        salario,
-        dinheiroEmConta,
-        bonus,
-        cartaoBB,
-        cartaoSantander,
-        energia,
-        internetEscola,
-        aluguel,
-        receitaTotal,
-        despesaTotal,
-        excedente,
-      });
     }
-    return rows;
+
+    return detected;
   }
-  async previewCSV(csvContent: string): Promise<ImportPreview> {
-    const format = this.detectFormat(csvContent);
-    if (format === 'simple') {
-      return this.previewSimpleCSV(csvContent);
+
+  /**
+   * Detect if CSV has header row
+   */
+  private detectHasHeader(rows: string[][]): boolean {
+    if (rows.length < 2) return false;
+
+    const firstRow = rows[0];
+    const secondRow = rows[1];
+
+    // Check if first row has more text-like values and second row has more number-like values
+    let firstRowTextCount = 0;
+    let secondRowNumberCount = 0;
+
+    for (let i = 0; i < firstRow.length; i++) {
+      const firstVal = firstRow[i]?.trim() || '';
+      const secondVal = secondRow[i]?.trim() || '';
+
+      // Check if first row value looks like a header (text, no numbers)
+      if (
+        firstVal &&
+        !/^\d/.test(firstVal) &&
+        !/^\d{1,2}[\/\-]/.test(firstVal)
+      ) {
+        firstRowTextCount++;
+      }
+
+      // Check if second row value looks like data (number or date)
+      if (
+        secondVal &&
+        (/^\d/.test(secondVal) || /^\d{1,2}[\/\-]/.test(secondVal))
+      ) {
+        secondRowNumberCount++;
+      }
     }
-    return this.previewCompleteCSV(csvContent);
+
+    return (
+      firstRowTextCount > firstRow.length / 2 ||
+      secondRowNumberCount > secondRow.length / 2
+    );
   }
-  private async previewSimpleCSV(csvContent: string): Promise<ImportPreview> {
-    const rows = this.parseSimpleCSV(csvContent);
-    if (rows.length === 0) {
-      throw new Error('Nenhum dado encontrado no CSV');
-    }
-    const dates = rows.map((r) => r.data);
-    const totalIncome = rows
-      .filter((r) => r.tipo === 'Receita')
-      .reduce((sum, r) => sum + r.valor, 0);
-    const totalExpenses = rows
-      .filter((r) => r.tipo === 'Despesa')
-      .reduce((sum, r) => sum + r.valor, 0);
-    const uniqueCategories = [...new Set(rows.map((r) => r.categoria))];
+
+  /**
+   * Parse CSV content into rows
+   */
+  private parseCSVRows(content: string, delimiter: string): string[][] {
+    const lines = content.trim().split('\n');
+    return lines.map((line) => {
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === delimiter && !inQuotes) {
+          values.push(current.trim().replace(/^"|"$/g, ''));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      values.push(current.trim().replace(/^"|"$/g, ''));
+      return values;
+    });
+  }
+
+  /**
+   * Get CSV preview data for column mapping
+   */
+  async getCSVPreview(csvContent: string): Promise<CSVPreviewData> {
+    const delimiter = this.detectDelimiter(csvContent);
+    const rows = this.parseCSVRows(csvContent, delimiter);
+    const hasHeader = this.detectHasHeader(rows);
+
+    const headers = hasHeader
+      ? rows[0].map((h, i) => h || `Coluna ${i + 1}`)
+      : rows[0].map((_, i) => `Coluna ${i + 1}`);
+
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    const sampleRows = dataRows.slice(0, 10);
+
     return {
-      totalRows: rows.length,
-      format: 'simple',
-      dateRange: {
-        start: new Date(Math.min(...dates.map((d) => d.getTime()))),
-        end: new Date(Math.max(...dates.map((d) => d.getTime()))),
-      },
-      summary: {
-        totalIncome,
-        totalExpenses,
-        balance: totalIncome - totalExpenses,
-      },
-      accountsToCreate: ['Conta Principal'],
-      categoriesToCreate: uniqueCategories.map((c) =>
-        this.formatCategoryName(c),
+      headers,
+      rows: sampleRows,
+      totalRows: dataRows.length,
+      detectedDelimiter: delimiter,
+      detectedHasHeader: hasHeader,
+    };
+  }
+
+  /**
+   * Parse date string according to format
+   */
+  private parseDate(dateStr: string, format: string): Date | null {
+    if (!dateStr) return null;
+
+    const cleanDate = dateStr.trim();
+    let day: number, month: number, year: number;
+
+    try {
+      switch (format) {
+        case 'DD/MM/YYYY':
+        case 'DD-MM-YYYY':
+        case 'DD.MM.YYYY': {
+          const parts = cleanDate.split(/[\/\-\.]/);
+          day = parseInt(parts[0]);
+          month = parseInt(parts[1]) - 1;
+          year = parseInt(parts[2]);
+          break;
+        }
+        case 'MM/DD/YYYY': {
+          const parts = cleanDate.split('/');
+          month = parseInt(parts[0]) - 1;
+          day = parseInt(parts[1]);
+          year = parseInt(parts[2]);
+          break;
+        }
+        case 'YYYY-MM-DD': {
+          const parts = cleanDate.split('-');
+          year = parseInt(parts[0]);
+          month = parseInt(parts[1]) - 1;
+          day = parseInt(parts[2]);
+          break;
+        }
+        default:
+          return null;
+      }
+
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+      // Handle 2-digit years
+      if (year < 100) {
+        year += year > 50 ? 1900 : 2000;
+      }
+
+      return new Date(year, month, day);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Parse amount string according to number format
+   */
+  private parseAmount(amountStr: string, numberFormat: string): number {
+    if (!amountStr) return 0;
+
+    let cleaned = amountStr.trim();
+
+    // Remove currency symbols and spaces
+    cleaned = cleaned.replace(/[R$€£¥\s]/g, '');
+
+    // If the string is empty after cleaning, return 0
+    if (!cleaned) return 0;
+
+    // Count occurrences of . and ,
+    const dotCount = (cleaned.match(/\./g) || []).length;
+    const commaCount = (cleaned.match(/,/g) || []).length;
+
+    let actualDecimalSep: string;
+
+    if (numberFormat === 'brazilian') {
+      // Brazilian: 1.234,56 - comma is decimal, dot is thousands
+      actualDecimalSep = ',';
+    } else if (numberFormat === 'international') {
+      // International: 1,234.56 - dot is decimal, comma is thousands
+      actualDecimalSep = '.';
+    } else {
+      // Auto-detect
+      // If there's only one dot and no comma, and dot is in decimal position (1-2 digits after)
+      if (dotCount === 1 && commaCount === 0) {
+        const dotPos = cleaned.indexOf('.');
+        const afterDot = cleaned.length - dotPos - 1;
+        actualDecimalSep = afterDot <= 2 ? '.' : ',';
+      }
+      // If there's only one comma and no dot, and comma is in decimal position
+      else if (commaCount === 1 && dotCount === 0) {
+        const commaPos = cleaned.indexOf(',');
+        const afterComma = cleaned.length - commaPos - 1;
+        actualDecimalSep = afterComma <= 2 ? ',' : '.';
+      }
+      // If both exist, the last one is likely the decimal separator
+      else if (dotCount > 0 && commaCount > 0) {
+        const lastDot = cleaned.lastIndexOf('.');
+        const lastComma = cleaned.lastIndexOf(',');
+        actualDecimalSep = lastDot > lastComma ? '.' : ',';
+      }
+      // Default to international format
+      else {
+        actualDecimalSep = '.';
+      }
+    }
+
+    // Remove thousands separator (the one that's NOT the decimal separator)
+    if (actualDecimalSep === '.') {
+      cleaned = cleaned.replace(/,/g, '');
+    } else {
+      cleaned = cleaned.replace(/\./g, '');
+    }
+
+    // Replace decimal separator with dot for parseFloat
+    if (actualDecimalSep === ',') {
+      cleaned = cleaned.replace(',', '.');
+    }
+
+    const value = parseFloat(cleaned);
+    return isNaN(value) ? 0 : value;
+  }
+
+  /**
+   * Determine transaction type from value or keywords
+   */
+  private determineType(
+    row: string[],
+    mappings: ColumnMapping[],
+    amount: number,
+    config: ImportConfig,
+  ): 'income' | 'expense' {
+    // Check if there's a type column
+    const typeMapping = mappings.find((m) => m.fieldType === 'type');
+    if (typeMapping) {
+      const typeValue = row[typeMapping.columnIndex]?.toLowerCase() || '';
+
+      for (const keyword of config.incomeKeywords) {
+        if (typeValue.includes(keyword.toLowerCase())) {
+          return 'income';
+        }
+      }
+
+      for (const keyword of config.expenseKeywords) {
+        if (typeValue.includes(keyword.toLowerCase())) {
+          return 'expense';
+        }
+      }
+    }
+
+    // Check description for keywords
+    const descMapping = mappings.find((m) => m.fieldType === 'description');
+    if (descMapping) {
+      const desc = row[descMapping.columnIndex]?.toLowerCase() || '';
+
+      for (const keyword of config.incomeKeywords) {
+        if (desc.includes(keyword.toLowerCase())) {
+          return 'income';
+        }
+      }
+    }
+
+    // Default: negative = expense, positive = income
+    return amount < 0 ? 'expense' : 'income';
+  }
+
+  /**
+   * Parse transactions from CSV using config
+   */
+  private parseTransactions(
+    csvContent: string,
+    config: ImportConfig,
+  ): { transactions: ParsedTransaction[]; errors: string[] } {
+    const rows = this.parseCSVRows(csvContent, config.delimiter);
+    const dataRows = config.hasHeader ? rows.slice(1) : rows;
+
+    const transactions: ParsedTransaction[] = [];
+    const errors: string[] = [];
+
+    const dateMapping = config.columnMappings.find(
+      (m) => m.fieldType === 'date',
+    );
+    const descMapping = config.columnMappings.find(
+      (m) => m.fieldType === 'description',
+    );
+    const amountMapping = config.columnMappings.find(
+      (m) => m.fieldType === 'amount',
+    );
+    const categoryMapping = config.columnMappings.find(
+      (m) => m.fieldType === 'category',
+    );
+
+    if (!dateMapping || !amountMapping) {
+      errors.push('Mapeamento de Data e Valor são obrigatórios');
+      return { transactions, errors };
+    }
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const rowNum = config.hasHeader ? i + 2 : i + 1;
+
+      try {
+        // Parse date
+        const dateStr = row[dateMapping.columnIndex];
+        const date = this.parseDate(dateStr, config.dateFormat);
+        if (!date) {
+          errors.push(`Linha ${rowNum}: Data inválida "${dateStr}"`);
+          continue;
+        }
+
+        // Parse amount
+        const amountStr = row[amountMapping.columnIndex];
+        let amount = this.parseAmount(amountStr, config.numberFormat);
+
+        if (amount === 0) {
+          continue; // Skip zero amount transactions
+        }
+
+        // Get description
+        const description = descMapping
+          ? row[descMapping.columnIndex]?.trim() || 'Sem descrição'
+          : 'Transação importada';
+
+        // Determine type
+        const type = this.determineType(
+          row,
+          config.columnMappings,
+          amount,
+          config,
+        );
+
+        // Make amount positive
+        amount = Math.abs(amount);
+
+        // Get category if mapped
+        const category = categoryMapping
+          ? row[categoryMapping.columnIndex]?.trim()
+          : undefined;
+
+        transactions.push({
+          date,
+          description,
+          amount,
+          type,
+          category,
+          rawRow: row,
+        });
+      } catch (error) {
+        errors.push(
+          `Linha ${rowNum}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        );
+      }
+    }
+
+    return { transactions, errors };
+  }
+
+  /**
+   * Preview import with configuration
+   */
+  async previewImport(
+    csvContent: string,
+    config: ImportConfig,
+  ): Promise<ImportPreview> {
+    const { transactions, errors } = this.parseTransactions(csvContent, config);
+
+    if (transactions.length === 0) {
+      return {
+        totalRows: 0,
+        validRows: 0,
+        invalidRows: errors.length,
+        dateRange: { start: new Date(), end: new Date() },
+        summary: { totalIncome: 0, totalExpenses: 0, balance: 0 },
+        categoriesToCreate: [],
+        sampleTransactions: [],
+        errors:
+          errors.length > 0 ? errors : ['Nenhuma transação válida encontrada'],
+      };
+    }
+
+    const dates = transactions.map((t) => t.date.getTime());
+    const totalIncome = transactions
+      .filter((t) => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions
+      .filter((t) => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Get unique categories
+    const categories = [
+      ...new Set(
+        transactions.filter((t) => t.category).map((t) => t.category!),
       ),
-      simpleSampleRows: rows.slice(0, 10).map((r) => ({
-        mesAno: r.mesAno,
-        tipo: r.tipo,
-        categoria: this.formatCategoryName(r.categoria),
-        valor: r.valor,
-      })),
-      sampleRows: [],
-    };
-  }
-  private async previewCompleteCSV(csvContent: string): Promise<ImportPreview> {
-    const rows = this.parseCompleteCSV(csvContent);
-    if (rows.length === 0) {
-      throw new Error('Nenhum dado encontrado no CSV');
-    }
-    const dates = rows.map((r) => r.dataReferencia);
-    const totalIncome = rows.reduce((sum, r) => sum + r.receitaTotal, 0);
-    const totalExpenses = rows.reduce((sum, r) => sum + r.despesaTotal, 0);
+    ];
+
     return {
-      totalRows: rows.length,
-      format: 'complete',
+      totalRows: transactions.length + errors.length,
+      validRows: transactions.length,
+      invalidRows: errors.length,
       dateRange: {
-        start: new Date(Math.min(...dates.map((d) => d.getTime()))),
-        end: new Date(Math.max(...dates.map((d) => d.getTime()))),
+        start: new Date(Math.min(...dates)),
+        end: new Date(Math.max(...dates)),
       },
       summary: {
         totalIncome,
         totalExpenses,
         balance: totalIncome - totalExpenses,
       },
-      accountsToCreate: ['Conta Principal', 'Cartão BB', 'Cartão Santander'],
-      categoriesToCreate: [
-        'Salário',
-        'Bônus',
-        'Cartão de Crédito',
-        'Energia',
-        'Internet/Educação',
-        'Aluguel',
-      ],
-      sampleRows: rows.slice(0, 5),
+      categoriesToCreate: categories,
+      sampleTransactions: transactions, // Return ALL transactions for editing
+      errors: errors.slice(0, 10),
     };
   }
-  async importCSV(userId: number, csvContent: string): Promise<ImportResult> {
-    const format = this.detectFormat(csvContent);
-    if (format === 'simple') {
-      return this.importSimpleCSV(userId, csvContent);
-    }
-    return this.importCompleteCSV(userId, csvContent);
-  }
-  private async importSimpleCSV(
+
+  /**
+   * Import CSV with configuration
+   */
+  async importCSV(
     userId: number,
     csvContent: string,
+    config: ImportConfig,
   ): Promise<ImportResult> {
-    const rows = this.parseSimpleCSV(csvContent);
-    const errors: string[] = [];
+    const { transactions, errors } = this.parseTransactions(csvContent, config);
+
     let transactionsCreated = 0;
     let categoriesCreated = 0;
+    const importErrors: string[] = [...errors];
+
     logger.info(
-      `Iniciando importação simples de ${rows.length} registros para usuário ${userId}`,
+      `Iniciando importação de ${transactions.length} transações para usuário ${userId}`,
     );
-    const accountId = await this.findOrCreateAccount(
-      userId,
-      'Conta Principal',
-      'checking',
-    );
+
+    // Get or create default account
+    const accountId =
+      config.defaultAccountId || (await this.getOrCreateDefaultAccount(userId));
+
+    // Create category map
     const categoryMap: Record<string, number> = {};
-    const uniqueCategories = [...new Set(rows.map((r) => r.categoria))];
-    for (const catName of uniqueCategories) {
-      const row = rows.find((r) => r.categoria === catName);
-      const type = row?.tipo === 'Receita' ? 'income' : 'expense';
-      const icon = this.getCategoryIcon(catName);
-      const formattedName = this.formatCategoryName(catName);
-      const existingCat = await this.categoryRepository.findByName(
-        userId,
-        formattedName,
-      );
-      if (existingCat) {
-        categoryMap[catName] = existingCat.id;
-      } else {
-        const created = await this.categoryRepository.createCategory({
-          userId,
-          name: formattedName,
-          type,
-          icon,
-          isDefault: false,
-        });
-        categoryMap[catName] = created.id;
-        categoriesCreated++;
-      }
-    }
-    logger.info(`${categoriesCreated} categorias criadas`);
-    for (const row of rows) {
+
+    for (const tx of transactions) {
       try {
-        const type = row.tipo === 'Receita' ? 'income' : 'expense';
-        const categoryId = categoryMap[row.categoria];
+        // Get or create category
+        let categoryId: number;
+
+        if (tx.category) {
+          if (categoryMap[tx.category]) {
+            categoryId = categoryMap[tx.category];
+          } else {
+            const existing = await this.categoryRepository.findByName(
+              userId,
+              tx.category,
+            );
+            if (existing) {
+              categoryId = existing.id;
+            } else {
+              const created = await this.categoryRepository.createCategory({
+                userId,
+                name: tx.category,
+                type: tx.type,
+                icon: 'category',
+                isDefault: false,
+              });
+              categoryId = created.id;
+              categoriesCreated++;
+            }
+            categoryMap[tx.category] = categoryId;
+          }
+        } else {
+          // Use default category
+          categoryId = await this.getOrCreateDefaultCategory(userId, tx.type);
+        }
+
+        // Create transaction
         await this.transactionRepository.createTransaction({
-          description: this.formatCategoryName(row.categoria),
-          amount: row.valor,
-          type: type as TransactionType,
-          transactionDate: row.data,
+          description: tx.description,
+          amount: tx.amount,
+          type: tx.type as TransactionType,
+          transactionDate: tx.date,
           accountId,
           categoryId,
-          paymentMethod: type === 'expense' ? 'debit' : undefined,
-          expenseType: type === 'expense' ? 'fixed' : undefined,
+          paymentMethod: tx.type === 'expense' ? 'debit' : undefined,
           recurrence: 'once',
         });
+
         transactionsCreated++;
       } catch (error) {
-        const msg = `Erro ao importar ${row.mesAno} - ${row.categoria}: ${error}`;
-        logger.error(msg);
-        errors.push(msg);
+        importErrors.push(
+          `Erro ao importar "${tx.description}": ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        );
       }
     }
+
     logger.success(
-      `Importação concluída: ${transactionsCreated} transações criadas`,
+      `Importação concluída: ${transactionsCreated} transações criadas, ${categoriesCreated} categorias criadas`,
     );
+
     return {
-      success: errors.length === 0,
-      accountsCreated: 1,
+      success: importErrors.length === 0,
       categoriesCreated,
       transactionsCreated,
-      errors,
+      errors: importErrors,
     };
   }
-  private formatCategoryName(name: string): string {
-    const nameMap: Record<string, string> = {
-      salario: 'Salário',
-      cartao_bb: 'Cartão BB',
-      cartao_santander: 'Cartão Santander',
-      energia: 'Energia',
-      escola: 'Escola',
-      internet: 'Internet',
-      santander: 'Santander',
-      aluguel: 'Aluguel',
-      bonus: 'Bônus',
-    };
-    const lowerName = name.toLowerCase();
-    if (nameMap[lowerName]) {
-      return nameMap[lowerName];
-    }
-    return name
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  }
-  private getCategoryIcon(categoryName: string): string {
-    const iconMap: Record<string, string> = {
-      salario: 'payments',
-      cartao_bb: 'credit_card',
-      cartao_santander: 'credit_card',
-      santander: 'credit_card',
-      energia: 'bolt',
-      escola: 'school',
-      internet: 'wifi',
-      aluguel: 'home',
-      bonus: 'card_giftcard',
-    };
-    return iconMap[categoryName.toLowerCase()] || 'category';
-  }
-  private async importCompleteCSV(
+
+  /**
+   * Import transactions directly (from edited list)
+   */
+  async importTransactions(
     userId: number,
-    csvContent: string,
+    config: ImportConfig,
+    transactions: ParsedTransaction[],
   ): Promise<ImportResult> {
-    const rows = this.parseCompleteCSV(csvContent);
-    const errors: string[] = [];
     let transactionsCreated = 0;
+    let categoriesCreated = 0;
+    const importErrors: string[] = [];
+
     logger.info(
-      `Iniciando importação completa de ${rows.length} registros para usuário ${userId}`,
+      `Iniciando importação de ${transactions.length} transações editadas para usuário ${userId}`,
     );
-    const accounts = await this.ensureAccounts(userId);
-    const categories = await this.ensureCategories(userId);
-    for (const row of rows) {
+
+    // Get or create default account
+    const accountId =
+      config.defaultAccountId || (await this.getOrCreateDefaultAccount(userId));
+
+    // Create category map
+    const categoryMap: Record<string, number> = {};
+
+    for (const tx of transactions) {
       try {
-        const created = await this.importRow(userId, row, accounts, categories);
-        transactionsCreated += created;
+        // Get or create category
+        let categoryId: number;
+
+        if (tx.category) {
+          if (categoryMap[tx.category]) {
+            categoryId = categoryMap[tx.category];
+          } else {
+            const existing = await this.categoryRepository.findByName(
+              userId,
+              tx.category,
+            );
+            if (existing) {
+              categoryId = existing.id;
+            } else {
+              const created = await this.categoryRepository.createCategory({
+                userId,
+                name: tx.category,
+                type: tx.type,
+                icon: 'category',
+                isDefault: false,
+              });
+              categoryId = created.id;
+              categoriesCreated++;
+            }
+            categoryMap[tx.category] = categoryId;
+          }
+        } else {
+          // Use default category
+          categoryId = await this.getOrCreateDefaultCategory(userId, tx.type);
+        }
+
+        // Create transaction
+        await this.transactionRepository.createTransaction({
+          description: tx.description,
+          amount: tx.amount,
+          type: tx.type as TransactionType,
+          transactionDate: new Date(tx.date),
+          accountId,
+          categoryId,
+          paymentMethod: tx.type === 'expense' ? 'debit' : undefined,
+          recurrence: 'once',
+        });
+
+        transactionsCreated++;
       } catch (error) {
-        const msg = `Erro ao importar linha ${row.mesRef}: ${error}`;
-        logger.error(msg);
-        errors.push(msg);
+        importErrors.push(
+          `Erro ao importar "${tx.description}": ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        );
       }
     }
+
     logger.success(
-      `Importação concluída: ${transactionsCreated} transações criadas`,
+      `Importação concluída: ${transactionsCreated} transações criadas, ${categoriesCreated} categorias criadas`,
     );
+
     return {
-      success: errors.length === 0,
-      accountsCreated: 3,
-      categoriesCreated: 6,
+      success: importErrors.length === 0,
+      categoriesCreated,
       transactionsCreated,
-      errors,
+      errors: importErrors,
     };
   }
-  private async ensureAccounts(
-    userId: number,
-  ): Promise<Record<string, number>> {
-    const accounts: Record<string, number> = {};
-    accounts['principal'] = await this.findOrCreateAccount(
-      userId,
-      'Conta Principal',
-      'checking',
-    );
-    accounts['cartao_bb'] = await this.findOrCreateAccount(
-      userId,
-      'Cartão BB',
-      'credit_card',
-      5000,
-      10,
-    );
-    accounts['cartao_santander'] = await this.findOrCreateAccount(
-      userId,
-      'Cartão Santander',
-      'credit_card',
-      5000,
-      15,
-    );
-    return accounts;
-  }
-  private async findOrCreateAccount(
-    userId: number,
-    name: string,
-    type: 'checking' | 'savings' | 'credit_card' | 'wallet',
-    creditLimit?: number,
-    closingDay?: number,
-  ): Promise<number> {
-    const existing = await this.accountRepository.findByName(userId, name);
-    if (existing) return existing.id;
+
+  private async getOrCreateDefaultAccount(userId: number): Promise<number> {
+    const accounts = await this.accountRepository.findAllByUserId(userId);
+    if (accounts.length > 0) {
+      return accounts[0].id;
+    }
+
     const created = await this.accountRepository.createAccount({
       userId,
-      name,
-      type,
+      name: 'Conta Principal',
+      type: 'checking',
       balance: 0,
-      creditLimit,
-      closingDay,
     });
     return created.id;
   }
-  private async ensureCategories(
+
+  private async getOrCreateDefaultCategory(
     userId: number,
-  ): Promise<Record<string, number>> {
-    const categories: Record<string, number> = {};
-    categories['salario'] = await this.findOrCreateCategory(
-      userId,
-      'Salário',
-      'income',
-      'payments',
-    );
-    categories['bonus'] = await this.findOrCreateCategory(
-      userId,
-      'Bônus',
-      'income',
-      'card_giftcard',
-    );
-    categories['cartao'] = await this.findOrCreateCategory(
-      userId,
-      'Cartão de Crédito',
-      'expense',
-      'credit_card',
-    );
-    categories['energia'] = await this.findOrCreateCategory(
-      userId,
-      'Energia',
-      'expense',
-      'bolt',
-    );
-    categories['internet'] = await this.findOrCreateCategory(
-      userId,
-      'Internet/Educação',
-      'expense',
-      'school',
-    );
-    categories['aluguel'] = await this.findOrCreateCategory(
-      userId,
-      'Aluguel',
-      'expense',
-      'home',
-    );
-    return categories;
-  }
-  private async findOrCreateCategory(
-    userId: number,
-    name: string,
     type: 'income' | 'expense',
-    icon: string,
   ): Promise<number> {
+    const name = type === 'income' ? 'Receita Geral' : 'Despesa Geral';
+
     const existing = await this.categoryRepository.findByName(userId, name);
     if (existing) return existing.id;
+
     const created = await this.categoryRepository.createCategory({
       userId,
       name,
       type,
-      icon,
-      isDefault: false,
+      icon: type === 'income' ? 'trending_up' : 'trending_down',
+      isDefault: true,
     });
     return created.id;
-  }
-  private async importRow(
-    _userId: number,
-    row: ParsedCSVRow,
-    accounts: Record<string, number>,
-    categories: Record<string, number>,
-  ): Promise<number> {
-    let count = 0;
-    const date = row.dataReferencia;
-    if (row.salario > 0) {
-      await this.createTransaction(
-        'Salário',
-        row.salario,
-        'income',
-        date,
-        accounts['principal'],
-        categories['salario'],
-      );
-      count++;
-    }
-    if (row.bonus > 0) {
-      await this.createTransaction(
-        'Bônus',
-        row.bonus,
-        'income',
-        date,
-        accounts['principal'],
-        categories['bonus'],
-      );
-      count++;
-    }
-    if (row.cartaoBB > 0) {
-      await this.createTransaction(
-        'Fatura Cartão BB',
-        row.cartaoBB,
-        'expense',
-        date,
-        accounts['cartao_bb'],
-        categories['cartao'],
-        'credit',
-      );
-      count++;
-    }
-    if (row.cartaoSantander > 0) {
-      await this.createTransaction(
-        'Fatura Cartão Santander',
-        row.cartaoSantander,
-        'expense',
-        date,
-        accounts['cartao_santander'],
-        categories['cartao'],
-        'credit',
-      );
-      count++;
-    }
-    if (row.energia > 0) {
-      await this.createTransaction(
-        'Energia',
-        row.energia,
-        'expense',
-        date,
-        accounts['principal'],
-        categories['energia'],
-        'debit',
-        'fixed',
-      );
-      count++;
-    }
-    if (row.internetEscola > 0) {
-      await this.createTransaction(
-        'Internet/Educação',
-        row.internetEscola,
-        'expense',
-        date,
-        accounts['principal'],
-        categories['internet'],
-        'debit',
-        'fixed',
-      );
-      count++;
-    }
-    if (row.aluguel > 0) {
-      await this.createTransaction(
-        'Aluguel',
-        row.aluguel,
-        'expense',
-        date,
-        accounts['principal'],
-        categories['aluguel'],
-        'debit',
-        'fixed',
-      );
-      count++;
-    }
-    return count;
-  }
-  private async createTransaction(
-    description: string,
-    amount: number,
-    type: 'income' | 'expense',
-    date: Date,
-    accountId: number,
-    categoryId: number,
-    paymentMethod?: 'credit' | 'debit' | 'pix' | 'cash',
-    expenseType?: 'fixed' | 'variable',
-  ): Promise<void> {
-    await this.transactionRepository.createTransaction({
-      description,
-      amount,
-      type: type as TransactionType,
-      transactionDate: date,
-      accountId,
-      categoryId,
-      paymentMethod,
-      expenseType,
-      recurrence: 'once',
-    });
   }
 }

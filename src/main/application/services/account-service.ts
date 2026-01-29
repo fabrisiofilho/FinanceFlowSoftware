@@ -3,6 +3,7 @@ import { logger } from '@main/infrastructure/log/logger';
 import {
   Account,
   AccountType,
+  CardBrand,
   CreateAccountInput,
   UpdateAccountInput,
 } from '@shared/interfaces/types/account.types';
@@ -25,6 +26,9 @@ export class AccountService {
       balance: Number(entity.balance),
       creditLimit: entity.creditLimit ? Number(entity.creditLimit) : undefined,
       closingDay: entity.closingDay ?? undefined,
+      cardColor: entity.cardColor ?? undefined,
+      cardBrand: entity.cardBrand as CardBrand | undefined,
+      bankName: entity.bankName ?? undefined,
       createdAt: entity.createdAt ?? new Date(),
       updatedAt: entity.updatedAt ?? new Date(),
     };
@@ -110,6 +114,9 @@ export class AccountService {
     if (data.type === 'credit_card') {
       accountData.creditLimit = data.creditLimit;
       accountData.closingDay = data.closingDay;
+      accountData.cardColor = data.cardColor;
+      accountData.cardBrand = data.cardBrand;
+      accountData.bankName = data.bankName;
     }
     const accountEntity = await this.accountRepository.createAccount({
       ...accountData,
@@ -139,6 +146,15 @@ export class AccountService {
       }
       if (data.closingDay !== undefined) {
         updateData.closingDay = data.closingDay;
+      }
+      if (data.cardColor !== undefined) {
+        updateData.cardColor = data.cardColor;
+      }
+      if (data.cardBrand !== undefined) {
+        updateData.cardBrand = data.cardBrand;
+      }
+      if (data.bankName !== undefined) {
+        updateData.bankName = data.bankName;
       }
     }
     const updatedEntity = await this.accountRepository.updateAccount(

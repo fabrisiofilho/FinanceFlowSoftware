@@ -9,6 +9,17 @@ import { GoalEntity } from '../../application/entities/goal.entity';
 import { GoalContributionEntity } from '../../application/entities/goal-contribution.entity';
 import { AlertEntity } from '../../application/entities/alert.entity';
 import { CreditCardInvoiceEntity } from '../../application/entities/credit-card-invoice.entity';
+import { CurrencyEntity } from '../../application/entities/currency.entity';
+import { TagEntity } from '../../application/entities/tag.entity';
+import { TransactionTagEntity } from '../../application/entities/transaction-tag.entity';
+import { AttachmentEntity } from '../../application/entities/attachment.entity';
+import { TransferEntity } from '../../application/entities/transfer.entity';
+import { BudgetEntity } from '../../application/entities/budget.entity';
+import { RecurringTransactionEntity } from '../../application/entities/recurring-transaction.entity';
+import { NotificationEntity } from '../../application/entities/notification.entity';
+import { NotificationSettingsEntity } from '../../application/entities/notification-settings.entity';
+import { BankImportEntity } from '../../application/entities/bank-import.entity';
+import { BankImportTransactionEntity } from '../../application/entities/bank-import-transaction.entity';
 import { logger } from '@main/infrastructure/log/logger';
 import { runMigrations } from './migration-runner';
 
@@ -58,6 +69,17 @@ function createDataSource(): DataSource {
       GoalContributionEntity,
       AlertEntity,
       CreditCardInvoiceEntity,
+      CurrencyEntity,
+      TagEntity,
+      TransactionTagEntity,
+      AttachmentEntity,
+      TransferEntity,
+      BudgetEntity,
+      RecurringTransactionEntity,
+      NotificationEntity,
+      NotificationSettingsEntity,
+      BankImportEntity,
+      BankImportTransactionEntity,
     ],
     migrations: [],
     subscribers: [],

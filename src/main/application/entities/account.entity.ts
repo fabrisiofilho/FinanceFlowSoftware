@@ -11,6 +11,14 @@ import type { RelationRef } from './config/relation-ref.entity';
 import type { FinanceUserEntity } from './finance-user.entity';
 import type { TransactionEntity } from './transaction.entity';
 export type AccountType = 'checking' | 'savings' | 'credit_card' | 'wallet';
+export type CardBrand =
+  | 'visa'
+  | 'mastercard'
+  | 'elo'
+  | 'amex'
+  | 'hipercard'
+  | 'diners'
+  | 'other';
 @Entity('accounts')
 export class AccountEntity extends AuditableEntity {
   @PrimaryGeneratedColumn()
@@ -36,6 +44,12 @@ export class AccountEntity extends AuditableEntity {
   creditLimit?: number;
   @Column({ name: 'closing_day', type: 'integer', nullable: true })
   closingDay?: number;
+  @Column({ name: 'card_color', type: 'text', nullable: true })
+  cardColor?: string;
+  @Column({ name: 'card_brand', type: 'text', nullable: true })
+  cardBrand?: CardBrand;
+  @Column({ name: 'bank_name', type: 'text', nullable: true })
+  bankName?: string;
   @OneToMany('TransactionEntity', 'account')
   transactions?: RelationRef<TransactionEntity>[];
 }

@@ -5,7 +5,6 @@ import * as yup from 'yup';
 import {
   ToggleButton,
   TextField,
-  InputAdornment,
   FormControlLabel,
   Switch,
   Typography,
@@ -18,8 +17,10 @@ import {
 import { FormTextField } from '@renderer/components/Form/FormTextField';
 import { FormSelectField } from '@renderer/components/Form/FormSelectField';
 import { FormDatePickerField } from '@renderer/components/Form/FormDatePickerField';
+import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import type { SelectInputItem } from '@renderer/components/Form/SelectInput';
 import { Modal } from '@renderer/components/Modal';
+import { formatCurrency } from '@renderer/utils/currency';
 import type {
   Transaction,
   TransactionType,
@@ -148,12 +149,7 @@ const recurrenceOptions: SelectInputItem[] = [
   { value: 'monthly', label: 'Mensal' },
   { value: 'weekly', label: 'Semanal' },
 ];
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+
 export function TransactionForm({
   open,
   onClose,
@@ -406,22 +402,12 @@ export function TransactionForm({
               />
             </FullWidthField>
             {}
-            <FormTextField
+            <FormCurrencyField
               control={control}
               name="amount"
               label="Valor"
-              type="number"
               required
               fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">R$</InputAdornment>
-                ),
-              }}
-              inputProps={{
-                step: '0.01',
-                min: '0.01',
-              }}
             />
             {}
             <FormSelectField

@@ -63,7 +63,12 @@ export function resolveAndSetupDbPath(): string {
       const alternativeBase = process.env.APPDATA || process.env.LOCALAPPDATA;
       if (alternativeBase) {
         console.warn(' Trying APPDATA alternative location...');
-        dbPath = path.join(alternativeBase, 'catraca', 'database', 'finance.db');
+        dbPath = path.join(
+          alternativeBase,
+          'catraca',
+          'database',
+          'finance.db',
+        );
         const altDir = path.dirname(dbPath);
 
         try {

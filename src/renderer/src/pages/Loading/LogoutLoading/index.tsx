@@ -1,7 +1,7 @@
 import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Container, MessageContainer } from './styles';
-import seifLogo from '@renderer/assets/seif-logo.svg';
+import financeLogo from '@renderer/assets/finance.png';
 const LOGOUT_MESSAGES = [
   'Finalizando sessão...',
   'Desconectando das controladoras...',
@@ -23,7 +23,7 @@ export function LogoutLoading() {
   return (
     <Container>
       <Stack alignItems="center" gap={4}>
-        <img src={seifLogo} alt="SEIF Logo" style={{ height: '3rem' }} />
+        <img src={financeLogo} alt="Finance Logo" style={{ height: '3rem' }} />
         <Box position="relative" display="inline-flex">
           <CircularProgress size={60} thickness={4} />
         </Box>

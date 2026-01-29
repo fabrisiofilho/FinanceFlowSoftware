@@ -1,4 +1,5 @@
 provider: github
 owner: fabrisiofilho
-repo: finance-flow
+repo: Finance_Local_Electron
+token: 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
 updaterCacheDirName: financeflow-updater

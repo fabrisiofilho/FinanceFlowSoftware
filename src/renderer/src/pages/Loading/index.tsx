@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
 import { Loading } from '@renderer/components/Loading';
-import seifLogo from '@renderer/assets/seif-logo.png';
+import financeLogo from '@renderer/assets/finance.png';
 import { Image } from './styles';
 import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@renderer/hooks/redux';
@@ -38,7 +38,7 @@ export function LoadingPage() {
 
   return (
     <Stack flex={1} height="100vh" alignItems="center" justifyContent="center">
-      <Image src={seifLogo} />
+      <Image src={financeLogo} />
 
       <Loading size="3.5rem" />
     </Stack>

@@ -54,12 +54,8 @@ import type { Account } from '@shared/interfaces/types/account.types';
 import type { CategoryExpense } from '@shared/interfaces/types/transaction.types';
 import type { IncomeVsExpense } from '@shared/interfaces/types/report.types';
 import type { TransactionType } from '@shared/interfaces/types/transaction.types';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { formatCurrency } from '@renderer/utils/currency';
+
 const MONTH_NAMES = [
   'Janeiro',
   'Fevereiro',

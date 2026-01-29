@@ -7,7 +7,6 @@ import {
   Tooltip,
   CircularProgress,
   Stack,
-  TextField,
   MenuItem,
   FormControl,
   InputLabel,
@@ -26,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
+import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import {
   AlertsContainer,
   PageHeaderContainer,
@@ -55,12 +55,8 @@ import type {
   UpdateAlertInput,
 } from '@shared/interfaces/types/alert.types';
 import type { Category } from '@shared/interfaces/types/category.types';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { formatCurrency } from '@renderer/utils/currency';
+
 const getStatusText = (status: AlertStatus): string => {
   switch (status) {
     case 'ok':
@@ -456,36 +452,17 @@ export function AlertsPage() {
             )}
           />
           {}
-          <Controller
+          <FormCurrencyField
             name="limitAmount"
             control={control}
+            label="Limite Mensal"
+            fullWidth
+            required
+            helperText="Defina o valor máximo de gastos para esta categoria"
             rules={{
               required: 'Limite é obrigatório',
               min: { value: 0.01, message: 'Limite deve ser maior que zero' },
             }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Limite Mensal"
-                type="number"
-                fullWidth
-                required
-                error={!!errors.limitAmount}
-                helperText={
-                  errors.limitAmount?.message ||
-                  'Defina o valor máximo de gastos para esta categoria'
-                }
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Typography color="text.secondary" mr={0.5}>
-                        R$
-                      </Typography>
-                    ),
-                  },
-                }}
-              />
-            )}
           />
           {}
           <Box

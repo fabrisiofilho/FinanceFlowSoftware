@@ -29,7 +29,7 @@ export const CreditCardsGrid = styled(Box)`
     gap: 1rem;
   }
 `;
-export const CreditCardCard = styled(Box)`
+export const CreditCardCard = styled(Box)<{ $cardColor?: string }>`
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
@@ -37,7 +37,7 @@ export const CreditCardCard = styled(Box)`
   background-color: ${({ theme }) => theme.COLORS.surface};
   box-shadow: ${({ theme }) => theme.SHADOWS.cards};
   border: 1px solid ${({ theme }) => theme.COLORS.border};
-  border-left: 4px solid ${({ theme }) => theme.COLORS.secondary_200};
+  border-left: 4px solid ${({ $cardColor, theme }) => $cardColor || theme.COLORS.secondary_200};
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -45,6 +45,26 @@ export const CreditCardCard = styled(Box)`
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
+`;
+
+export const CardBrandBadge = styled.span<{ $color?: string }>`
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  background-color: ${({ $color }) => $color || '#1a1a2e'};
+  color: #ffffff;
+  letter-spacing: 0.5px;
+`;
+
+export const BankBadge = styled.span`
+  font-size: 0.625rem;
+  font-weight: 500;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  background-color: ${({ theme }) => theme.COLORS.grey_200};
+  color: ${({ theme }) => theme.COLORS.textSecondary};
 `;
 export const CardHeader = styled(Stack).attrs({
   direction: 'row',

@@ -34,7 +34,7 @@
     "build:multi-win": "npm run build && npm run rebuild:sqlite64 && npm run rebuild:sqlite32 && electron-builder --win --x64 --ia32",
     "build:linux": "npm run build && npm run rebuild:sqlite && electron-builder --linux",
     "build:mac": "npm run build && npm run rebuild:sqlite && electron-builder --mac",
-    "publish": "npm run build && npm run rebuild:sqlite && electron-builder --win --mac --linux --publish always",
+    "publish": "npm run build && npm run rebuild:sqlite && electron-builder --win --publish always",
     "publish:win": "npm run build && npm run rebuild:sqlite && electron-builder --win --publish always",
     "publish:mac": "npm run build && npm run rebuild:sqlite && electron-builder --mac --publish always",
     "publish:linux": "npm run build && npm run rebuild:sqlite && electron-builder --linux --publish always",

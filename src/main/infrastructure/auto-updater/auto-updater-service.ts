@@ -5,38 +5,49 @@ import {
   UpdateState,
   UpdateStatus,
 } from '@shared/interfaces/types/auto-updater.types';
-const AUTO_UPDATER_ENABLED = false;
+
+// GitHub token for auto-updater (read-only access to releases)
+const GH_TOKEN = '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';
+
 export class AutoUpdaterService {
   private static instance: AutoUpdaterService;
   private mainWindow: BrowserWindow | null = null;
   private state: UpdateState = { status: 'idle' };
   private periodicCheckInterval: NodeJS.Timeout | null = null;
-  private readonly enabled: boolean = AUTO_UPDATER_ENABLED;
+
   private constructor() {
-    if (!this.enabled) {
-      logger.info('AutoUpdater is disabled - skipping configuration');
-      return;
-    }
     this.configureAutoUpdater();
     this.setupEventHandlers();
   }
+
   static getInstance(): AutoUpdaterService {
     if (!AutoUpdaterService.instance) {
       AutoUpdaterService.instance = new AutoUpdaterService();
     }
     return AutoUpdaterService.instance;
   }
+
   private configureAutoUpdater(): void {
-    autoUpdater.allowDowngrade = true;
+    // Configure GitHub token for private repos or rate limiting
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'fabrisiofilho',
+      repo: 'Finance_Local_Electron',
+      token: GH_TOKEN,
+    });
+
+    autoUpdater.allowDowngrade = false;
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
+
     autoUpdater.logger = {
       info: (message) => logger.info('[AutoUpdater]', message),
       warn: (message) => logger.warning('[AutoUpdater]', message),
       error: (message) => logger.error('[AutoUpdater]', message),
       debug: (message) => logger.debug('[AutoUpdater]', message),
     };
-    logger.info('AutoUpdater configured with allowDowngrade=true');
+
+    logger.info('AutoUpdater configured for GitHub Releases');
   }
   private setupEventHandlers(): void {
     autoUpdater.on('checking-for-update', () => {
@@ -110,16 +121,14 @@ export class AutoUpdaterService {
   setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window;
   }
+
   getAppVersion(): string {
     return app.getVersion();
   }
+
   async checkForUpdates(): Promise<UpdateInfo | null> {
-    if (!this.enabled) {
-      logger.debug('AutoUpdater disabled - skipping update check');
-      return null;
-    }
     try {
-      logger.info('Manually checking for updates...');
+      logger.info('Checking for updates...');
       const result = await autoUpdater.checkForUpdates();
       return result?.updateInfo || null;
     } catch (error) {
@@ -127,11 +136,8 @@ export class AutoUpdaterService {
       throw error;
     }
   }
+
   async downloadUpdate(): Promise<void> {
-    if (!this.enabled) {
-      logger.debug('AutoUpdater disabled - skipping download');
-      return;
-    }
     try {
       logger.info('Starting update download...');
       await autoUpdater.downloadUpdate();
@@ -140,39 +146,37 @@ export class AutoUpdaterService {
       throw error;
     }
   }
+
   installUpdate(): void {
-    if (!this.enabled) {
-      logger.debug('AutoUpdater disabled - skipping install');
-      return;
-    }
     logger.info('Installing update and restarting...');
     autoUpdater.quitAndInstall(false, true);
   }
+
   getUpdateState(): UpdateState {
     return this.state;
   }
-  isEnabled(): boolean {
-    return this.enabled;
-  }
+
   startPeriodicCheck(intervalHours: number = 4): void {
-    if (!this.enabled) {
-      logger.debug('AutoUpdater disabled - skipping periodic check');
-      return;
-    }
     this.stopPeriodicCheck();
+
     const intervalMs = intervalHours * 60 * 60 * 1000;
+
+    // First check after 10 seconds
     setTimeout(() => {
       this.checkForUpdates().catch((err) =>
         logger.error('Periodic update check failed:', err),
       );
     }, 10000);
+
     this.periodicCheckInterval = setInterval(() => {
       this.checkForUpdates().catch((err) =>
         logger.error('Periodic update check failed:', err),
       );
     }, intervalMs);
+
     logger.info(`Periodic update check started (every ${intervalHours} hours)`);
   }
+
   stopPeriodicCheck(): void {
     if (this.periodicCheckInterval) {
       clearInterval(this.periodicCheckInterval);

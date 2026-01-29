@@ -74,4 +74,16 @@ export const GlobalStyle = createGlobalStyle`
     outline: 2px solid ${({ theme }) => theme.COLORS.primary};
     outline-offset: 2px;
   }
+
+  /* Remove setas (spinners) de inputs numéricos */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 `;

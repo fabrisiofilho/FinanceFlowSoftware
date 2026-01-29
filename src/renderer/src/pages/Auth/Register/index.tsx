@@ -10,7 +10,7 @@ import { register } from '@renderer/redux/slices/auth/thunks';
 import { useAppDispatch, useAppSelector } from '@renderer/hooks/redux';
 import { isThunkLoading } from '@renderer/utils/thunk';
 import * as yup from 'yup';
-import { enqueueSnackbar } from 'notistack';
+
 const RegisterCredentialsSchema = yup.object({
   name: yup
     .string()
@@ -26,7 +26,9 @@ const RegisterCredentialsSchema = yup.object({
     .required('Confirmação de senha é obrigatória')
     .oneOf([yup.ref('password')], 'As senhas não coincidem'),
 });
+
 type SubmitData = yup.InferType<typeof RegisterCredentialsSchema>;
+
 export function RegisterPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -39,8 +41,10 @@ export function RegisterPage() {
       confirmPassword: '',
     },
   });
+
   const { registerLoading } = useAppSelector((state) => state.auth);
   const loading = isThunkLoading(registerLoading);
+
   const onSubmit = async (data: SubmitData) => {
     dispatch(
       register({
@@ -49,10 +53,6 @@ export function RegisterPage() {
         password: data.password,
         cb: (success) => {
           if (!success) return;
-          enqueueSnackbar({
-            variant: 'success',
-            message: 'Conta criada com sucesso!',
-          });
           navigate('/login');
         },
       }),

@@ -7,10 +7,26 @@ import { IAlertController } from '../controllers/alert.controller.interface';
 import { ICreditCardController } from '../controllers/credit-card.controller.interface';
 import { IReportController } from '../controllers/report.controller.interface';
 import { IImportController } from '../controllers/import.controller.interface';
+import { IBudgetController } from '../controllers/budget.controller.interface';
+import { ITransferController } from '../controllers/transfer.controller.interface';
+import { IRecurringController } from '../controllers/recurring.controller.interface';
+import { ICashFlowController } from '../controllers/cash-flow.controller.interface';
+import { IAdvancedReportController } from '../controllers/advanced-report.controller.interface';
+import { IBankImportController } from '../controllers/bank-import.controller.interface';
+import { ITagController } from '../controllers/tag.controller.interface';
+import { INotificationController } from '../controllers/notification.controller.interface';
+import { ICurrencyController } from '../controllers/currency.controller.interface';
+import { IAttachmentController } from '../controllers/attachment.controller.interface';
 import {
   IAutoUpdaterController,
   UpdateState,
 } from '../types/auto-updater.types';
+
+export interface IpcResultEvent {
+  channel: string;
+  success: boolean;
+  error?: string;
+}
 
 export interface CustomElectronAPI {
   financeAuth: IFinanceAuthController;
@@ -22,10 +38,22 @@ export interface CustomElectronAPI {
   creditCard: ICreditCardController;
   report: IReportController;
   import: IImportController;
+  budget: IBudgetController;
+  transfer: ITransferController;
+  recurring: IRecurringController;
+  cashFlow: ICashFlowController;
+  advancedReport: IAdvancedReportController;
+  bankImport: IBankImportController;
+  tag: ITagController;
+  notification: INotificationController;
+  currency: ICurrencyController;
+  attachment: IAttachmentController;
 
   autoUpdater: IAutoUpdaterController;
 
   openExternalUrl: (url: string) => void;
 
   onAutoUpdaterStatus: (callback: (state: UpdateState) => void) => () => void;
+
+  onIpcResult: (callback: (event: IpcResultEvent) => void) => () => void;
 }

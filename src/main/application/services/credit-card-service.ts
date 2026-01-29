@@ -426,6 +426,9 @@ export class CreditCardService {
       availableLimit,
       usedPercentage,
       closingDay,
+      cardColor: account.cardColor ?? undefined,
+      cardBrand: account.cardBrand ?? undefined,
+      bankName: account.bankName ?? undefined,
       currentInvoice: currentInvoice
         ? this.mapEntityToInvoice(currentInvoice)
         : undefined,

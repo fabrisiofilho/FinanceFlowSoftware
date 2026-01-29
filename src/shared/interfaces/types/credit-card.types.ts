@@ -1,4 +1,6 @@
 import { Transaction } from './transaction.types';
+import type { CardBrand } from './account.types';
+
 export type InvoiceStatus = 'open' | 'closed' | 'paid' | 'overdue';
 export interface CreditCardInvoice {
   id: number;
@@ -29,6 +31,9 @@ export interface CreditCardSummary {
   usedPercentage: number;
   closingDay: number;
   dueDay?: number;
+  cardColor?: string;
+  cardBrand?: CardBrand;
+  bankName?: string;
   currentInvoice?: CreditCardInvoice;
   nextDueInvoice?: CreditCardInvoice;
 }

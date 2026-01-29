@@ -19,6 +19,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
 import { AccountCard } from '@renderer/components/AccountCard';
+import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import {
   AccountsContainer,
   PageHeaderContainer,
@@ -35,15 +36,16 @@ import {
 import type {
   Account,
   AccountType,
+  CardBrand,
   CreateAccountInput,
   UpdateAccountInput,
 } from '@shared/interfaces/types/account.types';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import {
+  CARD_BRAND_LABELS,
+  BANK_OPTIONS,
+  CARD_COLOR_OPTIONS,
+} from '@shared/interfaces/types/account.types';
+import { formatCurrency } from '@renderer/utils/currency';
 const accountTypeOptions = [
   { value: 'checking', label: 'Conta Corrente' },
   { value: 'savings', label: 'Poupança' },
@@ -56,6 +58,9 @@ interface AccountFormData {
   balance: number;
   creditLimit?: number;
   closingDay?: number;
+  cardColor?: string;
+  cardBrand?: CardBrand;
+  bankName?: string;
 }
 export function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -81,6 +86,9 @@ export function AccountsPage() {
       balance: 0,
       creditLimit: undefined,
       closingDay: undefined,
+      cardColor: '#1a1a2e',
+      cardBrand: undefined,
+      bankName: undefined,
     },
   });
   const watchedType = watch('type');
@@ -119,6 +127,9 @@ export function AccountsPage() {
       balance: 0,
       creditLimit: undefined,
       closingDay: undefined,
+      cardColor: '#1a1a2e',
+      cardBrand: undefined,
+      bankName: undefined,
     });
     setIsFormOpen(true);
   };
@@ -130,6 +141,9 @@ export function AccountsPage() {
       balance: account.balance,
       creditLimit: account.creditLimit,
       closingDay: account.closingDay,
+      cardColor: account.cardColor || '#1a1a2e',
+      cardBrand: account.cardBrand,
+      bankName: account.bankName,
     });
     setIsFormOpen(true);
   };
@@ -148,6 +162,9 @@ export function AccountsPage() {
         if (data.type === 'credit_card') {
           updateData.creditLimit = data.creditLimit;
           updateData.closingDay = data.closingDay;
+          updateData.cardColor = data.cardColor;
+          updateData.cardBrand = data.cardBrand;
+          updateData.bankName = data.bankName;
         }
         const response = await window.electronAPI.account.update(
           selectedAccount.id,
@@ -165,6 +182,9 @@ export function AccountsPage() {
         if (data.type === 'credit_card') {
           createData.creditLimit = data.creditLimit;
           createData.closingDay = data.closingDay;
+          createData.cardColor = data.cardColor;
+          createData.cardBrand = data.cardBrand;
+          createData.bankName = data.bankName;
         }
         const response = await window.electronAPI.account.create(createData);
         if (!response.success) {
@@ -359,71 +379,36 @@ export function AccountsPage() {
           />
           {}
           {!selectedAccount && (
-            <Controller
+            <FormCurrencyField
               name="balance"
               control={control}
+              label="Saldo Inicial"
+              fullWidth
+              required
               rules={{
                 required: 'Saldo inicial é obrigatório',
-                validate: (value) => !isNaN(Number(value)) || 'Valor inválido',
               }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Saldo Inicial"
-                  type="number"
-                  fullWidth
-                  required
-                  error={!!errors.balance}
-                  helperText={errors.balance?.message}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <Typography color="text.secondary" mr={0.5}>
-                          R$
-                        </Typography>
-                      ),
-                    },
-                  }}
-                />
-              )}
             />
           )}
           {}
           {isCreditCard && (
             <FormRow>
               {}
-              <Controller
+              <FormCurrencyField
                 name="creditLimit"
                 control={control}
+                label="Limite de Crédito"
+                fullWidth
+                required={isCreditCard}
                 rules={{
                   required: isCreditCard
                     ? 'Limite é obrigatório para cartão de crédito'
                     : false,
-                  validate: (value) =>
+                  validate: (value: number) =>
                     !isCreditCard ||
-                    (value && value > 0) ||
+                    value > 0 ||
                     'Limite deve ser maior que zero',
                 }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Limite de Crédito"
-                    type="number"
-                    fullWidth
-                    required={isCreditCard}
-                    error={!!errors.creditLimit}
-                    helperText={errors.creditLimit?.message}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <Typography color="text.secondary" mr={0.5}>
-                            R$
-                          </Typography>
-                        ),
-                      },
-                    }}
-                  />
-                )}
               />
               {}
               <Controller
@@ -454,6 +439,103 @@ export function AccountsPage() {
                 )}
               />
             </FormRow>
+          )}
+          {isCreditCard && (
+            <FormRow>
+              <Controller
+                name="cardBrand"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Bandeira"
+                    fullWidth
+                    value={field.value || ''}
+                  >
+                    <MenuItem value="">Selecione...</MenuItem>
+                    {Object.entries(CARD_BRAND_LABELS).map(([value, label]) => (
+                      <MenuItem key={value} value={value}>
+                        {label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="bankName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Banco"
+                    fullWidth
+                    value={field.value || ''}
+                  >
+                    <MenuItem value="">Selecione...</MenuItem>
+                    {BANK_OPTIONS.map((bank) => (
+                      <MenuItem key={bank} value={bank}>
+                        {bank}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </FormRow>
+          )}
+          {isCreditCard && (
+            <Controller
+              name="cardColor"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Cor do Cartão"
+                  fullWidth
+                  value={field.value || '#1a1a2e'}
+                  SelectProps={{
+                    renderValue: (selected) => {
+                      const option = CARD_COLOR_OPTIONS.find(
+                        (opt) => opt.value === selected,
+                      );
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: '4px',
+                              backgroundColor: selected as string,
+                              border: '1px solid rgba(0,0,0,0.2)',
+                            }}
+                          />
+                          {option?.label || 'Selecione...'}
+                        </Box>
+                      );
+                    },
+                  }}
+                >
+                  {CARD_COLOR_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: '4px',
+                            backgroundColor: option.value,
+                            border: '1px solid rgba(0,0,0,0.2)',
+                          }}
+                        />
+                        {option.label}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
           )}
         </FormContainer>
       </Modal>

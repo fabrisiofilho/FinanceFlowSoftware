@@ -60,12 +60,8 @@ import type {
 } from '@shared/interfaces/types/transaction.types';
 import type { Category } from '@shared/interfaces/types/category.types';
 import type { Account } from '@shared/interfaces/types/account.types';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { formatCurrency } from '@renderer/utils/currency';
+
 const typeOptions: SelectInputItem[] = [
   { value: '', label: 'Todos' },
   { value: 'income', label: 'Receitas' },

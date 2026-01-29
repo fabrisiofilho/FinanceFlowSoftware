@@ -8,6 +8,7 @@ import {
   ReceiptLong as ReceiptLongIcon,
 } from '@mui/icons-material';
 import { formatDateToShow } from '@renderer/utils/date';
+import { formatCurrency } from '@renderer/utils/currency';
 import type {
   CreditCardInvoice,
   InvoiceStatus,
@@ -33,12 +34,7 @@ import {
   SummaryLabel,
   SummaryValue,
 } from './styles';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+
 const formatMonthYear = (month: number, year: number): string => {
   const months = [
     'Janeiro',

@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer, shell } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
-import { CustomElectronAPI } from '@shared/interfaces/config/index.types';
+import {
+  CustomElectronAPI,
+  IpcResultEvent,
+} from '@shared/interfaces/config/index.types';
 import { CONTROLLER_CONFIG } from './controller-config';
 import './index.d';
 
@@ -17,10 +20,34 @@ import type {
   IAutoUpdaterController,
   UpdateState,
 } from '@shared/interfaces/types/auto-updater.types';
+import type { IBudgetController } from '@shared/interfaces/controllers/budget.controller.interface';
+import type { ITransferController } from '@shared/interfaces/controllers/transfer.controller.interface';
+import type { IRecurringController } from '@shared/interfaces/controllers/recurring.controller.interface';
+import type { ICashFlowController } from '@shared/interfaces/controllers/cash-flow.controller.interface';
+import type { IAdvancedReportController } from '@shared/interfaces/controllers/advanced-report.controller.interface';
+import type { IBankImportController } from '@shared/interfaces/controllers/bank-import.controller.interface';
+import type { ITagController } from '@shared/interfaces/controllers/tag.controller.interface';
+import type { INotificationController } from '@shared/interfaces/controllers/notification.controller.interface';
+import type { ICurrencyController } from '@shared/interfaces/controllers/currency.controller.interface';
+import type { IAttachmentController } from '@shared/interfaces/controllers/attachment.controller.interface';
 import '@shared/config/dateFnsLocale';
 
 console.log('PRELOAD LOADED!');
 console.log('contextIsolated:', process.contextIsolated);
+
+// Event emitter para resultados IPC (sucesso e erro)
+type IpcResultCallback = (event: IpcResultEvent) => void;
+const ipcResultListeners: Set<IpcResultCallback> = new Set();
+
+function emitIpcResult(event: IpcResultEvent): void {
+  ipcResultListeners.forEach((callback) => {
+    try {
+      callback(event);
+    } catch (e) {
+      console.error('Error in IPC result listener:', e);
+    }
+  });
+}
 
 function createControllerFromConfig<T extends object>(
   prefix: string,
@@ -32,9 +59,33 @@ function createControllerFromConfig<T extends object>(
     const channel = `${prefix}:${String(methodName)}`;
     console.log('ipc::invoke::channel::' + channel);
 
-    (controller as Record<string, unknown>)[methodName as string] = (
+    (controller as Record<string, unknown>)[methodName as string] = async (
       ...args: unknown[]
-    ) => ipcRenderer.invoke(channel, ...args);
+    ) => {
+      try {
+        const result = await ipcRenderer.invoke(channel, ...args);
+
+        if (result && typeof result === 'object' && 'success' in result) {
+          if (result.success) {
+            // Emite evento de sucesso
+            emitIpcResult({ channel, success: true });
+          } else {
+            // Emite evento de erro
+            const errorMessage =
+              result.error || result.message || 'Erro desconhecido';
+            emitIpcResult({ channel, success: false, error: errorMessage });
+          }
+        }
+
+        return result;
+      } catch (error) {
+        // Captura erros de invocação IPC
+        const errorMessage =
+          error instanceof Error ? error.message : 'Erro de comunicação';
+        emitIpcResult({ channel, success: false, error: errorMessage });
+        throw error;
+      }
+    };
   });
 
   return controller;
@@ -91,6 +142,64 @@ const api: CustomElectronAPI = {
     CONTROLLER_CONFIG.autoUpdater.methods,
   ),
 
+  budget: createControllerFromConfig<IBudgetController>(
+    CONTROLLER_CONFIG.budget.prefix,
+    CONTROLLER_CONFIG.budget.methods as readonly (keyof IBudgetController)[],
+  ),
+
+  transfer: createControllerFromConfig<ITransferController>(
+    CONTROLLER_CONFIG.transfer.prefix,
+    CONTROLLER_CONFIG.transfer
+      .methods as readonly (keyof ITransferController)[],
+  ),
+
+  recurring: createControllerFromConfig<IRecurringController>(
+    CONTROLLER_CONFIG.recurring.prefix,
+    CONTROLLER_CONFIG.recurring
+      .methods as readonly (keyof IRecurringController)[],
+  ),
+
+  cashFlow: createControllerFromConfig<ICashFlowController>(
+    CONTROLLER_CONFIG.cashFlow.prefix,
+    CONTROLLER_CONFIG.cashFlow
+      .methods as readonly (keyof ICashFlowController)[],
+  ),
+
+  advancedReport: createControllerFromConfig<IAdvancedReportController>(
+    CONTROLLER_CONFIG.advancedReport.prefix,
+    CONTROLLER_CONFIG.advancedReport
+      .methods as readonly (keyof IAdvancedReportController)[],
+  ),
+
+  bankImport: createControllerFromConfig<IBankImportController>(
+    CONTROLLER_CONFIG.bankImport.prefix,
+    CONTROLLER_CONFIG.bankImport
+      .methods as readonly (keyof IBankImportController)[],
+  ),
+
+  tag: createControllerFromConfig<ITagController>(
+    CONTROLLER_CONFIG.tag.prefix,
+    CONTROLLER_CONFIG.tag.methods as readonly (keyof ITagController)[],
+  ),
+
+  notification: createControllerFromConfig<INotificationController>(
+    CONTROLLER_CONFIG.notification.prefix,
+    CONTROLLER_CONFIG.notification
+      .methods as readonly (keyof INotificationController)[],
+  ),
+
+  currency: createControllerFromConfig<ICurrencyController>(
+    CONTROLLER_CONFIG.currency.prefix,
+    CONTROLLER_CONFIG.currency
+      .methods as readonly (keyof ICurrencyController)[],
+  ),
+
+  attachment: createControllerFromConfig<IAttachmentController>(
+    CONTROLLER_CONFIG.attachment.prefix,
+    CONTROLLER_CONFIG.attachment
+      .methods as readonly (keyof IAttachmentController)[],
+  ),
+
   openExternalUrl: (url: string) => {
     shell.openExternal(url);
   },
@@ -107,6 +216,13 @@ const api: CustomElectronAPI = {
     ipcRenderer.on('autoUpdater:statusUpdate', listener);
     return () =>
       ipcRenderer.removeListener('autoUpdater:statusUpdate', listener);
+  },
+
+  onIpcResult: (callback: (event: IpcResultEvent) => void): (() => void) => {
+    ipcResultListeners.add(callback);
+    return () => {
+      ipcResultListeners.delete(callback);
+    };
   },
 };
 

@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
+import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import { InvoiceDetails } from '@renderer/components/InvoiceDetails';
 import { formatDateToShow } from '@renderer/utils/date';
 import {
@@ -38,6 +39,8 @@ import {
   EmptyStateContainer,
   LimitAlertIndicator,
   PaymentFormContainer,
+  CardBrandBadge,
+  BankBadge,
 } from './styles';
 import type {
   CreditCardSummary,
@@ -45,12 +48,9 @@ import type {
   PayInvoiceInput,
 } from '@shared/interfaces/types/credit-card.types';
 import type { Account } from '@shared/interfaces/types/account.types';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { CARD_BRAND_LABELS } from '@shared/interfaces/types/account.types';
+import { formatCurrency } from '@renderer/utils/currency';
+
 const formatMonthYear = (month: number, year: number): string => {
   const months = [
     'Janeiro',
@@ -219,18 +219,28 @@ export function CreditCardsPage() {
             const displayInvoice = nextDueInvoice || currentInvoice;
             const isOverLimit = card.usedPercentage >= 80;
             return (
-              <CreditCardCard key={card.accountId}>
+              <CreditCardCard key={card.accountId} $cardColor={card.cardColor}>
                 {}
                 <CardHeader>
                   <Stack direction="row" alignItems="center">
-                    <CardIcon>
-                      <CreditCardIcon />
+                    <CardIcon style={{ backgroundColor: card.cardColor ? `${card.cardColor}20` : undefined }}>
+                      <CreditCardIcon style={{ color: card.cardColor || undefined }} />
                     </CardIcon>
                     <CardInfo>
                       <CardName>{card.accountName}</CardName>
-                      <CardSubtitle>
-                        Fechamento dia {card.closingDay}
-                      </CardSubtitle>
+                      <Stack direction="row" alignItems="center" spacing={0.5} mt={0.5}>
+                        <CardSubtitle>
+                          Fechamento dia {card.closingDay}
+                        </CardSubtitle>
+                        {card.cardBrand && (
+                          <CardBrandBadge $color={card.cardColor}>
+                            {CARD_BRAND_LABELS[card.cardBrand]}
+                          </CardBrandBadge>
+                        )}
+                        {card.bankName && (
+                          <BankBadge>{card.bankName}</BankBadge>
+                        )}
+                      </Stack>
                     </CardInfo>
                   </Stack>
                 </CardHeader>
@@ -373,9 +383,13 @@ export function CreditCardsPage() {
                 )}
               />
               {}
-              <Controller
+              <FormCurrencyField
                 name="amount"
                 control={control}
+                label="Valor do Pagamento"
+                fullWidth
+                required
+                helperText="Deixe o valor total para pagar a fatura completa"
                 rules={{
                   required: 'Valor é obrigatório',
                   min: {
@@ -387,29 +401,6 @@ export function CreditCardsPage() {
                     message: 'Valor não pode ser maior que o total da fatura',
                   },
                 }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Valor do Pagamento"
-                    type="number"
-                    fullWidth
-                    required
-                    error={!!errors.amount}
-                    helperText={
-                      errors.amount?.message ||
-                      'Deixe o valor total para pagar a fatura completa'
-                    }
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <Typography color="text.secondary" mr={0.5}>
-                            R$
-                          </Typography>
-                        ),
-                      },
-                    }}
-                  />
-                )}
               />
             </>
           )}

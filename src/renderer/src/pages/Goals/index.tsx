@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
+import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import { formatDateToShow } from '@renderer/utils/date';
 import {
   GoalsContainer,
@@ -55,12 +56,7 @@ import type {
   UpdateGoalInput,
   AddContributionInput,
 } from '@shared/interfaces/types/goal.types';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { formatCurrency } from '@renderer/utils/currency';
 const calculateRemainingDays = (
   deadline: Date | string | undefined,
 ): number | null => {
@@ -112,7 +108,6 @@ export function GoalsPage() {
     control: contributionControl,
     handleSubmit: handleContributionSubmit,
     reset: resetContributionForm,
-    formState: { errors: contributionErrors },
   } = useForm<ContributionFormData>({
     defaultValues: {
       amount: 0,
@@ -493,33 +488,16 @@ export function GoalsPage() {
             )}
           />
           {}
-          <Controller
+          <FormCurrencyField
             name="targetAmount"
             control={goalControl}
+            label="Valor Alvo"
+            fullWidth
+            required
             rules={{
               required: 'Valor alvo é obrigatório',
               min: { value: 0.01, message: 'Valor deve ser maior que zero' },
             }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Valor Alvo"
-                type="number"
-                fullWidth
-                required
-                error={!!goalErrors.targetAmount}
-                helperText={goalErrors.targetAmount?.message}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Typography color="text.secondary" mr={0.5}>
-                        R$
-                      </Typography>
-                    ),
-                  },
-                }}
-              />
-            )}
           />
           {}
           <Controller
@@ -621,9 +599,13 @@ export function GoalsPage() {
                 </Typography>
               </GoalSummaryBox>
               {}
-              <Controller
+              <FormCurrencyField
                 name="amount"
                 control={contributionControl}
+                label="Valor da Contribuição"
+                fullWidth
+                required
+                autoFocus
                 rules={{
                   required: 'Valor é obrigatório',
                   min: {
@@ -631,27 +613,6 @@ export function GoalsPage() {
                     message: 'Valor deve ser maior que zero',
                   },
                 }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Valor da Contribuição"
-                    type="number"
-                    fullWidth
-                    required
-                    autoFocus
-                    error={!!contributionErrors.amount}
-                    helperText={contributionErrors.amount?.message}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <Typography color="text.secondary" mr={0.5}>
-                            R$
-                          </Typography>
-                        ),
-                      },
-                    }}
-                  />
-                )}
               />
             </>
           )}

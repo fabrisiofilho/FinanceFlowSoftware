@@ -7,8 +7,10 @@ export function wrap<T, A extends unknown[]>(fn: (...args: A) => Promise<T>) {
       const data = await fn(...args);
       return { success: true, data };
     } catch (error: unknown) {
-      logger.error(error as string);
-      return { success: false, error: error as string };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 }

@@ -24,12 +24,8 @@ import {
   CompletedBadge,
   DeadlineInfo,
 } from './styles';
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+import { formatCurrency } from '@renderer/utils/currency';
+
 const calculateRemainingDays = (
   deadline: Date | string | undefined,
 ): number | null => {

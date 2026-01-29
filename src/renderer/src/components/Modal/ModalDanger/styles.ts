@@ -10,9 +10,14 @@ import { styled } from '@mui/material/styles';
 export const CustomDialog = styled(Dialog)(({ theme }) => ({
   'div.MuiDialog-paper': {
     borderRadius: '1rem',
+    minWidth: '360px',
     maxWidth: '30rem',
     backgroundColor: theme.palette.background.paper,
     backgroundImage: 'none',
+    [`@media (max-width: 480px)`]: {
+      minWidth: 'calc(100vw - 2rem)',
+      margin: '1rem',
+    },
   },
   'div.MuiDialogContent-root': {
     padding: '1.5rem',

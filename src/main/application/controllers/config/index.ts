@@ -9,6 +9,16 @@ import { AlertController } from '../alert-controller';
 import { CreditCardController } from '../credit-card-controller';
 import { ReportController } from '../report-controller';
 import { ImportController } from '../import-controller';
+import { BudgetController } from '../budget-controller';
+import { TagController } from '../tag-controller';
+import { TransferController } from '../transfer-controller';
+import { NotificationController } from '../notification-controller';
+import { RecurringTransactionController } from '../recurring-transaction-controller';
+import { BankImportController } from '../bank-import-controller';
+import { AdvancedReportController } from '../advanced-report-controller';
+import { CashFlowController } from '../cash-flow-controller';
+import { CurrencyController } from '../currency-controller';
+import { AttachmentController } from '../attachment-controller';
 
 export function loadIpcControllers() {
   logger.info('Loading IPC controllers...');
@@ -42,6 +52,36 @@ export function loadIpcControllers() {
 
   logger.info('Loading ImportController...');
   new ImportController();
+
+  logger.info('Loading BudgetController...');
+  new BudgetController();
+
+  logger.info('Loading TagController...');
+  new TagController();
+
+  logger.info('Loading TransferController...');
+  new TransferController();
+
+  logger.info('Loading NotificationController...');
+  new NotificationController();
+
+  logger.info('Loading RecurringTransactionController...');
+  new RecurringTransactionController();
+
+  logger.info('Loading BankImportController...');
+  new BankImportController();
+
+  logger.info('Loading AdvancedReportController...');
+  new AdvancedReportController();
+
+  logger.info('Loading CashFlowController...');
+  new CashFlowController();
+
+  logger.info('Loading CurrencyController...');
+  new CurrencyController();
+
+  logger.info('Loading AttachmentController...');
+  new AttachmentController();
 
   logger.info('All IPC controllers loaded successfully');
 }

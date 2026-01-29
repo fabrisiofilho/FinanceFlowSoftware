@@ -113,7 +113,8 @@ export const CONTROLLER_CONFIG = {
   import: {
     prefix: 'import',
     methods: [
-      'previewCSV',
+      'getCSVPreview',
+      'previewImport',
       'importCSV',
     ] as const satisfies readonly (keyof IImportController)[],
   },
@@ -127,6 +128,113 @@ export const CONTROLLER_CONFIG = {
       'installUpdate',
       'getUpdateState',
     ] as const satisfies readonly (keyof IAutoUpdaterController)[],
+  },
+
+  budget: {
+    prefix: 'budget',
+    methods: [
+      'create',
+      'update',
+      'delete',
+      'findById',
+      'findAll',
+      'getSummary',
+      'getAlerts',
+      'copyFromPreviousMonth',
+    ] as const,
+  },
+
+  tag: {
+    prefix: 'tag',
+    methods: [
+      'create',
+      'update',
+      'delete',
+      'findAll',
+      'getTransactionTags',
+      'setTransactionTags',
+    ] as const,
+  },
+
+  transfer: {
+    prefix: 'transfer',
+    methods: ['create', 'delete', 'findById', 'findAll', 'getSummary'] as const,
+  },
+
+  notification: {
+    prefix: 'notification',
+    methods: [
+      'findAll',
+      'getSummary',
+      'markAsRead',
+      'markAllAsRead',
+      'dismiss',
+      'delete',
+      'getSettings',
+      'updateSettings',
+      'processScheduled',
+    ] as const,
+  },
+
+  recurring: {
+    prefix: 'recurring',
+    methods: [
+      'create',
+      'update',
+      'delete',
+      'findById',
+      'findAll',
+      'generate',
+    ] as const,
+  },
+
+  bankImport: {
+    prefix: 'bankImport',
+    methods: [
+      'create',
+      'process',
+      'findById',
+      'getTransactions',
+      'getReconciliationSuggestions',
+      'delete',
+    ] as const,
+  },
+
+  advancedReport: {
+    prefix: 'advancedReport',
+    methods: [
+      'yearComparison',
+      'trendAnalysis',
+      'spendingPatterns',
+      'categoryBreakdown',
+      'financialHealth',
+      'incomeVsExpenseHistory',
+    ] as const,
+  },
+
+  cashFlow: {
+    prefix: 'cashFlow',
+    methods: ['getProjection', 'getMonthlyProjections'] as const,
+  },
+
+  currency: {
+    prefix: 'currency',
+    methods: [
+      'create',
+      'update',
+      'delete',
+      'findAll',
+      'findByCode',
+      'getDefault',
+      'setDefault',
+      'convert',
+      'updateRates',
+    ] as const,
+  },
+
+  attachment: {
+    prefix: 'attachment',
+    methods: ['upload', 'delete', 'findByTransaction', 'getFile'] as const,
   },
 } as const;
 
