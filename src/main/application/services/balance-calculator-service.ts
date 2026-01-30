@@ -33,7 +33,15 @@ export class BalanceCalculatorService {
     type: TransactionType,
     amount: number,
   ): number {
-    const normalizedAmount = Math.abs(Number(amount));
+    const numericAmount = Number(amount);
+    
+    // Validar que o valor é um número válido e positivo
+    if (isNaN(numericAmount) || numericAmount < 0) {
+      logger.warning(`Valor inválido detectado: ${amount}, usando 0`);
+      return 0;
+    }
+    
+    const normalizedAmount = Math.abs(numericAmount);
     return type === 'income' ? normalizedAmount : -normalizedAmount;
   }
   async updateBalanceAfterCreate(

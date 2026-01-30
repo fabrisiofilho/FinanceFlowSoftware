@@ -163,10 +163,18 @@ export class TransactionService {
   private async validateCategory(
     userId: number,
     categoryId: number,
+    transactionType?: Transaction['type'],
   ): Promise<void> {
     const category = await this.categoryRepository.findById(categoryId, userId);
     if (!category) {
       throw new Error('Categoria não encontrada');
+    }
+    
+    // Validar que o tipo da categoria é compatível com o tipo da transação
+    if (transactionType && category.type !== transactionType) {
+      throw new Error(
+        `Categoria de ${category.type === 'income' ? 'receita' : 'despesa'} não pode ser usada em transação de ${transactionType === 'income' ? 'receita' : 'despesa'}`,
+      );
     }
   }
   private addMonths(date: Date, months: number): Date {
@@ -181,7 +189,7 @@ export class TransactionService {
     logger.info('Criando nova transação para usuário:', userId);
     this.validateCreateInput(data);
     await this.validateAccount(userId, data.accountId);
-    await this.validateCategory(userId, data.categoryId);
+    await this.validateCategory(userId, data.categoryId, data.type);
     const isInstallment = data.totalInstallments && data.totalInstallments > 1;
     const isRecurring =
       data.recurrence === 'monthly' || data.recurrence === 'weekly';
@@ -231,11 +239,14 @@ export class TransactionService {
   ): Promise<Transaction> {
     const totalInstallments = data.totalInstallments!;
     const installmentGroupId = crypto.randomUUID();
-    const installmentAmount = Number(
-      (data.amount / totalInstallments).toFixed(2),
-    );
+    
+    // Calcular valor base das parcelas e ajuste para última parcela
+    const baseInstallmentAmount = Math.floor((data.amount / totalInstallments) * 100) / 100;
+    const totalBaseAmount = baseInstallmentAmount * totalInstallments;
+    const lastInstallmentAdjustment = Number((data.amount - totalBaseAmount).toFixed(2));
+    
     logger.info(
-      `Criando ${totalInstallments} parcelas com valor ${installmentAmount} cada`,
+      `Criando ${totalInstallments} parcelas com valor base ${baseInstallmentAmount} cada (ajuste última: ${lastInstallmentAdjustment})`,
     );
     let firstTransaction: TransactionEntity | null = null;
     for (let i = 1; i <= totalInstallments; i++) {
@@ -246,6 +257,12 @@ export class TransactionService {
       const dueDate = data.dueDate
         ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i - 1)
         : undefined;
+      
+      // Última parcela recebe o ajuste de arredondamento
+      const installmentAmount = i === totalInstallments 
+        ? baseInstallmentAmount + lastInstallmentAdjustment 
+        : baseInstallmentAmount;
+      
       const transactionData: Partial<TransactionEntity> = {
         description: `${data.description.trim()} (${i}/${totalInstallments})`,
         amount: installmentAmount,
@@ -332,7 +349,8 @@ export class TransactionService {
     }
     this.validateUpdateInput(data);
     if (data.categoryId) {
-      await this.validateCategory(userId, data.categoryId);
+      // Usar o tipo existente da transação para validar compatibilidade da categoria
+      await this.validateCategory(userId, data.categoryId, existingEntity.type as Transaction['type']);
     }
     const oldAmount = Number(existingEntity.amount);
     const oldType = existingEntity.type as TransactionType;

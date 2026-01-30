@@ -29,6 +29,9 @@ export class RecurringTransactionService {
   private mapEntityToRecurring(
     entity: RecurringTransactionEntity,
   ): RecurringTransaction {
+    const account = entity.account as AccountEntity | undefined;
+    const category = entity.category as CategoryEntity | undefined;
+    
     return {
       id: entity.id,
       userId: entity.userId,
@@ -41,10 +44,10 @@ export class RecurringTransactionService {
       dayOfMonth: entity.dayOfMonth,
       dayOfWeek: entity.dayOfWeek,
       accountId: entity.accountId,
-      accountName: (entity.account as AccountEntity)?.name,
+      accountName: account?.name,
       categoryId: entity.categoryId,
-      categoryName: (entity.category as CategoryEntity)?.name,
-      categoryIcon: (entity.category as CategoryEntity)?.icon ?? undefined,
+      categoryName: category?.name,
+      categoryIcon: category?.icon ?? undefined,
       startDate: parseDateSafe(entity.startDate) ?? new Date(),
       endDate: entity.endDate ? parseDateSafe(entity.endDate) ?? undefined : undefined,
       nextOccurrence: parseDateSafe(entity.nextOccurrence) ?? new Date(),

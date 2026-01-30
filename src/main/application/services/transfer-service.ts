@@ -25,13 +25,16 @@ export class TransferService {
   }
 
   private mapEntityToTransfer(entity: TransferEntity): Transfer {
+    const fromAccount = entity.fromAccount as AccountEntity | undefined;
+    const toAccount = entity.toAccount as AccountEntity | undefined;
+    
     return {
       id: entity.id,
       userId: entity.userId,
       fromAccountId: entity.fromAccountId,
       toAccountId: entity.toAccountId,
-      fromAccountName: (entity.fromAccount as AccountEntity)?.name,
-      toAccountName: (entity.toAccount as AccountEntity)?.name,
+      fromAccountName: fromAccount?.name,
+      toAccountName: toAccount?.name,
       amount: Number(entity.amount),
       fromCurrencyId: entity.fromCurrencyId,
       toCurrencyId: entity.toCurrencyId,

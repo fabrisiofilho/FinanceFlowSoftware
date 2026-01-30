@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS currencies (
 CREATE INDEX IF NOT EXISTS idx_currencies_code ON currencies(code);
 CREATE INDEX IF NOT EXISTS idx_currencies_is_default ON currencies(is_default);
 
--- Insert default currency (BRL)
+-- Insert default currencies
 INSERT OR IGNORE INTO currencies (code, name, symbol, decimal_places, is_default, exchange_rate) 
 VALUES ('BRL', 'Real Brasileiro', 'R$', 2, 1, 1);
 

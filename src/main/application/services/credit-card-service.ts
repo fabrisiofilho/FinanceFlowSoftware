@@ -33,7 +33,10 @@ export class CreditCardService {
     let year = date.getFullYear();
     let month = date.getMonth() + 1;
 
-    if (date.getDate() > closingDay) {
+    // Validar closingDay (deve estar entre 1 e 31)
+    const validClosingDay = Math.max(1, Math.min(31, closingDay));
+
+    if (date.getDate() > validClosingDay) {
       month += 1;
       if (month > 12) {
         month = 1;
