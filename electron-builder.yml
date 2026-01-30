@@ -68,7 +68,8 @@ linux:
   synopsis: 'Controle financeiro pessoal'
   description: 'Aplicação desktop para controle financeiro pessoal com gestão de contas, transações, metas e cartões de crédito.'
 # ----------- AUTO UPDATE / PUBLISH -----------
-# TODO: Configurar Azure Blob Storage quando estiver pronto
-# publish:
-#   provider: generic
-#   url: https://SEU-STORAGE.blob.core.windows.net/releases
+publish:
+  provider: github
+  owner: fabrisiofilho
+  repo: Finance_Local_Electron
+  releaseType: release
