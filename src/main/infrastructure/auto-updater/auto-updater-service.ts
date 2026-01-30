@@ -133,7 +133,9 @@ export class AutoUpdaterService {
       return result?.updateInfo || null;
     } catch (error) {
       logger.error('Failed to check for updates:', error);
-      throw error;
+      // Não propaga o erro - apenas atualiza o estado silenciosamente
+      // O evento 'error' do autoUpdater já cuida de atualizar o estado
+      return null;
     }
   }
 

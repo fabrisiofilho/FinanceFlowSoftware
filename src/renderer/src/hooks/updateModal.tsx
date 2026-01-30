@@ -45,11 +45,8 @@ export function UpdateModalProvider({ children }: { children: ReactNode }) {
       if (state.status === 'downloaded' && userDeclined) {
         enqueueSnackbar(SNACKBAR_MESSAGES.downloaded, { variant: 'success' });
       }
-      if (state.status === 'error' && state.error) {
-        enqueueSnackbar(SNACKBAR_MESSAGES.error(state.error), {
-          variant: 'error',
-        });
-      }
+      // Erros de conexão são tratados silenciosamente - apenas exibe no status do botão
+      // Não mostra snackbar para não incomodar o usuário
     });
     return unsubscribe;
   }, [userDeclined, enqueueSnackbar]);
