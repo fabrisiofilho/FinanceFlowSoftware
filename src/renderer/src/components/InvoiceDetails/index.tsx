@@ -7,7 +7,7 @@ import {
   ExpandLess as ExpandLessIcon,
   ReceiptLong as ReceiptLongIcon,
 } from '@mui/icons-material';
-import { formatDateToShow } from '@renderer/utils/date';
+import { formatDateToShow, parseDateSafe } from '@renderer/utils/date';
 import { formatCurrency } from '@renderer/utils/currency';
 import type {
   CreditCardInvoice,
@@ -86,7 +86,8 @@ export function InvoiceDetails({
   const isOverdue = isInvoiceOverdue(invoice);
   function isInvoiceOverdue(inv: CreditCardInvoice): boolean {
     if (inv.status === 'paid') return false;
-    const dueDate = new Date(inv.dueDate);
+    const dueDate = parseDateSafe(inv.dueDate);
+    if (!dueDate) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return dueDate < today;

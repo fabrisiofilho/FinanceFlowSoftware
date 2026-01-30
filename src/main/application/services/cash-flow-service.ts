@@ -11,6 +11,7 @@ import {
   CashFlowAlert,
   MonthlyProjection,
 } from '@shared/interfaces/types/cash-flow.types';
+import { parseDateSafe, formatDateToISO } from '@main/infrastructure/utils/date-utils';
 
 export class CashFlowService {
   private get transactionRepository() {
@@ -188,13 +189,13 @@ export class CashFlowService {
       source: 'transaction' as const,
       description: t.description,
       amount: Number(t.amount),
-      date: new Date(t.transactionDate),
+      date: parseDateSafe(t.transactionDate) ?? new Date(),
       accountId: t.accountId,
       accountName: (t.account as AccountEntity)?.name ?? '',
       categoryId: t.categoryId,
       categoryName: (t.category as any)?.name,
       isConfirmed: true,
-      isPast: new Date(t.transactionDate) < new Date(),
+      isPast: (parseDateSafe(t.transactionDate) ?? new Date()) < new Date(),
     }));
   }
 
@@ -223,7 +224,7 @@ export class CashFlowService {
     const projections: CashFlowDetail[] = [];
 
     for (const recurring of recurrings) {
-      let nextDate = new Date(recurring.nextOccurrence);
+      let nextDate = parseDateSafe(recurring.nextOccurrence) ?? new Date();
 
       while (nextDate <= endDate) {
         if (nextDate >= startDate) {
@@ -233,7 +234,7 @@ export class CashFlowService {
             source: 'recurring',
             description: `[Recorrente] ${recurring.description}`,
             amount: Number(recurring.amount),
-            date: new Date(nextDate),
+            date: new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate()),
             accountId: recurring.accountId,
             accountName: (recurring.account as AccountEntity)?.name ?? '',
             categoryId: recurring.categoryId,
@@ -279,13 +280,13 @@ export class CashFlowService {
       source: 'bill' as const,
       description: `[Conta] ${t.description}`,
       amount: Number(t.amount),
-      date: new Date(t.dueDate!),
+      date: parseDateSafe(t.dueDate) ?? new Date(),
       accountId: t.accountId,
       accountName: (t.account as AccountEntity)?.name ?? '',
       categoryId: t.categoryId,
       categoryName: (t.category as any)?.name,
       isConfirmed: false,
-      isPast: new Date(t.dueDate!) < new Date(),
+      isPast: (parseDateSafe(t.dueDate) ?? new Date()) < new Date(),
     }));
   }
 
@@ -298,11 +299,12 @@ export class CashFlowService {
     const projectionMap = new Map<string, CashFlowProjection>();
 
     // Initialize all dates
-    const current = new Date(startDate);
-    while (current <= endDate) {
-      const key = current.toISOString().split('T')[0];
+    const current = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    while (current <= end) {
+      const key = formatDateToISO(current) ?? '';
       projectionMap.set(key, {
-        date: new Date(current),
+        date: new Date(current.getFullYear(), current.getMonth(), current.getDate()),
         projectedBalance: 0,
         income: 0,
         expenses: 0,
@@ -314,7 +316,7 @@ export class CashFlowService {
 
     // Add items to their dates
     for (const item of items) {
-      const key = item.date.toISOString().split('T')[0];
+      const key = formatDateToISO(item.date) ?? '';
       const projection = projectionMap.get(key);
       if (projection) {
         projection.details.push(item);

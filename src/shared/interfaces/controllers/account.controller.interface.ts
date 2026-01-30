@@ -12,4 +12,6 @@ export interface IAccountController {
   findAll(): Promise<ApiResponse<Account[]>>;
   getBalance(id: number): Promise<ApiResponse<number>>;
   getTotalBalance(): Promise<ApiResponse<number>>;
+  recalculateBalance(id: number): Promise<ApiResponse<number>>;
+  recalculateAllBalances(): Promise<ApiResponse<{ [accountId: number]: number }>>;
 }

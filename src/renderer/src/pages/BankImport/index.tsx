@@ -45,7 +45,7 @@ import {
 import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
 import { formatCurrency } from '@renderer/utils/currency';
-import { formatDateToShow } from '@renderer/utils/date';
+import { formatDateToShow, parseDateSafe, formatDateToISO } from '@renderer/utils/date';
 import { ImportContainer, PageHeaderContainer, UploadArea } from './styles';
 import type { Account } from '@shared/interfaces/types/account.types';
 import type {
@@ -427,7 +427,7 @@ export function BankImportPage() {
   const handleEditClick = useCallback((tx: EditableTransaction) => {
     setEditingTx(tx);
     setEditForm({
-      date: new Date(tx.date).toISOString().split('T')[0],
+      date: formatDateToISO(tx.date) ?? new Date().toISOString().split('T')[0],
       description: tx.description,
       amount: tx.amount,
       type: tx.type,
@@ -442,7 +442,7 @@ export function BankImportPage() {
         tx.id === editingTx.id
           ? {
               ...tx,
-              date: new Date(editForm.date),
+              date: parseDateSafe(editForm.date) ?? new Date(),
               description: editForm.description,
               amount: editForm.amount,
               type: editForm.type,

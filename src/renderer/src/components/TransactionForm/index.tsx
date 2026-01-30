@@ -21,6 +21,7 @@ import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import type { SelectInputItem } from '@renderer/components/Form/SelectInput';
 import { Modal } from '@renderer/components/Modal';
 import { formatCurrency } from '@renderer/utils/currency';
+import { parseDateSafe } from '@renderer/utils/date';
 import type {
   Transaction,
   TransactionType,
@@ -171,9 +172,9 @@ export function TransactionForm({
       categoryId: transaction?.categoryId ?? 0,
       accountId: transaction?.accountId ?? 0,
       transactionDate: transaction?.transactionDate
-        ? new Date(transaction.transactionDate)
+        ? parseDateSafe(transaction.transactionDate) ?? new Date()
         : new Date(),
-      dueDate: transaction?.dueDate ? new Date(transaction.dueDate) : null,
+      dueDate: transaction?.dueDate ? parseDateSafe(transaction.dueDate) : null,
       paymentMethod: transaction?.paymentMethod ?? 'debit',
       expenseType: transaction?.expenseType ?? 'variable',
       recurrence: transaction?.recurrence ?? 'once',

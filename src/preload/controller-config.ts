@@ -33,6 +33,8 @@ export const CONTROLLER_CONFIG = {
       'findAll',
       'getBalance',
       'getTotalBalance',
+      'recalculateBalance',
+      'recalculateAllBalances',
     ] as const satisfies readonly (keyof IAccountController)[],
   },
 

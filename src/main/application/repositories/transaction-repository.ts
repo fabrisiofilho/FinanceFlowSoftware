@@ -72,8 +72,10 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
         );
       }
       if (filters.endMonth && filters.endYear) {
+        // Last day of the month
         effectiveEndDate = new Date(filters.endYear, filters.endMonth, 0);
       }
+
       const where: Record<string, unknown> = {
         account: { userId },
       };
@@ -147,8 +149,17 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .innerJoinAndSelect('transaction.account', 'account')
       .leftJoinAndSelect('transaction.category', 'category')
       .where('account.user_id = :userId', { userId });
+
+    // Helper function to format date as YYYY-MM-DD using local timezone
+    const formatDateLocal = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     if (filters.startDate) {
-      const startDateStr = filters.startDate.toISOString().split('T')[0];
+      const startDateStr = formatDateLocal(filters.startDate);
       queryBuilder.andWhere(
         'date(transaction.transaction_date) >= date(:startDate)',
         {
@@ -157,7 +168,7 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       );
     }
     if (filters.endDate) {
-      const endDateStr = filters.endDate.toISOString().split('T')[0];
+      const endDateStr = formatDateLocal(filters.endDate);
       queryBuilder.andWhere(
         'date(transaction.transaction_date) <= date(:endDate)',
         {
@@ -186,41 +197,32 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
         },
       );
     }
+
+    // Apply sorting in the query (before pagination)
+    if (filters.sort) {
+      const fieldMap: Record<TransactionSortField, string> = {
+        transactionDate: 'transactionDate',
+        amount: 'amount',
+        description: 'description',
+        type: 'type',
+        createdAt: 'createdAt',
+      };
+      const sortField = fieldMap[filters.sort.field] || 'transactionDate';
+      queryBuilder.orderBy(`transaction.${sortField}`, filters.sort.direction);
+      if (filters.sort.field !== 'createdAt') {
+        queryBuilder.addOrderBy('transaction.createdAt', 'DESC');
+      }
+    } else {
+      queryBuilder.orderBy('transaction.transactionDate', 'DESC');
+      queryBuilder.addOrderBy('transaction.createdAt', 'DESC');
+    }
+
     const totalElements = await queryBuilder.getCount();
     const page = filters.page ?? 0;
     const size = filters.size ?? 10;
     queryBuilder.skip(page * size).take(size);
     const content = await queryBuilder.getMany();
-    content.sort((a, b) => {
-      if (filters.sort) {
-        const fieldMap: Record<TransactionSortField, keyof TransactionEntity> =
-          {
-            transactionDate: 'transactionDate',
-            amount: 'amount',
-            description: 'description',
-            type: 'type',
-            createdAt: 'createdAt',
-          };
-        const field = fieldMap[filters.sort.field] || 'transactionDate';
-        const aVal = a[field];
-        const bVal = b[field];
-        let comparison = 0;
-        if (aVal instanceof Date && bVal instanceof Date) {
-          comparison = aVal.getTime() - bVal.getTime();
-        } else if (typeof aVal === 'number' && typeof bVal === 'number') {
-          comparison = aVal - bVal;
-        } else if (typeof aVal === 'string' && typeof bVal === 'string') {
-          comparison = aVal.localeCompare(bVal);
-        }
-        return filters.sort!.direction === 'DESC' ? -comparison : comparison;
-      }
-      const dateA = new Date(a.transactionDate).getTime();
-      const dateB = new Date(b.transactionDate).getTime();
-      if (dateA !== dateB) return dateB - dateA;
-      const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return createdB - createdA;
-    });
+
     return {
       content,
       page,
@@ -238,8 +240,17 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .innerJoinAndSelect('transaction.account', 'account')
       .leftJoinAndSelect('transaction.category', 'category')
       .where('account.user_id = :userId', { userId });
+
+    // Helper function to format date as YYYY-MM-DD using local timezone
+    const formatDateLocal = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     if (filters.startDate) {
-      const startDateStr = filters.startDate.toISOString().split('T')[0];
+      const startDateStr = formatDateLocal(filters.startDate);
       queryBuilder.andWhere(
         'date(transaction.transaction_date) >= date(:startDate)',
         {
@@ -248,7 +259,7 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       );
     }
     if (filters.endDate) {
-      const endDateStr = filters.endDate.toISOString().split('T')[0];
+      const endDateStr = formatDateLocal(filters.endDate);
       queryBuilder.andWhere(
         'date(transaction.transaction_date) <= date(:endDate)',
         {
@@ -277,10 +288,8 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
         },
       );
     }
-    queryBuilder.orderBy({
-      'transaction.transaction_date': 'DESC',
-      'transaction.created_at': 'DESC',
-    });
+    queryBuilder.orderBy('transaction.transactionDate', 'DESC');
+    queryBuilder.addOrderBy('transaction.createdAt', 'DESC');
     return await queryBuilder.getMany();
   }
   async findByPeriod(
@@ -336,8 +345,17 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
     const today = new Date();
     const futureDate = new Date();
     futureDate.setDate(today.getDate() + daysAhead);
-    const todayStr = today.toISOString().split('T')[0];
-    const futureDateStr = futureDate.toISOString().split('T')[0];
+
+    // Helper function to format date as YYYY-MM-DD using local timezone
+    const formatDateLocal = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const todayStr = formatDateLocal(today);
+    const futureDateStr = formatDateLocal(futureDate);
     return await this.repository
       .createQueryBuilder('transaction')
       .innerJoinAndSelect('transaction.account', 'account')

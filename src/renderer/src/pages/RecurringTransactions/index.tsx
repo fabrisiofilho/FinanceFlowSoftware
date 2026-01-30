@@ -30,7 +30,7 @@ import {
 import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
 import { formatCurrency } from '@renderer/utils/currency';
-import { formatDateToShow } from '@renderer/utils/date';
+import { formatDateToShow, parseDateSafe, formatDateToISO } from '@renderer/utils/date';
 import {
   RecurringContainer,
   PageHeaderContainer,
@@ -135,7 +135,7 @@ export function RecurringTransactionsPage() {
           frequency: formData.frequency as any,
           accountId: effectiveAccountId,
           categoryId: formData.categoryId,
-          startDate: new Date(formData.startDate),
+          startDate: parseDateSafe(formData.startDate) ?? new Date(),
           autoConfirm: formData.autoConfirm,
           paymentMethod: formData.type === 'expense' ? formData.paymentMethod : undefined,
         };
@@ -191,7 +191,7 @@ export function RecurringTransactionsPage() {
       accountId: isCredit ? 0 : r.accountId,
       creditCardId: isCredit ? r.accountId : 0,
       categoryId: r.categoryId,
-      startDate: new Date(r.startDate).toISOString().split('T')[0],
+      startDate: formatDateToISO(r.startDate) ?? new Date().toISOString().split('T')[0],
       autoConfirm: r.autoConfirm,
     });
     setIsFormOpen(true);

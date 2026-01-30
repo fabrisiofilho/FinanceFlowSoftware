@@ -1,5 +1,6 @@
 import { IAccountController } from '@shared/interfaces/controllers/account.controller.interface';
 import { AccountService } from '../services/account-service';
+import { BalanceCalculatorService } from '../services/balance-calculator-service';
 import { FinanceAuthService } from '../services/finance-auth-service';
 import type {
   Account,
@@ -15,12 +16,19 @@ export class AccountController
   implements IAccountController
 {
   private _accountService: AccountService | null = null;
+  private _balanceCalculatorService: BalanceCalculatorService | null = null;
   private financeAuthService = FinanceAuthService.getInstance();
   private get accountService(): AccountService {
     if (!this._accountService) {
       this._accountService = new AccountService();
     }
     return this._accountService;
+  }
+  private get balanceCalculatorService(): BalanceCalculatorService {
+    if (!this._balanceCalculatorService) {
+      this._balanceCalculatorService = new BalanceCalculatorService();
+    }
+    return this._balanceCalculatorService;
   }
   private getUserId(): number {
     const userId = this.financeAuthService.getCurrentUserId();
@@ -83,6 +91,23 @@ export class AccountController
     return wrap(async () => {
       const userId = this.getUserId();
       return await this.accountService.getTotalBalance(userId);
+    })();
+  }
+
+  @IpcMethod('account:recalculateBalance')
+  async recalculateBalance(id: number): Promise<ApiResponse<number>> {
+    return wrap(async () => {
+      const userId = this.getUserId();
+      return await this.balanceCalculatorService.recalculateAccountBalance(userId, id);
+    })();
+  }
+
+  @IpcMethod('account:recalculateAllBalances')
+  async recalculateAllBalances(): Promise<ApiResponse<{ [accountId: number]: number }>> {
+    return wrap(async () => {
+      const userId = this.getUserId();
+      const balances = await this.balanceCalculatorService.recalculateAllAccountBalances(userId);
+      return Object.fromEntries(balances);
     })();
   }
 }

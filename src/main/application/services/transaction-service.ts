@@ -19,6 +19,7 @@ import {
   CategoryExpense,
 } from '@shared/interfaces/types/transaction.types';
 import { repositoryCache } from '../repositories/repository-cache';
+import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 export class TransactionService {
   private _balanceCalculatorService: BalanceCalculatorService | null = null;
   private _injectedTransactionRepository: TransactionRepository | null = null;
@@ -81,8 +82,8 @@ export class TransactionService {
       type: entity.type as Transaction['type'],
       paymentMethod: entity.paymentMethod as Transaction['paymentMethod'],
       expenseType: entity.expenseType as Transaction['expenseType'],
-      transactionDate: new Date(entity.transactionDate),
-      dueDate: entity.dueDate ? new Date(entity.dueDate) : undefined,
+      transactionDate: parseDateSafe(entity.transactionDate) ?? new Date(),
+      dueDate: entity.dueDate ? parseDateSafe(entity.dueDate) ?? undefined : undefined,
       installmentNumber: entity.installmentNumber ?? undefined,
       totalInstallments: entity.totalInstallments ?? undefined,
       installmentGroupId: entity.installmentGroupId ?? undefined,
@@ -208,8 +209,8 @@ export class TransactionService {
       type: data.type as TransactionType,
       paymentMethod: data.paymentMethod,
       expenseType: data.expenseType,
-      transactionDate: new Date(data.transactionDate),
-      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      transactionDate: parseDateSafe(data.transactionDate) ?? new Date(),
+      dueDate: data.dueDate ? parseDateSafe(data.dueDate) ?? undefined : undefined,
       recurrence: data.recurrence ?? 'once',
       accountId: data.accountId,
       categoryId: data.categoryId,
@@ -239,11 +240,11 @@ export class TransactionService {
     let firstTransaction: TransactionEntity | null = null;
     for (let i = 1; i <= totalInstallments; i++) {
       const installmentDate = this.addMonths(
-        new Date(data.transactionDate),
+        parseDateSafe(data.transactionDate) ?? new Date(),
         i - 1,
       );
       const dueDate = data.dueDate
-        ? this.addMonths(new Date(data.dueDate), i - 1)
+        ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i - 1)
         : undefined;
       const transactionData: Partial<TransactionEntity> = {
         description: `${data.description.trim()} (${i}/${totalInstallments})`,
@@ -283,9 +284,9 @@ export class TransactionService {
     logger.info(`Criando ${totalMonths} transações recorrentes mensais`);
     let firstTransaction: TransactionEntity | null = null;
     for (let i = 0; i < totalMonths; i++) {
-      const transactionDate = this.addMonths(new Date(data.transactionDate), i);
+      const transactionDate = this.addMonths(parseDateSafe(data.transactionDate) ?? new Date(), i);
       const dueDate = data.dueDate
-        ? this.addMonths(new Date(data.dueDate), i)
+        ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i)
         : undefined;
       const transactionData: Partial<TransactionEntity> = {
         description: data.description.trim(),
@@ -349,10 +350,10 @@ export class TransactionService {
       updateData.expenseType = data.expenseType;
     }
     if (data.transactionDate !== undefined) {
-      updateData.transactionDate = new Date(data.transactionDate);
+      updateData.transactionDate = parseDateSafe(data.transactionDate) ?? new Date();
     }
     if (data.dueDate !== undefined) {
-      updateData.dueDate = new Date(data.dueDate);
+      updateData.dueDate = parseDateSafe(data.dueDate) ?? undefined;
     }
     if (data.categoryId !== undefined) {
       updateData.categoryId = data.categoryId;
@@ -487,10 +488,23 @@ export class TransactionService {
     const repoFilters: RepoFilters = {};
     if (filters) {
       if (filters.startDate) {
-        repoFilters.startDate = new Date(filters.startDate);
+        repoFilters.startDate = parseDateSafe(filters.startDate) ?? undefined;
       }
       if (filters.endDate) {
-        repoFilters.endDate = new Date(filters.endDate);
+        repoFilters.endDate = parseDateSafe(filters.endDate) ?? undefined;
+      }
+      // Pass month/year filters
+      if (filters.startMonth) {
+        repoFilters.startMonth = filters.startMonth;
+      }
+      if (filters.startYear) {
+        repoFilters.startYear = filters.startYear;
+      }
+      if (filters.endMonth) {
+        repoFilters.endMonth = filters.endMonth;
+      }
+      if (filters.endYear) {
+        repoFilters.endYear = filters.endYear;
       }
       if (filters.categoryId) {
         repoFilters.categoryId = filters.categoryId;

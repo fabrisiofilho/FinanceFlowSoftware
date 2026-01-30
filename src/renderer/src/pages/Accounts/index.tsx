@@ -15,6 +15,7 @@ import {
   AccountBalanceWallet as WalletIcon,
   Refresh as RefreshIcon,
   Warning as WarningIcon,
+  Calculate as CalculateIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
@@ -73,6 +74,7 @@ export function AccountsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [recalculateLoading, setRecalculateLoading] = useState(false);
   const {
     control,
     handleSubmit,
@@ -223,6 +225,22 @@ export function AccountsPage() {
       setDeleteLoading(false);
     }
   };
+
+  const handleRecalculateBalances = async () => {
+    setRecalculateLoading(true);
+    try {
+      const response = await window.electronAPI.account.recalculateAllBalances();
+      if (response.success) {
+        loadAccounts();
+      } else {
+        console.error('Erro ao recalcular saldos:', response.error);
+      }
+    } catch (err) {
+      console.error('Erro ao recalcular saldos:', err);
+    } finally {
+      setRecalculateLoading(false);
+    }
+  };
   if (loading && accounts.length === 0) {
     return (
       <AccountsContainer>
@@ -263,6 +281,15 @@ export function AccountsPage() {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          <Tooltip title="Recalcular saldos baseado nas transações">
+            <IconButton 
+              onClick={handleRecalculateBalances} 
+              size="small"
+              disabled={recalculateLoading}
+            >
+              {recalculateLoading ? <CircularProgress size={20} /> : <CalculateIcon />}
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Atualizar">
             <IconButton onClick={loadAccounts} size="small">
               <RefreshIcon />

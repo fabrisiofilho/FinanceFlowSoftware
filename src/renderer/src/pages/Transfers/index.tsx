@@ -24,7 +24,7 @@ import {
 import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
 import { formatCurrency } from '@renderer/utils/currency';
-import { formatDateToShow } from '@renderer/utils/date';
+import { formatDateToShow, parseDateSafe } from '@renderer/utils/date';
 import {
   TransfersContainer,
   PageHeaderContainer,
@@ -77,7 +77,7 @@ export function TransfersPage() {
         toAccountId: formData.toAccountId,
         amount: formData.amount,
         description: formData.description || undefined,
-        transferDate: new Date(formData.transferDate),
+        transferDate: parseDateSafe(formData.transferDate) ?? new Date(),
       });
       setIsFormOpen(false);
       setFormData({

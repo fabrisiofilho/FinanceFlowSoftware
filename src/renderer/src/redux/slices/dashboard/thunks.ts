@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { DashboardFilters } from '@shared/interfaces/types/dashboard.types';
+import { parseDateSafe } from '@renderer/utils/date';
 
 export const loadDashboardData = createAsyncThunk(
   'dashboard/loadDashboardData',
@@ -56,8 +57,8 @@ export const loadDashboardData = createAsyncThunk(
     const sortedTransactions = [...transactions]
       .sort(
         (a, b) =>
-          new Date(b.transactionDate).getTime() -
-          new Date(a.transactionDate).getTime(),
+          (parseDateSafe(b.transactionDate)?.getTime() ?? 0) -
+          (parseDateSafe(a.transactionDate)?.getTime() ?? 0),
       )
       .slice(0, 5);
 
@@ -66,11 +67,11 @@ export const loadDashboardData = createAsyncThunk(
     const upcomingBills = transactions
       .filter((t) => {
         if (t.type !== 'expense' || !t.dueDate) return false;
-        const dueDate = new Date(t.dueDate);
-        return dueDate >= now && dueDate <= sevenDaysFromNow;
+        const dueDate = parseDateSafe(t.dueDate);
+        return dueDate && dueDate >= now && dueDate <= sevenDaysFromNow;
       })
       .map((t) => {
-        const dueDate = new Date(t.dueDate!);
+        const dueDate = parseDateSafe(t.dueDate!)!;
         const diffTime = dueDate.getTime() - now.getTime();
         const daysUntilDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return {
@@ -186,8 +187,8 @@ export const loadRecentTransactions = createAsyncThunk(
     return [...transactions]
       .sort(
         (a, b) =>
-          new Date(b.transactionDate).getTime() -
-          new Date(a.transactionDate).getTime(),
+          (parseDateSafe(b.transactionDate)?.getTime() ?? 0) -
+          (parseDateSafe(a.transactionDate)?.getTime() ?? 0),
       )
       .slice(0, limit);
   },

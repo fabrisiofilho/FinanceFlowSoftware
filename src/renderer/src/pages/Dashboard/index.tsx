@@ -21,7 +21,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useAppSelector } from '@renderer/hooks/redux';
-import { formatDateToShow } from '@renderer/utils/date';
+import { formatDateToShow, parseDateSafe } from '@renderer/utils/date';
 import {
   DashboardContainer,
   SummaryCard,
@@ -131,8 +131,8 @@ export function DashboardPage() {
         const sortedTransactions = transactionsResponse.data.content
           .sort(
             (a, b) =>
-              new Date(b.transactionDate).getTime() -
-              new Date(a.transactionDate).getTime(),
+              (parseDateSafe(b.transactionDate)?.getTime() ?? 0) -
+              (parseDateSafe(a.transactionDate)?.getTime() ?? 0),
           )
           .slice(0, 5);
         setRecentTransactions(sortedTransactions);
@@ -143,11 +143,11 @@ export function DashboardPage() {
         const bills = transactionsResponse.data.content
           .filter((t) => {
             if (t.type !== 'expense' || !t.dueDate) return false;
-            const dueDate = new Date(t.dueDate);
-            return dueDate >= now && dueDate <= sevenDaysFromNow;
+            const dueDate = parseDateSafe(t.dueDate);
+            return dueDate && dueDate >= now && dueDate <= sevenDaysFromNow;
           })
           .map((t) => {
-            const dueDate = new Date(t.dueDate!);
+            const dueDate = parseDateSafe(t.dueDate!) ?? new Date();
             const diffTime = dueDate.getTime() - now.getTime();
             const daysUntilDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             return {

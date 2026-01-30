@@ -25,6 +25,7 @@ import {
   DeadlineInfo,
 } from './styles';
 import { formatCurrency } from '@renderer/utils/currency';
+import { parseDateSafe } from '@renderer/utils/date';
 
 const calculateRemainingDays = (
   deadline: Date | string | undefined,
@@ -32,7 +33,8 @@ const calculateRemainingDays = (
   if (!deadline) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(deadline);
+  const deadlineDate = parseDateSafe(deadline);
+  if (!deadlineDate) return null;
   deadlineDate.setHours(0, 0, 0, 0);
   const diffTime = deadlineDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

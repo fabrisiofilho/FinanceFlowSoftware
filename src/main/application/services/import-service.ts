@@ -9,9 +9,14 @@ import type {
 } from '@shared/interfaces/types/import.types';
 import { TransactionType } from '../entities/transaction.entity';
 import { repositoryCache } from '../repositories/repository-cache';
+import { BalanceCalculatorService } from './balance-calculator-service';
 
 export class ImportService {
-  constructor() {}
+  private balanceCalculatorService: BalanceCalculatorService;
+
+  constructor() {
+    this.balanceCalculatorService = new BalanceCalculatorService();
+  }
 
   private get accountRepository() {
     return repositoryCache.accountRepository;
@@ -519,6 +524,14 @@ export class ImportService {
           recurrence: 'once',
         });
 
+        // Update account balance
+        await this.balanceCalculatorService.updateBalanceAfterCreate(
+          userId,
+          accountId,
+          tx.type as TransactionType,
+          tx.amount,
+        );
+
         transactionsCreated++;
       } catch (error) {
         importErrors.push(
@@ -606,6 +619,14 @@ export class ImportService {
           paymentMethod: tx.type === 'expense' ? 'debit' : undefined,
           recurrence: 'once',
         });
+
+        // Update account balance
+        await this.balanceCalculatorService.updateBalanceAfterCreate(
+          userId,
+          accountId,
+          tx.type as TransactionType,
+          tx.amount,
+        );
 
         transactionsCreated++;
       } catch (error) {

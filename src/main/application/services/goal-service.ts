@@ -10,6 +10,7 @@ import {
   AddContributionInput,
 } from '@shared/interfaces/types/goal.types';
 import { repositoryCache } from '../repositories/repository-cache';
+import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 export class GoalService {
   private onGoalCompletedCallback?: (goal: Goal) => void;
   constructor() {}
@@ -40,7 +41,7 @@ export class GoalService {
       name: entity.name,
       targetAmount,
       currentAmount,
-      deadline: entity.deadline ? new Date(entity.deadline) : undefined,
+      deadline: entity.deadline ? parseDateSafe(entity.deadline) ?? undefined : undefined,
       accountId: entity.accountId ?? undefined,
       progress: this.calculateProgress(currentAmount, targetAmount),
       createdAt: entity.createdAt ?? new Date(),
@@ -54,7 +55,7 @@ export class GoalService {
       id: entity.id,
       goalId: entity.goalId,
       amount: Number(entity.amount),
-      contributionDate: new Date(entity.contributionDate),
+      contributionDate: parseDateSafe(entity.contributionDate) ?? new Date(),
       createdAt: entity.createdAt ?? new Date(),
     };
   }
@@ -116,7 +117,7 @@ export class GoalService {
       name: data.name.trim(),
       targetAmount: data.targetAmount,
       currentAmount: 0,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
+      deadline: data.deadline ? parseDateSafe(data.deadline) ?? undefined : undefined,
       accountId: data.accountId ?? undefined,
     };
     const goalEntity = await this.goalRepository.createGoal(userId, goalData);
@@ -142,7 +143,7 @@ export class GoalService {
       updateData.targetAmount = data.targetAmount;
     }
     if (data.deadline !== undefined) {
-      updateData.deadline = data.deadline ? new Date(data.deadline) : undefined;
+      updateData.deadline = data.deadline ? parseDateSafe(data.deadline) ?? undefined : undefined;
     }
     if (data.accountId !== undefined) {
       updateData.accountId = data.accountId;
@@ -197,7 +198,7 @@ export class GoalService {
       goalId,
       amount: data.amount,
       contributionDate: data.contributionDate
-        ? new Date(data.contributionDate)
+        ? parseDateSafe(data.contributionDate) ?? new Date()
         : new Date(),
     };
     await this.contributionRepository.createContribution(contributionData);

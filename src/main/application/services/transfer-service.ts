@@ -9,6 +9,7 @@ import {
   TransferFilters,
   TransferSummary,
 } from '@shared/interfaces/types/transfer.types';
+import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 
 export class TransferService {
   private get transferRepository() {
@@ -39,7 +40,7 @@ export class TransferService {
         ? Number(entity.convertedAmount)
         : undefined,
       description: entity.description,
-      transferDate: new Date(entity.transferDate),
+      transferDate: parseDateSafe(entity.transferDate) ?? new Date(),
       fromTransactionId: entity.fromTransactionId,
       toTransactionId: entity.toTransactionId,
       createdAt: entity.createdAt ?? new Date(),
@@ -77,7 +78,7 @@ export class TransferService {
         amount: data.amount,
         type: 'expense',
         paymentMethod: 'pix',
-        transactionDate: new Date(data.transferDate),
+        transactionDate: parseDateSafe(data.transferDate) ?? new Date(),
         accountId: data.fromAccountId,
         categoryId: 1, // Transfer category - should be created
       });
@@ -93,7 +94,7 @@ export class TransferService {
         amount: convertedAmount,
         type: 'income',
         paymentMethod: 'pix',
-        transactionDate: new Date(data.transferDate),
+        transactionDate: parseDateSafe(data.transferDate) ?? new Date(),
         accountId: data.toAccountId,
         categoryId: 1, // Transfer category
       });
@@ -108,7 +109,7 @@ export class TransferService {
         exchangeRate: data.exchangeRate ?? 1,
         convertedAmount: data.exchangeRate ? convertedAmount : undefined,
         description: data.description,
-        transferDate: new Date(data.transferDate),
+        transferDate: parseDateSafe(data.transferDate) ?? new Date(),
         fromTransactionId: savedFromTx.id,
         toTransactionId: savedToTx.id,
       });

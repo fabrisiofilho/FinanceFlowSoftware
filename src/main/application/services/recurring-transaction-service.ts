@@ -13,6 +13,7 @@ import {
   RecurringFrequency,
 } from '@shared/interfaces/types/recurring.types';
 import { BalanceCalculatorService } from './balance-calculator-service';
+import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 
 export class RecurringTransactionService {
   private balanceCalculatorService = new BalanceCalculatorService();
@@ -44,11 +45,11 @@ export class RecurringTransactionService {
       categoryId: entity.categoryId,
       categoryName: (entity.category as CategoryEntity)?.name,
       categoryIcon: (entity.category as CategoryEntity)?.icon ?? undefined,
-      startDate: new Date(entity.startDate),
-      endDate: entity.endDate ? new Date(entity.endDate) : undefined,
-      nextOccurrence: new Date(entity.nextOccurrence),
+      startDate: parseDateSafe(entity.startDate) ?? new Date(),
+      endDate: entity.endDate ? parseDateSafe(entity.endDate) ?? undefined : undefined,
+      nextOccurrence: parseDateSafe(entity.nextOccurrence) ?? new Date(),
       lastGenerated: entity.lastGenerated
-        ? new Date(entity.lastGenerated)
+        ? parseDateSafe(entity.lastGenerated) ?? undefined
         : undefined,
       isActive: Boolean(entity.isActive),
       autoConfirm: Boolean(entity.autoConfirm),
@@ -64,7 +65,7 @@ export class RecurringTransactionService {
     logger.info('Criando transação recorrente para usuário:', userId);
 
     const nextOccurrence = this.calculateNextOccurrence(
-      new Date(data.startDate),
+      parseDateSafe(data.startDate) ?? new Date(),
       data.frequency,
       data.dayOfMonth,
       data.dayOfWeek,
@@ -82,8 +83,8 @@ export class RecurringTransactionService {
       dayOfWeek: data.dayOfWeek,
       accountId: data.accountId,
       categoryId: data.categoryId,
-      startDate: new Date(data.startDate),
-      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      startDate: parseDateSafe(data.startDate) ?? new Date(),
+      endDate: data.endDate ? parseDateSafe(data.endDate) ?? undefined : undefined,
       nextOccurrence,
       isActive: true,
       autoConfirm: data.autoConfirm ?? false,
@@ -112,7 +113,7 @@ export class RecurringTransactionService {
 
     Object.assign(recurring, {
       ...data,
-      endDate: data.endDate ? new Date(data.endDate) : recurring.endDate,
+      endDate: data.endDate ? parseDateSafe(data.endDate) : recurring.endDate,
     });
 
     if (
@@ -227,14 +228,14 @@ export class RecurringTransactionService {
           transactionId: transaction.id,
           description: transaction.description,
           amount: Number(transaction.amount),
-          date: new Date(transaction.transactionDate),
+          date: parseDateSafe(transaction.transactionDate) ?? new Date(),
           isConfirmed: recurring.autoConfirm,
         });
 
         // Update next occurrence
         recurring.lastGenerated = new Date();
         recurring.nextOccurrence = this.calculateNextOccurrence(
-          new Date(recurring.nextOccurrence),
+          parseDateSafe(recurring.nextOccurrence) ?? new Date(),
           recurring.frequency,
           recurring.dayOfMonth,
           recurring.dayOfWeek,
@@ -270,7 +271,7 @@ export class RecurringTransactionService {
       type: recurring.type,
       paymentMethod: recurring.paymentMethod,
       expenseType: recurring.expenseType,
-      transactionDate: new Date(recurring.nextOccurrence),
+      transactionDate: parseDateSafe(recurring.nextOccurrence) ?? new Date(),
       recurrence: recurring.frequency === 'monthly' ? 'monthly' : 'weekly',
       accountId: recurring.accountId,
       categoryId: recurring.categoryId,

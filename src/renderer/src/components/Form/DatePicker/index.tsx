@@ -4,6 +4,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker as MuiDatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { ptBR } from 'date-fns/locale/pt-BR';
+import { parseDateSafe } from '@renderer/utils/date';
 
 export type DatePickerProps = {
   value: string | Date | null;
@@ -50,14 +51,14 @@ export function DatePicker({
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
         <MuiDatePicker
           label={label}
-          value={value ? new Date(value) : null}
+          value={parseDateSafe(value)}
           onChange={handleChange}
           onAccept={onAccept}
           disabled={disabled}
           disableFuture={disableFuture}
           disablePast={disablePast}
-          minDate={minDate ? new Date(minDate) : undefined}
-          maxDate={maxDate ? new Date(maxDate) : undefined}
+          minDate={parseDateSafe(minDate)}
+          maxDate={parseDateSafe(maxDate)}
           views={views}
           format={format}
           slotProps={{

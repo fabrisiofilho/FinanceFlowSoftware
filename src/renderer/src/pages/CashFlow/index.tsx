@@ -16,6 +16,7 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { formatCurrency } from '@renderer/utils/currency';
+import { formatDateToShow } from '@renderer/utils/date';
 import { useTheme } from '@renderer/hooks/theme';
 import {
   CashFlowContainer,
@@ -210,7 +211,7 @@ export function CashFlowPage() {
                 >
                   <Typography variant="body2">{alert.message}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {new Date(alert.date).toLocaleDateString('pt-BR')}
+                    {formatDateToShow(alert.date)}
                   </Typography>
                 </AlertCard>
               ))}

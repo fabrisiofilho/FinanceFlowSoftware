@@ -2,6 +2,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker as MuiDatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { ptBR } from 'date-fns/locale/pt-BR';
+import { parseDateSafe } from '@renderer/utils/date';
 
 type Props = {
   label: string;
@@ -27,35 +28,14 @@ export function DatePickerField({
   disableFuture,
   disablePast,
 }: Readonly<Props>) {
-  let mininumDate: Date | undefined;
-  let maximumDate: Date | undefined;
-
-  if (minDate) {
-    const minDateStr = String(minDate);
-    if (!minDateStr.includes(':')) {
-      mininumDate = new Date(`${minDateStr}T03:00:00+0000`);
-    } else {
-      mininumDate = new Date(minDateStr);
-    }
-  }
-
-  if (maxDate) {
-    const maxDateStr = String(maxDate);
-    if (!maxDateStr.includes(':')) {
-      maximumDate = new Date(`${maxDateStr}T03:00:00+0000`);
-    } else {
-      maximumDate = new Date(maxDateStr);
-    }
-  }
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
       <MuiDatePicker
         views={['year', 'day']}
-        minDate={mininumDate}
-        maxDate={maximumDate}
+        minDate={parseDateSafe(minDate)}
+        maxDate={parseDateSafe(maxDate)}
         label={label}
-        value={(value && new Date(value)) || null}
+        value={parseDateSafe(value)}
         disabled={disabledDatePicker}
         disableFuture={disableFuture}
         disablePast={disablePast}

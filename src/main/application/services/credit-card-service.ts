@@ -13,6 +13,7 @@ import {
   PayInvoiceResult,
 } from '@shared/interfaces/types/credit-card.types';
 import { repositoryCache } from '../repositories/repository-cache';
+import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 export class CreditCardService {
   constructor() {}
   private get invoiceRepository() {
@@ -28,7 +29,7 @@ export class CreditCardService {
     transactionDate: Date,
     closingDay: number,
   ): { year: number; month: number } {
-    const date = new Date(transactionDate);
+    const date = parseDateSafe(transactionDate) ?? new Date();
     let year = date.getFullYear();
     let month = date.getMonth() + 1;
 
@@ -71,10 +72,8 @@ export class CreditCardService {
         type: t.type ?? 'expense',
         paymentMethod: t.paymentMethod,
         expenseType: t.expenseType,
-        transactionDate: t.transactionDate
-          ? new Date(t.transactionDate)
-          : new Date(),
-        dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
+        transactionDate: parseDateSafe(t.transactionDate) ?? new Date(),
+        dueDate: t.dueDate ? parseDateSafe(t.dueDate) ?? undefined : undefined,
         installmentNumber: t.installmentNumber,
         totalInstallments: t.totalInstallments,
         installmentGroupId: t.installmentGroupId,
@@ -94,9 +93,9 @@ export class CreditCardService {
       year: entity.year,
       month: entity.month,
       totalAmount: Number(entity.totalAmount),
-      dueDate: new Date(entity.dueDate),
+      dueDate: parseDateSafe(entity.dueDate) ?? new Date(),
       status: entity.status as InvoiceStatus,
-      paidAt: entity.paidAt ? new Date(entity.paidAt) : undefined,
+      paidAt: entity.paidAt ? parseDateSafe(entity.paidAt) ?? undefined : undefined,
       paymentAccountId: entity.paymentAccountId ?? undefined,
       paymentAccountName: entity.paymentAccount?.name,
       transactions,
@@ -297,7 +296,7 @@ export class CreditCardService {
     const affectedInvoices: CreditCardInvoice[] = [];
     for (const installment of installments) {
       const { year, month } = this.determineInvoiceMonth(
-        new Date(installment.transactionDate),
+        parseDateSafe(installment.transactionDate) ?? new Date(),
         account.closingDay,
       );
       const invoice = await this.getOrCreateInvoice(

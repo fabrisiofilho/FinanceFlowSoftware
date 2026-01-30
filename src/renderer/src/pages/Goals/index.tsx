@@ -24,7 +24,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
 import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
-import { formatDateToShow } from '@renderer/utils/date';
+import { formatDateToShow, parseDateSafe } from '@renderer/utils/date';
 import {
   GoalsContainer,
   PageHeaderContainer,
@@ -63,7 +63,8 @@ const calculateRemainingDays = (
   if (!deadline) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(deadline);
+  const deadlineDate = parseDateSafe(deadline);
+  if (!deadlineDate) return null;
   deadlineDate.setHours(0, 0, 0, 0);
   const diffTime = deadlineDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -144,11 +145,12 @@ export function GoalsPage() {
   };
   const handleEditGoal = (goal: Goal) => {
     setSelectedGoal(goal);
+    const deadlineDate = parseDateSafe(goal.deadline);
     resetGoalForm({
       name: goal.name,
       targetAmount: goal.targetAmount,
-      deadline: goal.deadline
-        ? new Date(goal.deadline).toISOString().split('T')[0]
+      deadline: deadlineDate
+        ? `${deadlineDate.getFullYear()}-${String(deadlineDate.getMonth() + 1).padStart(2, '0')}-${String(deadlineDate.getDate()).padStart(2, '0')}`
         : '',
     });
     setIsFormOpen(true);
@@ -165,7 +167,7 @@ export function GoalsPage() {
         const updateData: UpdateGoalInput = {
           name: data.name,
           targetAmount: data.targetAmount,
-          deadline: data.deadline ? new Date(data.deadline) : undefined,
+          deadline: data.deadline ? parseDateSafe(data.deadline) ?? undefined : undefined,
         };
         const response = await window.electronAPI.goal.update(
           selectedGoal.id,
@@ -178,7 +180,7 @@ export function GoalsPage() {
         const createData: CreateGoalInput = {
           name: data.name,
           targetAmount: data.targetAmount,
-          deadline: data.deadline ? new Date(data.deadline) : undefined,
+          deadline: data.deadline ? parseDateSafe(data.deadline) ?? undefined : undefined,
         };
         const response = await window.electronAPI.goal.create(createData);
         if (!response.success) {

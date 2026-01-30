@@ -119,6 +119,16 @@ export const SelectInput = forwardRef(function SelectInput(
     );
   };
 
+  const handleRenderEmptyMessage = () => {
+    if (loading || items.length > 0) return null;
+
+    return (
+      <MenuItem disabled value="">
+        Nenhum item disponível
+      </MenuItem>
+    );
+  };
+
   return (
     <TextField
       ref={ref as Ref<HTMLDivElement>}
@@ -142,6 +152,8 @@ export const SelectInput = forwardRef(function SelectInput(
         },
       }}
     >
+      {handleRenderEmptyMessage()}
+
       {items.map((item: SelectInputItem) => {
         const { key, value } = handleGetItemKeyAndValue(item);
 
