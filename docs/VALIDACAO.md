@@ -1,5 +1,9 @@
 # Validação do incremento inicial
 
+## Base de lançamentos — 2026-11-01
+
+18 testes passaram, incluindo conservação de centavos em milhares de divisões, datas bissextas, âncora mensal, recorrência semanal e datas inválidas. Serviço testado com falha simulada na segunda parcela e reversão do grupo/saldo em driver fictício. Typecheck e build passaram; lint com zero erros e 17 avisos existentes. Integração SQLite existente e teste Electron das 16 telas com IPC fictício passaram. Nenhuma alteração no esquema ou no banco pessoal. Pendências de liquidação, armazenamento monetário e integração real ORM continuam no plano V2.
+
 ## Fundação V2 e navegação — 2026-11-01
 
 Inventário gerado: 16 rotas, 21 entidades, 129 canais IPC e 6 migrações. Branch refactor/contabily-v2-foundation. Baseline: 10 testes e integração SQLite passaram. Após a reestruturação, typecheck e build passaram; lint sem erros e com 17 avisos existentes. Teste Electron com IPC fictício percorreu as 16 telas, confirmou a área Análises ativa na URL antiga de Relatórios e repetiu verificações de loading, filtros e animação. Captura stable-reports.png inspecionada: navegação contextual e pontilhado somente no canto inferior direito.

@@ -17,13 +17,18 @@ function compile(path, dependencies = {}) {
     }).outputText,
     {
       exports,
+      Date,
       require: (name) => dependencies[name] ?? require(name),
     },
   );
   return exports;
 }
 test('relatório encaminha filtros e agrega todas as competências selecionadas', async () => {
-  const dates = compile('src/main/infrastructure/utils/date-utils.ts');
+  const dates = compile('src/main/infrastructure/utils/date-utils.ts', {
+    '@shared/finance/calendar-date': compile(
+      'src/shared/finance/calendar-date.ts',
+    ),
+  });
   const { ReportService } = compile(
     'src/main/application/services/report-service.ts',
     {

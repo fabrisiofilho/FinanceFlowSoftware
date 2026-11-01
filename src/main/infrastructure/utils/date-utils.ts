@@ -1,3 +1,4 @@
+import { parseCalendarDate } from '@shared/finance/calendar-date';
 /**
  * Utilitários para tratamento seguro de datas, evitando problemas de timezone.
  *
@@ -14,37 +15,7 @@
  * sem problemas de timezone. Datas no formato YYYY-MM-DD são tratadas
  * como datas locais, não UTC.
  */
-export function parseDateSafe(
-  date: Date | string | null | undefined,
-): Date | null {
-  if (!date) return null;
-
-  if (date instanceof Date) {
-    // Se já é um Date, verificar se precisa de correção
-    // Isso acontece quando o TypeORM converte uma string de data para Date
-    return date;
-  }
-
-  if (typeof date === 'string') {
-    // Formato YYYY-MM-DD (sem hora) - criar como data local
-    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      const [year, month, day] = date.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    }
-
-    // Formato ISO com T (ex: 2025-11-01T00:00:00) - extrair apenas a data
-    if (date.includes('T')) {
-      const datePart = date.split('T')[0];
-      const [year, month, day] = datePart.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    }
-
-    // Outros formatos - tentar criar com meio-dia para evitar problema de timezone
-    return new Date(`${date}T12:00:00`);
-  }
-
-  return null;
-}
+export const parseDateSafe = parseCalendarDate;
 
 /**
  * Converte uma Date para string no formato YYYY-MM-DD de forma segura,

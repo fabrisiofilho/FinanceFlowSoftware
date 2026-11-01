@@ -8,6 +8,14 @@ Referência: [auditoria recebida](reference/AUDITORIA-V2.md). Produto: gerenciad
 
 ## Entregue nesta etapa
 
+### Base dos lançamentos — implementação iniciada
+
+- TransactionService executa criação, edição, exclusão e exclusão em lote usando repositórios vinculados ao mesmo EntityManager transacional. Grupos de parcelas/recorrências e seus ajustes de saldo são confirmados ou revertidos juntos.
+- entry-schedule.ts centraliza divisão em centavos, validação de precisão e calendário ancorado. Parcelas conservam a soma; o ajuste fica na última, também mostrado na prévia do formulário. Semanas avançam sete dias e o dia 31 não transborda fevereiro.
+- calendar-date.ts centraliza leitura de datas locais entre main e renderer, rejeitando datas inválidas em vez de normalizá-las silenciosamente.
+- Não há mudança de esquema neste bloco e não é necessário limpar o banco para usá-lo. Armazenamento decimal legado, status pendente/liquidado, separação de competência/liquidação e integração de investimentos com contas ainda estão pendentes. A lógica de saldos futura será substituída pelo modelo de liquidação; esta entrega não deve ser interpretada como conclusão dessa fase.
+- Testes de serviço usam repositórios e driver transacional fictícios, incluindo reversão de falha na segunda parcela. Testes SQLite existentes continuam cobrindo investimentos e migrações, não toda a integração ORM dos lançamentos.
+
 - Melhorar: pontilhado menta translúcido somente no canto inferior direito do painel, fixo na área útil, sem bloquear cliques. Retirado o padrão repetido no fundo inteiro.
 - Unificar experiência: oito destinos principais (incluindo ajuda), com páginas especializadas em subitens contextuais. Navegação de produto separada do registro de rotas em routes/navigation.ts. As 16 URLs continuam funcionando; nenhum controller, tabela ou funcionalidade foi excluído.
 - Corrigir acesso: Categorias estava declarada nas rotas mas ausente dos grupos do menu. Agora integra Configurações, junto de Alertas. Importação fica em Contas e cartões; Fluxo de caixa e Metas em Planejamento; Relatórios avançados em Análises.

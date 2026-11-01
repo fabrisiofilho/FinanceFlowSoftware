@@ -1,3 +1,9 @@
+import {
+  amountToCents,
+  installmentAmounts,
+  occurrenceDate,
+} from '@shared/finance/entry-schedule';
+import { getDataSource } from '@main/infrastructure/database/data-source';
 import { assertPositiveAmount } from '../../domain/financial-validation';
 import {
   TransactionRepository,
@@ -75,6 +81,22 @@ export class TransactionService {
       this._injectedBalanceCalculatorService = balanceCalculatorService;
     }
   }
+  private async atomic<T>(
+    action: (service: TransactionService) => Promise<T>,
+  ): Promise<T> {
+    return getDataSource().transaction((manager) => {
+      const accounts = new AccountRepository(manager);
+      const transactions = new TransactionRepository(manager);
+      return action(
+        new TransactionService(
+          transactions,
+          accounts,
+          new CategoryRepository(manager),
+          new BalanceCalculatorService(accounts, transactions),
+        ),
+      );
+    });
+  }
   private mapEntityToTransaction(entity: TransactionEntity): Transaction {
     return {
       id: entity.id,
@@ -106,6 +128,13 @@ export class TransactionService {
       throw new Error('Valor é obrigatório');
     }
     assertPositiveAmount(data.amount);
+    amountToCents(data.amount);
+    if (!parseDateSafe(data.transactionDate))
+      throw new Error('Data da transação inválida');
+    if (data.dueDate && !parseDateSafe(data.dueDate))
+      throw new Error('Vencimento inválido');
+    if (data.totalInstallments !== undefined)
+      installmentAmounts(data.amount, data.totalInstallments);
     if (!data.type) {
       throw new Error('Tipo da transação é obrigatório');
     }
@@ -148,7 +177,14 @@ export class TransactionService {
     ) {
       throw new Error('Descrição não pode ser vazia');
     }
-    if (data.amount !== undefined) assertPositiveAmount(data.amount);
+    if (data.amount !== undefined) amountToCents(data.amount);
+    if (
+      data.transactionDate !== undefined &&
+      !parseDateSafe(data.transactionDate)
+    )
+      throw new Error('Data da transação inválida');
+    if (data.dueDate !== undefined && !parseDateSafe(data.dueDate))
+      throw new Error('Vencimento inválido');
   }
   private async validateAccount(
     userId: number,
@@ -177,14 +213,14 @@ export class TransactionService {
     }
   }
   private addMonths(date: Date, months: number): Date {
-    const result = new Date(date);
-    result.setMonth(result.getMonth() + months);
-    return result;
+    return occurrenceDate(date, months);
   }
   async create(
     userId: number,
     data: CreateTransactionInput,
   ): Promise<Transaction> {
+    if (!this._injectedTransactionRepository)
+      return this.atomic((service) => service.create(userId, data));
     logger.info('Criando nova transação para usuário:', userId);
     this.validateCreateInput(data);
     await this.validateAccount(userId, data.accountId);
@@ -241,17 +277,7 @@ export class TransactionService {
     const totalInstallments = data.totalInstallments!;
     const installmentGroupId = crypto.randomUUID();
 
-    // Calcular valor base das parcelas e ajuste para última parcela
-    const baseInstallmentAmount =
-      Math.floor((data.amount / totalInstallments) * 100) / 100;
-    const totalBaseAmount = baseInstallmentAmount * totalInstallments;
-    const lastInstallmentAdjustment = Number(
-      (data.amount - totalBaseAmount).toFixed(2),
-    );
-
-    logger.info(
-      `Criando ${totalInstallments} parcelas com valor base ${baseInstallmentAmount} cada (ajuste última: ${lastInstallmentAdjustment})`,
-    );
+    const amounts = installmentAmounts(data.amount, totalInstallments);
     let firstTransaction: TransactionEntity | null = null;
     for (let i = 1; i <= totalInstallments; i++) {
       const installmentDate = this.addMonths(
@@ -262,11 +288,7 @@ export class TransactionService {
         ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i - 1)
         : undefined;
 
-      // Última parcela recebe o ajuste de arredondamento
-      const installmentAmount =
-        i === totalInstallments
-          ? baseInstallmentAmount + lastInstallmentAdjustment
-          : baseInstallmentAmount;
+      const installmentAmount = amounts[i - 1];
 
       const transactionData: Partial<TransactionEntity> = {
         description: `${data.description.trim()} (${i}/${totalInstallments})`,
@@ -306,12 +328,17 @@ export class TransactionService {
     logger.info(`Criando ${totalMonths} transações recorrentes mensais`);
     let firstTransaction: TransactionEntity | null = null;
     for (let i = 0; i < totalMonths; i++) {
-      const transactionDate = this.addMonths(
-        parseDateSafe(data.transactionDate) ?? new Date(),
+      const transactionDate = occurrenceDate(
+        parseDateSafe(data.transactionDate)!,
         i,
+        data.recurrence === 'weekly' ? 'weekly' : 'monthly',
       );
       const dueDate = data.dueDate
-        ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i)
+        ? occurrenceDate(
+            parseDateSafe(data.dueDate)!,
+            i,
+            data.recurrence === 'weekly' ? 'weekly' : 'monthly',
+          )
         : undefined;
       const transactionData: Partial<TransactionEntity> = {
         description: data.description.trim(),
@@ -347,6 +374,8 @@ export class TransactionService {
     id: number,
     data: UpdateTransactionInput,
   ): Promise<Transaction> {
+    if (!this._injectedTransactionRepository)
+      return this.atomic((service) => service.update(userId, id, data));
     logger.info('Atualizando transação:', id);
     const existingEntity = await this.transactionRepository.findById(
       id,
@@ -415,6 +444,10 @@ export class TransactionService {
     id: number,
     deleteAllInstallments: boolean = false,
   ): Promise<void> {
+    if (!this._injectedTransactionRepository)
+      return this.atomic((service) =>
+        service.delete(userId, id, deleteAllInstallments),
+      );
     logger.info(
       'Excluindo transação:',
       id,
@@ -476,6 +509,8 @@ export class TransactionService {
     );
   }
   async deleteMany(userId: number, ids: number[]): Promise<number> {
+    if (!this._injectedTransactionRepository)
+      return this.atomic((service) => service.deleteMany(userId, ids));
     logger.info(`Excluindo ${ids.length} transações em lote`);
     if (ids.length === 0) {
       return 0;

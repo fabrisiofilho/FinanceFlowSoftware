@@ -1,3 +1,4 @@
+import { installmentAmounts } from '@shared/finance/entry-schedule';
 import { AppAlert as Alert } from '@renderer/components/Feedback';
 import { Input as TextField } from '@renderer/components/Form/Input';
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -234,15 +235,18 @@ export function TransactionForm({
     ],
     [accounts],
   );
-  const installmentValue = useMemo(() => {
+  const installments = useMemo(() => {
     if (
       !watchHasInstallments ||
       !watchTotalInstallments ||
       watchTotalInstallments < 2
-    ) {
-      return 0;
+    )
+      return [];
+    try {
+      return installmentAmounts(watchAmount, watchTotalInstallments);
+    } catch {
+      return [];
     }
-    return watchAmount / watchTotalInstallments;
   }, [watchAmount, watchHasInstallments, watchTotalInstallments]);
   const canHaveInstallments = useMemo(() => {
     return (
@@ -540,9 +544,11 @@ export function TransactionForm({
                       )}
                     />
                     <InstallmentText>vezes</InstallmentText>
-                    {installmentValue > 0 && (
+                    {installments.length > 0 && (
                       <InstallmentPreview>
-                        {formatCurrency(installmentValue)} / parcela
+                        {formatCurrency(installments[0])} / parcela
+                        {installments.at(-1) !== installments[0] &&
+                          ' · última: ' + formatCurrency(installments.at(-1)!)}
                       </InstallmentPreview>
                     )}
                   </InstallmentsContainer>

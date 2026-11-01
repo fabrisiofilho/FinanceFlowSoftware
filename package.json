@@ -41,7 +41,7 @@
     "migration:create": "npx ts-node src/main/infrastructure/database/scripts/migration-cli.ts create",
     "migration:status": "npx ts-node src/main/infrastructure/database/scripts/migration-cli.ts status",
     "migration:help": "npx ts-node src/main/infrastructure/database/scripts/migration-cli.ts help",
-    "test": "node --test tests/financial-validation.test.mjs tests/window-controls.test.mjs tests/month-range.test.mjs tests/report-filters.test.mjs tests/investments.test.mjs tests/notification-evaluation.test.mjs",
+    "test": "node --test tests/financial-validation.test.mjs tests/window-controls.test.mjs tests/month-range.test.mjs tests/report-filters.test.mjs tests/investments.test.mjs tests/notification-evaluation.test.mjs tests/entry-schedule.test.mjs tests/transaction-service.test.mjs",
     "test:sqlite": "node scripts/check-sqlite.mjs",
     "test:ui": "node scripts/check-ui-loading.mjs"
   },
