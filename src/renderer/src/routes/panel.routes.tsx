@@ -1,3 +1,4 @@
+import { buildNavigation } from './navigation';
 import { InvestmentsPage } from '@renderer/pages/Investments';
 import ShowChartRounded from '@mui/icons-material/ShowChartRounded';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
@@ -173,7 +174,7 @@ const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
 
 export function PanelRoutes() {
   return (
-    <DrawerNavigator items={ROUTES_ITEMS}>
+    <DrawerNavigator items={buildNavigation(ROUTES_ITEMS)}>
       <Routes>
         {ROUTES_ITEMS.map((item) => (
           <Route

@@ -28,6 +28,8 @@ O resultado mensal usa a data da transação e equivale a receitas menos despesa
 
 ## Desenvolvimento
 
+A reestruturação incremental segue [o plano V2](docs/REESTRUTURACAO-V2.md), com [inventário verificável](docs/INVENTARIO-V2.json). O menu agrupa as telas em Visão geral, Movimentações, Contas e cartões, Investimentos, Planejamento, Análises, Configurações e Ajuda. As rotas especializadas permanecem disponíveis.
+
 Electron + React + TypeScript, electron-vite, Material UI, Redux Toolkit, TypeORM e better-sqlite3. Consulte [diretrizes](docs/DIRETRIZES.md), [plano](docs/PLANO.md) e [decisão inicial](docs/decisions/001-base.md). Instruções para agentes em AGENTS.md.
 
 ```powershell
@@ -36,10 +38,13 @@ npm test
 npm run test:sqlite
 npm run lint
 npm run build
+npm run test:ui
 npm run build:win
 ```
 
 O último comando gera o instalador em dist. Dependências nativas podem exigir ferramentas de compilação C++ para Windows quando não houver binário compatível. Não existe canal de publicação ou atualização configurado para o Contabily.
+
+Após o build, `npm run test:ui` verifica os cabeçalhos dos 16 módulos, carregamento ao trocar filtros, respostas fora de ordem e animação do login em Electron oculto. Usa IPC fictício e dados isolados em `.qa`, sem acessar o banco pessoal.
 
 O menu **Ajuda → Manual do sistema** explica as funções e permite buscar assuntos. A barra superior integrada controla a janela. Após mudanças no processo main ou preload, encerre e reinicie o aplicativo para carregar os novos controles.
 

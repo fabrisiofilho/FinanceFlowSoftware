@@ -9,15 +9,17 @@ type Props = {
 };
 const groups = [
   {
-    name: 'Visão e movimentos',
-    paths: ['dashboard', 'transactions', 'accounts', 'transfers'],
+    name: 'Seu financeiro',
+    paths: [
+      'dashboard',
+      'transactions',
+      'accounts',
+      'investments',
+      'budget',
+      'reports',
+    ],
   },
-  { name: 'Patrimônio', paths: ['investments', 'credit-cards', 'goals'] },
-  { name: 'Planejamento', paths: ['budget', 'recurring', 'alerts'] },
-  {
-    name: 'Análises',
-    paths: ['reports', 'cash-flow', 'advanced-reports', 'bank-import'],
-  },
+  { name: 'Preferências', paths: ['categories'] },
   { name: 'Ajuda', paths: ['manual'] },
 ];
 export function DrawerCategoryList({

@@ -1,5 +1,19 @@
 # Validação do incremento inicial
 
+## Fundação V2 e navegação — 2026-11-01
+
+Inventário gerado: 16 rotas, 21 entidades, 129 canais IPC e 6 migrações. Branch refactor/contabily-v2-foundation. Baseline: 10 testes e integração SQLite passaram. Após a reestruturação, typecheck e build passaram; lint sem erros e com 17 avisos existentes. Teste Electron com IPC fictício percorreu as 16 telas, confirmou a área Análises ativa na URL antiga de Relatórios e repetiu verificações de loading, filtros e animação. Captura stable-reports.png inspecionada: navegação contextual e pontilhado somente no canto inferior direito.
+
+Escopo: fundação documental e reorganização da navegação, sem migração financeira. Backup/restauração integral e homologação real dos fluxos permanecem pendentes; consultar REESTRUTURACAO-V2.md. Nenhum teste utilizou o banco pessoal.
+
+## Loading estável e cabeçalhos unificados — 2026-11-01
+
+Typecheck e build passaram. Lint global: zero erros e 17 avisos preexistentes. Os 10 testes unitários e a integração SQLite passaram.
+
+Após o build, npm run test:ui passou em Electron oculto com preload real e IPC fictício: cabeçalhos dos 16 módulos, ausência de alertas vazios, preservação dos elementos e dimensões dos cards durante/após troca de filtro, ausência de skeleton em consultas rápidas e descarte de resposta antiga. Conferidos ponto na ponta do rastro e cores legíveis do botão do login, inclusive no hover. Capturas em .qa/stable-loading-reports.png, .qa/stable-reports.png e .qa/stable-login.png. O ensaio usa dados isolados e não acessa o banco pessoal.
+
+Não equivale a homologação completa de formulários, exportações, notificações nativas ou instalador. As seções seguintes registram etapas anteriores.
+
 ## Dark neutro e investimentos — 2026-11-01
 
 Validação atual: 10 testes unitários passaram; typecheck e build passaram; lint global sem erros (17 avisos remanescentes). npm run test:sqlite executa seis migrações em banco em memória e verifica persistência, upsert mensal, isolamento por usuário, exclusão do histórico e deduplicação. Não modifica o banco pessoal.

@@ -242,6 +242,12 @@ app
     await run(
       "window.qaHeader=document.querySelector('[data-page-header]');window.qaCards=Array.from(document.querySelectorAll('[data-card-skeleton]')).map(s=>({node:s.parentElement,width:s.parentElement.getBoundingClientRect().width,height:s.parentElement.getBoundingClientRect().height}));",
     );
+    assert(
+      await run(
+        "Array.from(document.querySelectorAll('a')).some(a=>a.textContent.includes('Análises')&&a.classList.contains('active'))",
+      ),
+      'área Análises ativa na rota antiga de relatórios',
+    );
     const select = async (value) => {
       await run(
         "Array.from(document.querySelectorAll('[role=combobox]')).at(-1).dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))",

@@ -10,7 +10,8 @@ Leia docs/DIRETRIZES.md e docs/PLANO.md antes de alterar funcionalidades.
 - Não acesse banco, Node ou arquivos pelo renderer. Exponha operações específicas no preload e valide no main.
 - Reutilize formulários, componentes e formatadores existentes antes de criar novos.
 - Use nomenclatura de domínio e mudanças pequenas. Não adicione padrões ou dependências sem necessidade concreta.
-- Não altere a representação monetária ou semântica de datas sem migração explícita e testes. A base usa valores decimais em reais; centavos inteiros são uma evolução planejada.
+- Autorização do proprietário em 2026-11-01: a aplicação ainda não tem usuários; mudanças incompatíveis no esquema, dinheiro e datas podem exigir banco limpo, sem migração dos dados antigos. Avisar explicitamente quando a limpeza for necessária. O proprietário fará a limpeza; não apagar o banco automaticamente. Manter testes financeiros e registrar a versão do novo esquema.
+- Trabalhar na branch principal existente main, chamada de master pelo proprietário. Não criar branches de tarefa sem solicitação.
 - Não publique releases nem reative o updater do projeto de origem. O Contabily ainda não tem canal próprio.
 - Não versionar credenciais, dados financeiros reais, bancos ou backups.
 - Execute npm run typecheck, npm run lint e npm run build; relate falhas herdadas e limitações de validação.

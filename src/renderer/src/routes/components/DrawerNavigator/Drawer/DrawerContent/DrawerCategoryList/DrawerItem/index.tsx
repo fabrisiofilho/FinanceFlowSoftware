@@ -28,12 +28,15 @@ export function DrawerItem({
 }: Readonly<Props>) {
   const { label, icon, path, subItems } = item;
 
-  const isSelected = currentPath.includes(path);
+  const pathname = currentPath.split('?')[0];
+  const isSelected =
+    pathname === path ||
+    Boolean(subItems?.some((item) => item.path === pathname));
 
   const hasSubItems = subItems?.length;
 
   const isSubItemSelected = (subItem: IDrawerSubItem) => {
-    return currentPath === subItem.path;
+    return pathname === subItem.path;
   };
 
   const isMobile = useResponsiveCurrentSize() === 'xs';
@@ -43,6 +46,7 @@ export function DrawerItem({
       <ListItem
         key={label}
         to={path}
+        className={isSelected ? 'active' : undefined}
         onClick={isMobile && !hasSubItems ? onChangeCompacted : () => {}}
       >
         {icon}
