@@ -4,5 +4,7 @@ dist
 out
 .DS_Store
 .eslintcache
+.lint-report.json
+.qa/
 *.log*
 .env

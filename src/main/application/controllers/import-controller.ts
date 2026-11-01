@@ -33,7 +33,9 @@ export class ImportController extends BaseHandler implements IImportController {
   }
 
   @IpcMethod('import:getCSVPreview')
-  async getCSVPreview(csvContent: string): Promise<ApiResponse<CSVPreviewData>> {
+  async getCSVPreview(
+    csvContent: string,
+  ): Promise<ApiResponse<CSVPreviewData>> {
     return wrap(async () => {
       return await this.importService.getCSVPreview(csvContent);
     })();
@@ -42,7 +44,7 @@ export class ImportController extends BaseHandler implements IImportController {
   @IpcMethod('import:previewImport')
   async previewImport(
     csvContent: string,
-    config: ImportConfig
+    config: ImportConfig,
   ): Promise<ApiResponse<ImportPreview>> {
     return wrap(async () => {
       return await this.importService.previewImport(csvContent, config);
@@ -53,11 +55,15 @@ export class ImportController extends BaseHandler implements IImportController {
   async importCSV(
     _csvContent: string,
     config: ImportConfig,
-    transactions: ParsedTransaction[]
+    transactions: ParsedTransaction[],
   ): Promise<ApiResponse<ImportResult>> {
     return wrap(async () => {
       const userId = this.getUserId();
-      return await this.importService.importTransactions(userId, config, transactions);
+      return await this.importService.importTransactions(
+        userId,
+        config,
+        transactions,
+      );
     })();
   }
 }

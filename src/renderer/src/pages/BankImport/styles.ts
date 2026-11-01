@@ -1,22 +1,12 @@
+import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 
-export const ImportContainer = styled(Box)`
-  padding: 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-`;
+export const ImportContainer = PageContainer;
 
-export const PageHeaderContainer = styled(Box)`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-`;
-
-export const UploadArea = styled(Paper)`
+export const UploadArea = styled(ContentSurface)`
   padding: 3rem;
-  border-radius: 12px;
+  border-radius: 1.5rem;
   border: 2px dashed ${({ theme }) => theme.COLORS.border};
   text-align: center;
   cursor: pointer;

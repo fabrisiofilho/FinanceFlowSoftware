@@ -4,7 +4,10 @@ import { GlobalStyle } from '@renderer/styles/global';
 import { getMuiTheme } from '@renderer/styles/muiTheme';
 import { getStyledTheme } from '@renderer/styles/styledTheme';
 import { ThemeProvider as MUIProvider } from '@mui/material';
-import { SnackbarProvider } from 'notistack';
+import { SnackbarProvider, closeSnackbar } from 'notistack';
+import { IconButton } from '@mui/material';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+import { feedbackIcons } from '@renderer/components/Feedback';
 import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { HashRouter } from 'react-router-dom';
@@ -28,8 +31,20 @@ function ThemedApp({ children }: Props) {
         <SnackbarProvider
           maxSnack={3}
           preventDuplicate
-          anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
+          autoHideDuration={4000}
+          iconVariant={{ ...feedbackIcons, default: feedbackIcons.info }}
+          action={(key) => (
+            <IconButton
+              aria-label="Fechar mensagem"
+              size="small"
+              onClick={() => closeSnackbar(key)}
+            >
+              <CloseRounded fontSize="small" />
+            </IconButton>
+          )}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           Components={{
+            default: CustomMaterialDesignContent,
             success: CustomMaterialDesignContent,
             error: CustomMaterialDesignContent,
             warning: CustomMaterialDesignContent,

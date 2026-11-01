@@ -8,8 +8,8 @@ type ContainerProps = {
 export const Container = styled.nav.withConfig({
   shouldForwardProp: (propName) => propName !== 'compacted',
 })<Readonly<ContainerProps>>`
-  width: 17.5rem;
-  height: 100vh;
+  width: 16rem;
+  height: var(--app-height);
 
   display: flex;
   flex-direction: column;
@@ -42,7 +42,7 @@ export const LogoContainer = styled('div')`
 
   position: relative;
 
-  height: 5.5rem;
+  height: 3.5rem;
   padding-left: 1rem;
 
   background-color: ${({ theme }) => theme.COLORS.surface};

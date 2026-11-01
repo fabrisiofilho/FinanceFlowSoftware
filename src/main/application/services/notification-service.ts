@@ -48,6 +48,7 @@ export class NotificationService {
     return {
       id: entity.id,
       userId: entity.userId,
+      investmentYieldEnabled: Boolean(entity.investmentYieldEnabled),
       billDueEnabled: Boolean(entity.billDueEnabled),
       billDueDaysBefore: entity.billDueDaysBefore,
       budgetExceededEnabled: Boolean(entity.budgetExceededEnabled),
@@ -112,7 +113,10 @@ export class NotificationService {
     const query = this.notificationRepository
       .createQueryBuilder('n')
       .where('n.user_id = :userId', { userId })
-      .andWhere('n.is_dismissed = 0');
+      .andWhere('n.is_dismissed = 0')
+      .andWhere(
+        '(n.scheduled_at IS NULL OR n.scheduled_at <= CURRENT_TIMESTAMP)',
+      );
 
     if (filters?.type) {
       query.andWhere('n.type = :type', { type: filters.type });
@@ -193,7 +197,43 @@ export class NotificationService {
       settings = this.settingsRepository.create({ userId });
     }
 
-    Object.assign(settings, data);
+    const patch: UpdateNotificationSettingsInput = {};
+    for (const key of [
+      'investmentYieldEnabled',
+      'billDueEnabled',
+      'budgetExceededEnabled',
+      'goalReachedEnabled',
+      'recurringGeneratedEnabled',
+      'lowBalanceEnabled',
+      'invoiceClosingEnabled',
+      'soundEnabled',
+    ] as const) {
+      if (data[key] !== undefined) {
+        if (typeof data[key] !== 'boolean')
+          throw new Error('Preferência inválida');
+        patch[key] = data[key];
+      }
+    }
+    for (const [key, min, max] of [
+      ['billDueDaysBefore', 0, 90],
+      ['invoiceClosingDaysBefore', 0, 31],
+      ['budgetThresholdPercent', 1, 100],
+      ['lowBalanceThreshold', 0, 100000000],
+    ] as const) {
+      const value = data[key];
+      if (value !== undefined) {
+        if (
+          typeof value !== 'number' ||
+          !Number.isFinite(value) ||
+          value < min ||
+          value > max ||
+          (key !== 'lowBalanceThreshold' && !Number.isInteger(value))
+        )
+          throw new Error('Limite de notificação inválido');
+        patch[key] = value;
+      }
+    }
+    Object.assign(settings, patch);
     const saved = await this.settingsRepository.save(settings);
 
     return this.mapEntityToSettings(saved);
@@ -222,15 +262,18 @@ export class NotificationService {
   async processScheduledNotifications(userId: number): Promise<void> {
     const now = new Date();
 
+    const settings = await this.getSettings(userId);
     const scheduled = await this.notificationRepository
       .createQueryBuilder('n')
       .where('n.user_id = :userId', { userId })
       .andWhere('n.scheduled_at <= :now', { now })
       .andWhere('n.sent_at IS NULL')
+      .andWhere('n.is_dismissed = 0')
       .getMany();
 
     for (const notification of scheduled) {
       await this.sendDesktopNotification({
+        silent: !settings.soundEnabled,
         title: notification.title,
         body: notification.message,
         urgency: notification.priority === 'urgent' ? 'critical' : 'normal',

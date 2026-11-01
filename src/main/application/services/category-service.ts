@@ -23,7 +23,6 @@ const DEFAULT_CATEGORIES: Array<{
   { name: 'Outros', type: 'expense', icon: 'more_horiz' },
 ];
 export class CategoryService {
-  constructor() {}
   private get categoryRepository() {
     return repositoryCache.categoryRepository;
   }

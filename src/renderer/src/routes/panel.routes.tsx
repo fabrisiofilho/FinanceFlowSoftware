@@ -1,3 +1,5 @@
+import { InvestmentsPage } from '@renderer/pages/Investments';
+import ShowChartRounded from '@mui/icons-material/ShowChartRounded';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
@@ -11,6 +13,8 @@ import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined';
 import SyncOutlinedIcon from '@mui/icons-material/SyncOutlined';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import { ManualPage } from '@renderer/pages/Manual';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DrawerNavigator } from './components/DrawerNavigator';
 import { IDrawerItem } from '@renderer/types/drawer/drawerItem';
@@ -37,6 +41,14 @@ type WithRouteProps<T> = T & {
 };
 
 const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
+  {
+    label: 'Investimentos',
+    path: '/panel/investments',
+    icon: <ShowChartRounded />,
+    canAccess: true,
+    routeElement: <InvestmentsPage />,
+    routePath: '/investments',
+  },
   {
     label: 'Dashboard',
     path: '/panel/dashboard',
@@ -148,6 +160,14 @@ const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
     canAccess: true,
     routeElement: <BankImportPage />,
     routePath: '/bank-import',
+  },
+  {
+    label: 'Manual do sistema',
+    path: '/panel/manual',
+    icon: <MenuBookOutlinedIcon />,
+    canAccess: true,
+    routeElement: <ManualPage />,
+    routePath: '/manual',
   },
 ];
 

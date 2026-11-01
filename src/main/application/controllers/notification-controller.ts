@@ -11,8 +11,15 @@ import type { ApiResponse } from '@shared/interfaces/types/common.types';
 import { IpcMethod } from '@main/infrastructure/decorators/ipc.decorator';
 import { BaseHandler } from './config/base-handler';
 import { wrap } from '@main/infrastructure/utils/try-catch';
+import { NotificationEvaluationService } from '../services/notification-evaluation-service';
 
 export class NotificationController extends BaseHandler {
+  @IpcMethod('notification:refresh')
+  async refresh(): Promise<ApiResponse<void>> {
+    return wrap(() =>
+      new NotificationEvaluationService().refresh(this.getUserId()),
+    )();
+  }
   private _notificationService: NotificationService | null = null;
   private financeAuthService = FinanceAuthService.getInstance();
 

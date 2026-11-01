@@ -1,18 +1,18 @@
+import { AppAlert as Alert } from '@renderer/components/Feedback';
+import { Input as TextField } from '@renderer/components/Form/Input';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
   ToggleButton,
-  TextField,
   FormControlLabel,
   Switch,
   Typography,
-  Alert,
 } from '@mui/material';
 import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
+  TrendingUpOutlined as TrendingUpIcon,
+  TrendingDownOutlined as TrendingDownIcon,
 } from '@mui/icons-material';
 import { FormTextField } from '@renderer/components/Form/FormTextField';
 import { FormSelectField } from '@renderer/components/Form/FormSelectField';
@@ -172,7 +172,7 @@ export function TransactionForm({
       categoryId: transaction?.categoryId ?? 0,
       accountId: transaction?.accountId ?? 0,
       transactionDate: transaction?.transactionDate
-        ? parseDateSafe(transaction.transactionDate) ?? new Date()
+        ? (parseDateSafe(transaction.transactionDate) ?? new Date())
         : new Date(),
       dueDate: transaction?.dueDate ? parseDateSafe(transaction.dueDate) : null,
       paymentMethod: transaction?.paymentMethod ?? 'debit',

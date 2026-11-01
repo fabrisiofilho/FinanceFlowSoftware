@@ -1,10 +1,10 @@
 /**
  * Utilitários para tratamento seguro de datas, evitando problemas de timezone.
- * 
+ *
  * O problema: Quando o SQLite armazena uma data como '2025-11-01' e o TypeORM lê,
  * ele cria um `new Date('2025-11-01')` que é interpretado como UTC meia-noite.
  * Ao converter para o fuso local (ex: Brasil, UTC-3), a data "volta" para o dia anterior.
- * 
+ *
  * A solução: Sempre criar datas no formato YYYY-MM-DD como datas locais usando
  * new Date(year, month - 1, day) em vez de new Date('YYYY-MM-DD').
  */
@@ -14,7 +14,9 @@
  * sem problemas de timezone. Datas no formato YYYY-MM-DD são tratadas
  * como datas locais, não UTC.
  */
-export function parseDateSafe(date: Date | string | null | undefined): Date | null {
+export function parseDateSafe(
+  date: Date | string | null | undefined,
+): Date | null {
   if (!date) return null;
 
   if (date instanceof Date) {
@@ -48,7 +50,9 @@ export function parseDateSafe(date: Date | string | null | undefined): Date | nu
  * Converte uma Date para string no formato YYYY-MM-DD de forma segura,
  * usando os valores locais (não UTC).
  */
-export function formatDateToISO(date: Date | string | null | undefined): string | null {
+export function formatDateToISO(
+  date: Date | string | null | undefined,
+): string | null {
   if (!date) return null;
 
   const dateObj = typeof date === 'string' ? parseDateSafe(date) : date;
@@ -66,7 +70,9 @@ export function formatDateToISO(date: Date | string | null | undefined): string 
  * como data local. Útil para quando você recebe uma Date do TypeORM que pode
  * estar com problema de timezone.
  */
-export function ensureLocalDate(date: Date | string | null | undefined): Date | null {
+export function ensureLocalDate(
+  date: Date | string | null | undefined,
+): Date | null {
   if (!date) return null;
 
   if (date instanceof Date) {
@@ -83,7 +89,7 @@ export function ensureLocalDate(date: Date | string | null | undefined): Date | 
  */
 export function compareDatesOnly(
   date1: Date | string | null | undefined,
-  date2: Date | string | null | undefined
+  date2: Date | string | null | undefined,
 ): number {
   const d1 = parseDateSafe(date1);
   const d2 = parseDateSafe(date2);

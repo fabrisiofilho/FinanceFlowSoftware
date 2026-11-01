@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Box, Button, Collapse, Typography } from '@mui/material';
 import {
-  Receipt as ReceiptIcon,
-  Payment as PaymentIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  ReceiptLong as ReceiptLongIcon,
+  ReceiptOutlined as ReceiptIcon,
+  PaymentOutlined as PaymentIcon,
+  ExpandMoreOutlined as ExpandMoreIcon,
+  ExpandLessOutlined as ExpandLessIcon,
+  ReceiptLongOutlined as ReceiptLongIcon,
 } from '@mui/icons-material';
 import { formatDateToShow, parseDateSafe } from '@renderer/utils/date';
 import { formatCurrency } from '@renderer/utils/currency';

@@ -7,7 +7,7 @@ type DynamicWidthContainerProps = {
 export const DynamicWidthContainer = styled.div.withConfig({
   shouldForwardProp: (propName) => propName !== 'compacted',
 })<DynamicWidthContainerProps>`
-  width: 17.5rem;
+  width: 16rem;
   overflow: visible;
   z-index: 100;
   background-color: ${({ theme }) => theme.COLORS.surface};

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Box, Typography, Tooltip, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import DownloadingIcon from '@mui/icons-material/Downloading';
-import ScheduleIcon from '@mui/icons-material/Schedule';
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAltOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
+import DownloadingIcon from '@mui/icons-material/DownloadingOutlined';
+import ScheduleIcon from '@mui/icons-material/ScheduleOutlined';
 import { useUpdateModal } from '@renderer/hooks/updateModal';
 const VersionContainer = styled(Box)<{ compacted?: boolean }>(
   ({ compacted }) => ({

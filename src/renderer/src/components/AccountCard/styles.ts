@@ -44,7 +44,7 @@ export const AccountCardContainer = styled(Box)<{ $type: AccountTypeVariant }>`
     transform 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
-    transform: translateY(-2px);
+    filter: brightness(1.04);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
 `;

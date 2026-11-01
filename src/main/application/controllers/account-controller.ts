@@ -98,15 +98,23 @@ export class AccountController
   async recalculateBalance(id: number): Promise<ApiResponse<number>> {
     return wrap(async () => {
       const userId = this.getUserId();
-      return await this.balanceCalculatorService.recalculateAccountBalance(userId, id);
+      return await this.balanceCalculatorService.recalculateAccountBalance(
+        userId,
+        id,
+      );
     })();
   }
 
   @IpcMethod('account:recalculateAllBalances')
-  async recalculateAllBalances(): Promise<ApiResponse<{ [accountId: number]: number }>> {
+  async recalculateAllBalances(): Promise<
+    ApiResponse<{ [accountId: number]: number }>
+  > {
     return wrap(async () => {
       const userId = this.getUserId();
-      const balances = await this.balanceCalculatorService.recalculateAllAccountBalances(userId);
+      const balances =
+        await this.balanceCalculatorService.recalculateAllAccountBalances(
+          userId,
+        );
       return Object.fromEntries(balances);
     })();
   }

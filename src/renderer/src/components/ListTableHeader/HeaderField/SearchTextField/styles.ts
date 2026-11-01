@@ -1,5 +1,5 @@
 import BackspaceOutlined from '@mui/icons-material/BackspaceOutlined';
-import Search from '@mui/icons-material/Search';
+import Search from '@mui/icons-material/SearchOutlined';
 import { styled } from '@mui/material';
 
 export const SearchIcon = styled(Search)(({ theme }) => ({

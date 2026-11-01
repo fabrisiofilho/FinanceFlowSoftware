@@ -1,25 +1,8 @@
+import { ExpandableCard } from '@renderer/components/ExpandableCard';
+import { PageContainer } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
 import { Box, Stack, LinearProgress } from '@mui/material';
-export const GoalsContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const PageHeaderContainer = styled(Stack).attrs({
-  direction: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-})`
-  margin-bottom: 1.5rem;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-`;
+export const GoalsContainer = PageContainer;
 export const GoalsGrid = styled(Box)`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -29,7 +12,7 @@ export const GoalsGrid = styled(Box)`
     gap: 1rem;
   }
 `;
-export const GoalCard = styled(Box)<{ $completed?: boolean }>`
+export const GoalCard = styled(ExpandableCard)<{ $completed?: boolean }>`
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
@@ -44,7 +27,7 @@ export const GoalCard = styled(Box)<{ $completed?: boolean }>`
     transform 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
-    transform: translateY(-2px);
+    filter: brightness(1.04);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
 `;
@@ -61,7 +44,7 @@ export const GoalIcon = styled(Box)<{ $completed?: boolean }>`
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme, $completed }) =>
     $completed ? theme.COLORS.success_100 : theme.COLORS.primary_100};
   svg {
@@ -208,7 +191,7 @@ export const ContributionFormContainer = styled(Stack).attrs({
 `;
 export const GoalSummaryBox = styled(Box)`
   padding: 1rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.surfaceAlt};
   margin-bottom: 1rem;
 `;

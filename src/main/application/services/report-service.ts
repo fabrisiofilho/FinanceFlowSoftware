@@ -16,6 +16,7 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { repositoryCache } from '../repositories/repository-cache';
+import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 export class ReportService {
   private _injectedTransactionRepository: TransactionRepository | null = null;
   private get transactionRepository(): TransactionRepository {
@@ -31,7 +32,7 @@ export class ReportService {
   }
   private getExportDirectory(): string {
     const documentsPath = app.getPath('documents');
-    const exportDir = path.join(documentsPath, 'FinanceFlow', 'Relatorios');
+    const exportDir = path.join(documentsPath, 'Contabily', 'Relatorios');
     if (!fs.existsSync(exportDir)) {
       fs.mkdirSync(exportDir, { recursive: true });
     }
@@ -97,8 +98,26 @@ export class ReportService {
       );
     let totalIncome = 0;
     let totalExpenses = 0;
+    const monthly = new Map<string, IncomeVsExpense>();
     for (const transaction of transactions) {
       const amount = Number(transaction.amount);
+      const date = parseDateSafe(transaction.transactionDate);
+      if (date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const key = `${year}-${String(month).padStart(2, '0')}`;
+        const item = monthly.get(key) ?? {
+          year,
+          month,
+          income: 0,
+          expense: 0,
+          balance: 0,
+        };
+        if (transaction.type === 'income') item.income += amount;
+        else if (transaction.type === 'expense') item.expense += amount;
+        item.balance = item.income - item.expense;
+        monthly.set(key, item);
+      }
       if (transaction.type === 'income') {
         totalIncome += amount;
       } else if (transaction.type === 'expense') {
@@ -142,6 +161,9 @@ export class ReportService {
       expensesByCategory,
     };
     const reportData: ReportData = {
+      incomeVsExpenses: [...monthly.values()].sort(
+        (a, b) => a.year - b.year || a.month - b.month,
+      ),
       filters,
       summary,
       generatedAt: new Date(),
@@ -328,7 +350,7 @@ export class ReportService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relatório Financeiro - FinanceFlow</title>
+  <title>Relatório Financeiro - Contabily</title>
   <style>
     * {
       margin: 0;
@@ -454,7 +476,7 @@ export class ReportService {
 </head>
 <body>
   <div class="header">
-    <h1>FinanceFlow</h1>
+    <h1>Contabily</h1>
     <div class="subtitle">Relatório Financeiro</div>
     <div class="period">Período: ${periodStart} a ${periodEnd}</div>
   </div>
@@ -519,7 +541,7 @@ export class ReportService {
     </table>
   </div>
   <div class="footer">
-    <p>Relatório gerado em ${generatedAt} pelo FinanceFlow</p>
+    <p>Relatório gerado em ${generatedAt} pelo Contabily</p>
     <p>Este documento é para uso pessoal e não possui valor fiscal.</p>
   </div>
 </body>

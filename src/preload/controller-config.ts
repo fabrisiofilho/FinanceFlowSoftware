@@ -10,6 +10,10 @@ import type { IImportController } from '@shared/interfaces/controllers/import.co
 import type { IAutoUpdaterController } from '@shared/interfaces/types/auto-updater.types';
 
 export const CONTROLLER_CONFIG = {
+  investment: {
+    prefix: 'investment',
+    methods: ['list', 'create', 'recordYield', 'remove'] as const,
+  },
   financeAuth: {
     prefix: 'financeAuth',
     methods: [
@@ -105,6 +109,7 @@ export const CONTROLLER_CONFIG = {
   report: {
     prefix: 'report',
     methods: [
+      'generateReport',
       'generatePDF',
       'generateCSV',
       'getExpensesByCategory',
@@ -166,6 +171,7 @@ export const CONTROLLER_CONFIG = {
   notification: {
     prefix: 'notification',
     methods: [
+      'refresh',
       'findAll',
       'getSummary',
       'markAsRead',

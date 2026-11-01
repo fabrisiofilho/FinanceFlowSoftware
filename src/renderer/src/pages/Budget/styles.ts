@@ -1,28 +1,18 @@
+import { metricCardStyles } from '@renderer/components/PageLayout';
+import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 
-export const BudgetContainer = styled(Box)`
+export const BudgetContainer = PageContainer;
+
+export const SummaryCard = styled(ContentSurface)`
   padding: 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-`;
-
-export const PageHeaderContainer = styled(Box)`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-`;
-
-export const SummaryCard = styled(Paper)`
-  padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: 1.5rem;
   height: 100%;
+  ${metricCardStyles};
 `;
 
-export const BudgetCard = styled(Paper)`
+export const BudgetCard = styled(ContentSurface)`
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 0.75rem;

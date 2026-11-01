@@ -1,4 +1,4 @@
-import LogoutIcon from '@mui/icons-material/Logout';
+import LogoutIcon from '@mui/icons-material/LogoutOutlined';
 import { useNavigate } from 'react-router-dom';
 import { ActionButton } from '../ActionButton';
 import { useAppDispatch } from '@renderer/hooks/redux';
@@ -20,7 +20,7 @@ export function SignOutButton({ onClick }: Props) {
   const handleSignOut = () => {
     openConfirmModal({
       title: 'Sair',
-      description: 'Tem certeza que deseja sair do FinanceFlow?',
+      description: 'Tem certeza que deseja sair do Contabily?',
       action: async () => {
         showLogoutLoading();
 

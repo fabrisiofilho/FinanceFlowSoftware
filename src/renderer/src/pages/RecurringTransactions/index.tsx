@@ -1,3 +1,8 @@
+import { ContentLoading } from '@renderer/components/ContentLoading';
+import { PageHeader } from '@renderer/components/PageHeader';
+import { DateStringField } from '@renderer/components/Form/DatePicker/DateStringField';
+import { Input as TextField } from '@renderer/components/Form/Input';
+
 import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
@@ -11,32 +16,29 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Switch,
   FormControlLabel,
   Chip,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Refresh as RefreshIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  PlayArrow as PlayIcon,
-  Repeat as RepeatIcon,
-  TrendingUp,
-  TrendingDown,
-  CreditCard as CreditCardIcon,
+  AddOutlined as AddIcon,
+  RefreshOutlined as RefreshIcon,
+  DeleteOutlined as DeleteIcon,
+  EditOutlined as EditIcon,
+  PlayArrowOutlined as PlayIcon,
+  TrendingUpOutlined as TrendingUp,
+  TrendingDownOutlined as TrendingDown,
+  CreditCardOutlined as CreditCardIcon,
 } from '@mui/icons-material';
 import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
 import { formatCurrency } from '@renderer/utils/currency';
-import { formatDateToShow, parseDateSafe, formatDateToISO } from '@renderer/utils/date';
 import {
-  RecurringContainer,
-  PageHeaderContainer,
-  RecurringCard,
-  FrequencyBadge,
-} from './styles';
+  formatDateToShow,
+  parseDateSafe,
+  formatDateToISO,
+} from '@renderer/utils/date';
+import { RecurringContainer, RecurringCard, FrequencyBadge } from './styles';
 import type {
   RecurringTransaction,
   CreateRecurringTransactionInput,
@@ -124,7 +126,8 @@ export function RecurringTransactionsPage() {
           accountId: effectiveAccountId,
           categoryId: formData.categoryId,
           autoConfirm: formData.autoConfirm,
-          paymentMethod: formData.type === 'expense' ? formData.paymentMethod : undefined,
+          paymentMethod:
+            formData.type === 'expense' ? formData.paymentMethod : undefined,
         };
         await window.electronAPI.recurring.update(editingId, updateData);
       } else {
@@ -137,7 +140,8 @@ export function RecurringTransactionsPage() {
           categoryId: formData.categoryId,
           startDate: parseDateSafe(formData.startDate) ?? new Date(),
           autoConfirm: formData.autoConfirm,
-          paymentMethod: formData.type === 'expense' ? formData.paymentMethod : undefined,
+          paymentMethod:
+            formData.type === 'expense' ? formData.paymentMethod : undefined,
         };
         await window.electronAPI.recurring.create(createData);
       }
@@ -179,7 +183,8 @@ export function RecurringTransactionsPage() {
   const openEdit = (r: RecurringTransaction) => {
     // Check if the account is a credit card
     const account = accounts.find((a) => a.id === r.accountId);
-    const isCredit = account?.type === 'credit_card' || r.paymentMethod === 'credit';
+    const isCredit =
+      account?.type === 'credit_card' || r.paymentMethod === 'credit';
 
     setEditingId(r.id);
     setFormData({
@@ -191,7 +196,8 @@ export function RecurringTransactionsPage() {
       accountId: isCredit ? 0 : r.accountId,
       creditCardId: isCredit ? r.accountId : 0,
       categoryId: r.categoryId,
-      startDate: formatDateToISO(r.startDate) ?? new Date().toISOString().split('T')[0],
+      startDate:
+        formatDateToISO(r.startDate) ?? new Date().toISOString().split('T')[0],
       autoConfirm: r.autoConfirm,
     });
     setIsFormOpen(true);
@@ -199,287 +205,283 @@ export function RecurringTransactionsPage() {
 
   const filteredCategories = categories.filter((c) => c.type === formData.type);
 
-  if (loading && recurrings.length === 0) {
-    return (
-      <RecurringContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <CircularProgress />
-        </Stack>
-      </RecurringContainer>
-    );
-  }
-
   return (
     <RecurringContainer>
-      <PageHeaderContainer>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            <RepeatIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-            Transações Recorrentes
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Configure receitas e despesas que se repetem automaticamente
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<PlayIcon />}
-            onClick={handleGenerate}
-          >
-            Gerar Pendentes
-          </Button>
-          <Tooltip title="Atualizar">
-            <IconButton onClick={loadData}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setIsFormOpen(true)}
-          >
-            Nova Recorrência
-          </Button>
-        </Stack>
-      </PageHeaderContainer>
-
-      {recurrings.length === 0 ? (
-        <Typography color="text.secondary" textAlign="center" py={4}>
-          Nenhuma transação recorrente configurada.
-        </Typography>
-      ) : (
-        <Stack spacing={1}>
-          {recurrings.map((r) => {
-            const account = accounts.find((a) => a.id === r.accountId);
-            const isCredit = account?.type === 'credit_card' || r.paymentMethod === 'credit';
-            return (
-            <RecurringCard key={r.id} $type={r.type}>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+      <PageHeader
+        title="Recorrências"
+        description={
+          <>Configure receitas e despesas que se repetem automaticamente</>
+        }
+        actions={
+          <>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="outlined"
+                startIcon={<PlayIcon />}
+                onClick={handleGenerate}
               >
-                <Box flex={1}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    {r.type === 'income' ? (
-                      <TrendingUp color="success" />
-                    ) : (
-                      <TrendingDown color="error" />
-                    )}
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {r.description}
-                    </Typography>
-                    <FrequencyBadge>
-                      {FREQUENCY_LABELS[r.frequency]}
-                    </FrequencyBadge>
-                    {isCredit && (
-                      <Chip
+                Gerar Pendentes
+              </Button>
+              <Tooltip title="Atualizar">
+                <IconButton onClick={loadData}>
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setIsFormOpen(true)}
+              >
+                Nova Recorrência
+              </Button>
+            </Stack>
+          </>
+        }
+      />
+      <ContentLoading loading={loading} initial="cards">
+        {recurrings.length === 0 ? (
+          <Typography color="text.secondary" textAlign="center" py={4}>
+            Nenhuma transação recorrente configurada.
+          </Typography>
+        ) : (
+          <Stack spacing={1}>
+            {recurrings.map((r) => {
+              const account = accounts.find((a) => a.id === r.accountId);
+              const isCredit =
+                account?.type === 'credit_card' || r.paymentMethod === 'credit';
+              return (
+                <RecurringCard key={r.id} $type={r.type}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Box flex={1}>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        {r.type === 'income' ? (
+                          <TrendingUp color="success" />
+                        ) : (
+                          <TrendingDown color="error" />
+                        )}
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {r.description}
+                        </Typography>
+                        <FrequencyBadge>
+                          {FREQUENCY_LABELS[r.frequency]}
+                        </FrequencyBadge>
+                        {isCredit && (
+                          <Chip
+                            size="small"
+                            icon={<CreditCardIcon />}
+                            label="Crédito"
+                            color="info"
+                            variant="outlined"
+                          />
+                        )}
+                        {!r.isActive && (
+                          <Chip size="small" label="Inativo" color="default" />
+                        )}
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        {r.categoryName} • {r.accountName}
+                      </Typography>
+                    </Box>
+                    <Box textAlign="right" mr={2}>
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        color={
+                          r.type === 'income' ? 'success.main' : 'error.main'
+                        }
+                      >
+                        {r.type === 'income' ? '+' : '-'}
+                        {formatCurrency(r.amount)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Próxima: {formatDateToShow(r.nextOccurrence)}
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={0.5}>
+                      <IconButton size="small" onClick={() => openEdit(r)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
                         size="small"
-                        icon={<CreditCardIcon />}
-                        label="Crédito"
-                        color="info"
-                        variant="outlined"
-                      />
-                    )}
-                    {!r.isActive && (
-                      <Chip size="small" label="Inativo" color="default" />
-                    )}
+                        color="error"
+                        onClick={() => handleDelete(r.id)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {r.categoryName} • {r.accountName}
-                  </Typography>
-                </Box>
-                <Box textAlign="right" mr={2}>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    color={r.type === 'income' ? 'success.main' : 'error.main'}
-                  >
-                    {r.type === 'income' ? '+' : '-'}
-                    {formatCurrency(r.amount)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Próxima: {formatDateToShow(r.nextOccurrence)}
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={0.5}>
-                  <IconButton size="small" onClick={() => openEdit(r)}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleDelete(r.id)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Stack>
-              </Stack>
-            </RecurringCard>
-          );
-          })}
-        </Stack>
-      )}
+                </RecurringCard>
+              );
+            })}
+          </Stack>
+        )}
 
-      <Dialog open={isFormOpen} onClose={closeForm} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingId ? 'Editar' : 'Nova'} Transação Recorrente
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField
-              label="Descrição"
-              fullWidth
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-            />
-            <CurrencyInput
-              label="Valor"
-              fullWidth
-              value={formData.amount}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, amount: value }))
-              }
-            />
-            {!editingId && (
-              <SelectInput
-                label="Tipo"
-                value={formData.type}
-                items={[
-                  { value: 'expense', label: 'Despesa' },
-                  { value: 'income', label: 'Receita' },
-                ]}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    type: e.target.value as any,
-                    categoryId: 0,
-                  }))
-                }
-                fullWidth
-              />
-            )}
-            <SelectInput
-              label="Frequência"
-              value={formData.frequency}
-              items={Object.entries(FREQUENCY_LABELS).map(([v, l]) => ({
-                value: v,
-                label: l,
-              }))}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  frequency: e.target.value as string,
-                }))
-              }
-              fullWidth
-            />
-            {formData.type === 'expense' && (
-              <SelectInput
-                label="Forma de Pagamento"
-                value={formData.paymentMethod}
-                items={PAYMENT_METHOD_OPTIONS}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    paymentMethod: e.target.value as PaymentMethod,
-                    accountId: e.target.value === 'credit' ? 0 : prev.accountId,
-                    creditCardId: e.target.value === 'debit' ? 0 : prev.creditCardId,
-                  }))
-                }
-                fullWidth
-              />
-            )}
-            {isCreditCard && formData.type === 'expense' ? (
-              <SelectInput
-                label="Cartão de Crédito"
-                value={formData.creditCardId}
-                items={creditCards.map((c) => ({ value: c.id, label: c.name }))}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    creditCardId: e.target.value as number,
-                  }))
-                }
-                fullWidth
-              />
-            ) : (
-              <SelectInput
-                label="Conta"
-                value={formData.accountId}
-                items={regularAccounts.map((a) => ({ value: a.id, label: a.name }))}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    accountId: e.target.value as number,
-                  }))
-                }
-                fullWidth
-              />
-            )}
-            <SelectInput
-              label="Categoria"
-              value={formData.categoryId}
-              items={filteredCategories.map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  categoryId: e.target.value as number,
-                }))
-              }
-              fullWidth
-            />
-            {!editingId && (
+        <Dialog open={isFormOpen} onClose={closeForm} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            {editingId ? 'Editar' : 'Nova'} Transação Recorrente
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} mt={1}>
               <TextField
-                label="Data de Início"
-                type="date"
+                label="Descrição"
                 fullWidth
-                value={formData.startDate}
+                value={formData.description}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    startDate: e.target.value,
+                    description: e.target.value,
                   }))
                 }
-                InputLabelProps={{ shrink: true }}
               />
-            )}
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.autoConfirm}
+              <CurrencyInput
+                label="Valor"
+                fullWidth
+                value={formData.amount}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, amount: value }))
+                }
+              />
+              {!editingId && (
+                <SelectInput
+                  label="Tipo"
+                  value={formData.type}
+                  items={[
+                    { value: 'expense', label: 'Despesa' },
+                    { value: 'income', label: 'Receita' },
+                  ]}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      autoConfirm: e.target.checked,
+                      type: e.target.value as any,
+                      categoryId: 0,
                     }))
                   }
+                  fullWidth
                 />
-              }
-              label="Confirmar automaticamente (atualiza saldo)"
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeForm}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={formLoading}
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Salvar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              )}
+              <SelectInput
+                label="Frequência"
+                value={formData.frequency}
+                items={Object.entries(FREQUENCY_LABELS).map(([v, l]) => ({
+                  value: v,
+                  label: l,
+                }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    frequency: e.target.value as string,
+                  }))
+                }
+                fullWidth
+              />
+              {formData.type === 'expense' && (
+                <SelectInput
+                  label="Forma de Pagamento"
+                  value={formData.paymentMethod}
+                  items={PAYMENT_METHOD_OPTIONS}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      paymentMethod: e.target.value as PaymentMethod,
+                      accountId:
+                        e.target.value === 'credit' ? 0 : prev.accountId,
+                      creditCardId:
+                        e.target.value === 'debit' ? 0 : prev.creditCardId,
+                    }))
+                  }
+                  fullWidth
+                />
+              )}
+              {isCreditCard && formData.type === 'expense' ? (
+                <SelectInput
+                  label="Cartão de Crédito"
+                  value={formData.creditCardId}
+                  items={creditCards.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      creditCardId: e.target.value as number,
+                    }))
+                  }
+                  fullWidth
+                />
+              ) : (
+                <SelectInput
+                  label="Conta"
+                  value={formData.accountId}
+                  items={regularAccounts.map((a) => ({
+                    value: a.id,
+                    label: a.name,
+                  }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      accountId: e.target.value as number,
+                    }))
+                  }
+                  fullWidth
+                />
+              )}
+              <SelectInput
+                label="Categoria"
+                value={formData.categoryId}
+                items={filteredCategories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    categoryId: e.target.value as number,
+                  }))
+                }
+                fullWidth
+              />
+              {!editingId && (
+                <DateStringField
+                  label="Data de Início"
+                  fullWidth
+                  value={formData.startDate}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, startDate: value }))
+                  }
+                />
+              )}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.autoConfirm}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        autoConfirm: e.target.checked,
+                      }))
+                    }
+                  />
+                }
+                label="Confirmar automaticamente (atualiza saldo)"
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeForm}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={formLoading}
+            >
+              {formLoading ? <CircularProgress size={20} /> : 'Salvar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </ContentLoading>
     </RecurringContainer>
   );
 }

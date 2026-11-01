@@ -1,8 +1,10 @@
+import { createRequire } from 'node:module';
 import type BetterSqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { logger } from '@main/infrastructure/log/logger';
 
+const loadModule = createRequire(__filename);
 function getNativeBinding(): string | undefined {
   const isDev =
     process.env.NODE_ENV === 'development' ||
@@ -30,10 +32,10 @@ type DatabaseConstructor = typeof BetterSqlite3;
 
 const Database: DatabaseConstructor = nativeBinding
   ? (() => {
-      const mod = require('better-sqlite3');
+      const mod = loadModule('better-sqlite3');
       return mod.default || mod;
     })()
-  : require('better-sqlite3');
+  : loadModule('better-sqlite3');
 
 function createDatabase(dbPath: string): BetterSqlite3.Database {
   const options: BetterSqlite3.Options = {};
@@ -57,7 +59,7 @@ function getElectronApp(): {
   try {
     const moduleName = 'electron';
 
-    const electron = require(moduleName);
+    const electron = loadModule(moduleName);
     electronApp = electron.app || null;
     return electronApp;
   } catch {
@@ -171,7 +173,12 @@ export class MigrationRunner {
       logger.error('Failed to create backup:', error);
       try {
         this.db = createDatabase(this.dbPath);
-      } catch {}
+      } catch (recoveryError) {
+        console.error(
+          'Falha ao liberar ou recuperar conexão do banco:',
+          recoveryError,
+        );
+      }
       throw new Error(`Failed to create database backup: ${error}`);
     }
   }
@@ -185,7 +192,12 @@ export class MigrationRunner {
     try {
       try {
         this.db.close();
-      } catch {}
+      } catch (recoveryError) {
+        console.error(
+          'Falha ao liberar ou recuperar conexão do banco:',
+          recoveryError,
+        );
+      }
 
       if (fs.existsSync(this.dbPath)) {
         fs.unlinkSync(this.dbPath);
@@ -599,7 +611,12 @@ export class MigrationRunner {
     if (this.db) {
       try {
         this.db.close();
-      } catch {}
+      } catch (recoveryError) {
+        console.error(
+          'Falha ao liberar ou recuperar conexão do banco:',
+          recoveryError,
+        );
+      }
     }
   }
 }

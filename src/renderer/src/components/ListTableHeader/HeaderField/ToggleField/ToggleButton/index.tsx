@@ -1,5 +1,5 @@
 import { Show } from '@renderer/components/Show';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import { type ButtonProps } from '@mui/material';
 import { CustomButton } from './styles';
 

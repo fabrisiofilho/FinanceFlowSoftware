@@ -1,5 +1,6 @@
+import { Input as TextField } from '@renderer/components/Form/Input';
 import { forwardRef, useCallback, useState, useEffect } from 'react';
-import { TextField, TextFieldProps } from '@mui/material';
+import { TextFieldProps } from '@mui/material';
 import { formatCurrency, formatCurrencyInput } from '@renderer/utils/currency';
 
 type CurrencyInputProps = Omit<TextFieldProps, 'onChange' | 'value'> & {

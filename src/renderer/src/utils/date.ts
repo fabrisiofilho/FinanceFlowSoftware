@@ -8,7 +8,9 @@ const TIMEZONE = 'America/Sao_Paulo';
  * sem problemas de timezone. Datas no formato YYYY-MM-DD são tratadas
  * como datas locais, não UTC.
  */
-export function parseDateSafe(date: Date | string | null | undefined): Date | null {
+export function parseDateSafe(
+  date: Date | string | null | undefined,
+): Date | null {
   if (!date) return null;
 
   if (date instanceof Date) {
@@ -40,7 +42,9 @@ export function parseDateSafe(date: Date | string | null | undefined): Date | nu
  * Converte uma Date para string no formato YYYY-MM-DD de forma segura,
  * usando os valores locais (não UTC).
  */
-export function formatDateToISO(date: Date | string | null | undefined): string | null {
+export function formatDateToISO(
+  date: Date | string | null | undefined,
+): string | null {
   if (!date) return null;
 
   const dateObj = typeof date === 'string' ? parseDateSafe(date) : date;

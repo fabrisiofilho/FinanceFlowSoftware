@@ -1,88 +1,54 @@
-# FinanceFlow
+# Contabily
 
-Aplicação de controle financeiro pessoal desenvolvida em Electron.
+Aplicativo desktop para gerenciar ganhos e gastos mensais, derivado do FinanceFlowSoftware de fabrisiofilho.
 
-## 🛠️ Tecnologias
+Interface somente dark neutro, com cards ampliáveis, busca nos detalhes e menu agrupado. Em **Investimentos**, cadastre o valor aplicado, registre ou corrija rendimentos mensais e simule uma taxa mensal definida por você por até 360 meses. A simulação é separada dos registros reais; não calcula automaticamente CDI, impostos, resgates ou novos aportes.
 
-- **Electron** - Framework para aplicações desktop
-- **React** - Biblioteca para interface do usuário
-- **Vite** - Build tool e dev server
-- **TypeORM** - ORM para banco de dados
-- **Better SQLite3** - Banco de dados local
-- **Material-UI** - Biblioteca de componentes
-- **Redux Toolkit** - Gerenciamento de estado
-- **React Hook Form** - Gerenciamento de formulários
+O sininho oferece preferências, avisos por categoria, orçamento, saldo, vencimento, metas, recorrências, fechamento de fatura e lembretes de rendimento pendente. A avaliação ocorre com o aplicativo aberto e evita avisos automáticos duplicados.
 
-## 📋 Funcionalidades
+## Executar
 
-- Gestão de contas bancárias
-- Controle de transações (receitas e despesas)
-- Categorização de gastos
-- Metas financeiras
-- Gestão de cartões de crédito
-- Alertas e notificações
-- Relatórios financeiros
+Use Node.js 22.12 ou superior e npm. Na pasta do projeto:
 
-## 📋 Pré-requisitos
-
-- Node.js (versão 16 ou superior)
-- npm (geralmente vem com o Node.js)
-
-## 🚀 Configuração do Ambiente de Desenvolvimento
-
-### 1. Clone o repositório
-
-```bash
-git clone <url-do-repositorio>
-cd finance-flow
-```
-
-### 2. Instale as dependências
-
-```bash
-npm install
-```
-
-### 3. Inicie o ambiente de desenvolvimento
-
-```bash
+```powershell
+npm ci
 npm run dev
 ```
 
-## 🏗️ Build para Produção
+No primeiro acesso, crie um usuário local. Depois, cadastre uma conta financeira e categorias; use Transações para registrar receitas e despesas. O painel permite selecionar o mês de referência. Os dados são locais, sem integração bancária.
 
-### Build para Windows
+## Funcionalidades disponíveis no código
 
-```bash
+- Cadastro e edição de receitas e despesas, com conta, categoria e data.
+- Filtros de transações por período, tipo, categoria e conta.
+- Painel com ganhos, gastos e resultado do mês selecionado, além do saldo atual das contas.
+- Módulos herdados para relatórios, contas, cartões, metas, orçamentos e recorrências. Sua presença não significa que todos os fluxos tenham sido homologados.
+
+O resultado mensal usa a data da transação e equivale a receitas menos despesas. Não representa previsão nem distingue pagamentos pendentes e realizados. O saldo das contas e as transações recentes são informações atuais; o gráfico de evolução continua mostrando os últimos seis meses.
+
+## Desenvolvimento
+
+Electron + React + TypeScript, electron-vite, Material UI, Redux Toolkit, TypeORM e better-sqlite3. Consulte [diretrizes](docs/DIRETRIZES.md), [plano](docs/PLANO.md) e [decisão inicial](docs/decisions/001-base.md). Instruções para agentes em AGENTS.md.
+
+```powershell
+npm run typecheck
+npm test
+npm run test:sqlite
+npm run lint
+npm run build
 npm run build:win
 ```
 
-### Build para Linux
+O último comando gera o instalador em dist. Dependências nativas podem exigir ferramentas de compilação C++ para Windows quando não houver binário compatível. Não existe canal de publicação ou atualização configurado para o Contabily.
 
-```bash
-npm run build:linux
-```
+O menu **Ajuda → Manual do sistema** explica as funções e permite buscar assuntos. A barra superior integrada controla a janela. Após mudanças no processo main ou preload, encerre e reinicie o aplicativo para carregar os novos controles.
 
-### Build para macOS
+## Dados locais
 
-```bash
-npm run build:mac
-```
+Em desenvolvimento: database/finance.db dentro do projeto. No aplicativo instalado: database/finance.db no diretório userData do Electron correspondente ao Contabily. Bancos anteriores do FinanceFlow não são importados automaticamente. Não apague o banco para atualizar o esquema; use migrações. Para copiar o banco manualmente, encerre o aplicativo antes e mantenha juntos eventuais arquivos auxiliares do SQLite.
 
-## 📁 Estrutura do Projeto
+## Origem
 
-```
-finance-flow/
-├── src/
-│   ├── main/          # Processo principal do Electron
-│   ├── preload/       # Scripts de preload
-│   ├── renderer/      # Interface React (processo de renderização)
-│   └── shared/        # Código compartilhado
-├── out/               # Arquivos compilados
-├── dist/              # Executáveis gerados
-└── package.json
-```
+Base: https://github.com/fabrisiofilho/FinanceFlowSoftware
 
-## 📝 Licença
-
-Versão: 1.0.0
+Commit inicial: 40921deead2e3dd6b8a6a337505e9ac1e51006fc. Histórico Git e autoria original preservados. O remoto origin ainda aponta para a base; esta entrega não publica alterações nem cria repositório remoto. A base não contém um arquivo de licença identificado; não foi adicionada uma licença nova.

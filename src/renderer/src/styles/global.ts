@@ -1,6 +1,24 @@
 import { createGlobalStyle } from 'styled-components';
 
 export const GlobalStyle = createGlobalStyle`
+  .MuiChip-root { border-radius:6px; font-weight:600; }
+  .MuiGrid-root > .MuiGrid-root > .MuiPaper-root { height:100%; }
+  .MuiDateCalendar-root { height:auto !important; }
+  .MuiMonthCalendar-root { min-height:240px; }
+  .MuiPickersLayout-contentWrapper { min-height:0; }
+  :root { --app-height: calc(100dvh - 40px); }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
   * {
     margin: 0;
     padding: 0;
@@ -13,7 +31,7 @@ export const GlobalStyle = createGlobalStyle`
     width: 100%;
   }
 
-  body {
+  body { overflow:hidden;
     background-color: ${({ theme }) => theme.COLORS.background};
     color: ${({ theme }) => theme.COLORS.text};
     transition: background-color 0.2s ease, color 0.2s ease;

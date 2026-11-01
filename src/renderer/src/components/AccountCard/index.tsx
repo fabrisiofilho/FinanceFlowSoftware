@@ -1,12 +1,12 @@
 import { IconButton, Stack, Tooltip } from '@mui/material';
 import {
-  AccountBalance as CheckingIcon,
-  Savings as SavingsIcon,
-  CreditCard as CreditCardIcon,
-  AccountBalanceWallet as WalletIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  TrendingDown as TrendingDownIcon,
+  AccountBalanceOutlined as CheckingIcon,
+  SavingsOutlined as SavingsIcon,
+  CreditCardOutlined as CreditCardIcon,
+  AccountBalanceWalletOutlined as WalletIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  TrendingDownOutlined as TrendingDownIcon,
 } from '@mui/icons-material';
 import type {
   Account,

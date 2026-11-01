@@ -7,10 +7,14 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
   {
-    ignores: ['**/node_modules', '**/dist', '**/out'],
+    ignores: ['**/node_modules', '**/dist', '**/out', '.qa/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ['tests/**/*.mjs'],
+    rules: { '@typescript-eslint/explicit-function-return-type': 'off' },
+  },
 
   // Configuração específica para código Node (main e preload)
   {

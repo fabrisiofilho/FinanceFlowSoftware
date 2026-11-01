@@ -22,7 +22,7 @@ export function DrawerContent({
   return (
     <Container compacted={compacted}>
       <LogoContainer>
-        <LogoText compacted={compacted}>FinanceFlow</LogoText>
+        <LogoText compacted={compacted}>Contabily</LogoText>
 
         <DrawerArrowButton onClick={onChangeCompacted} />
       </LogoContainer>
@@ -30,13 +30,22 @@ export function DrawerContent({
       <Content>
         <Show.When isTrue={items.length > 0}>
           <DrawerCategoryList
-            list={items}
+            list={items.filter((item) => item.path !== '/panel/manual')}
             currentPath={`${pathname}${search}`}
             compacted={compacted}
             onChangeCompacted={onChangeCompacted}
           />
         </Show.When>
       </Content>
+
+      <div style={{ alignSelf: 'stretch', flexShrink: 0 }}>
+        <DrawerCategoryList
+          list={items.filter((item) => item.path === '/panel/manual')}
+          currentPath={pathname}
+          compacted={compacted}
+          onChangeCompacted={onChangeCompacted}
+        />
+      </div>
 
       <AppVersion compacted={compacted} />
     </Container>

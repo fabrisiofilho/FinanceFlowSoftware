@@ -2,7 +2,10 @@ import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { BankImportEntity } from '../entities/bank-import.entity';
 import { BankImportTransactionEntity } from '../entities/bank-import-transaction.entity';
-import { TransactionEntity, TransactionType } from '../entities/transaction.entity';
+import {
+  TransactionEntity,
+  TransactionType,
+} from '../entities/transaction.entity';
 import {
   BankImport,
   BankImportTransaction,
@@ -43,8 +46,12 @@ export class BankImportService {
       filename: entity.filename,
       fileType: entity.fileType,
       importDate: entity.importDate,
-      startDate: entity.startDate ? parseDateSafe(entity.startDate) ?? undefined : undefined,
-      endDate: entity.endDate ? parseDateSafe(entity.endDate) ?? undefined : undefined,
+      startDate: entity.startDate
+        ? (parseDateSafe(entity.startDate) ?? undefined)
+        : undefined,
+      endDate: entity.endDate
+        ? (parseDateSafe(entity.endDate) ?? undefined)
+        : undefined,
       totalTransactions: entity.totalTransactions,
       importedCount: entity.importedCount,
       duplicateCount: entity.duplicateCount,
@@ -326,7 +333,7 @@ export class BankImportService {
       description: string;
       amount: number;
       date: Date;
-      raw: any;
+      raw: unknown;
     }[]
   > {
     const content = file.buffer.toString('utf-8');
@@ -406,7 +413,7 @@ export class BankImportService {
     description: string;
     amount: number;
     date: Date;
-    raw: any;
+    raw: unknown;
   }[] {
     const lines = content.split('\n').filter((l) => l.trim());
     const transactions: {
@@ -414,7 +421,7 @@ export class BankImportService {
       description: string;
       amount: number;
       date: Date;
-      raw: any;
+      raw: unknown;
     }[] = [];
 
     // Skip header
@@ -531,9 +538,17 @@ export class BankImportService {
   > {
     // Find transactions within 3 days and similar amount
     const txDate = parseDateSafe(importTx.transactionDate) ?? new Date();
-    const startDate = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+    const startDate = new Date(
+      txDate.getFullYear(),
+      txDate.getMonth(),
+      txDate.getDate(),
+    );
     startDate.setDate(startDate.getDate() - 3);
-    const endDate = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+    const endDate = new Date(
+      txDate.getFullYear(),
+      txDate.getMonth(),
+      txDate.getDate(),
+    );
     endDate.setDate(endDate.getDate() + 3);
 
     const candidates = await this.transactionRepository
@@ -554,7 +569,8 @@ export class BankImportService {
       .map((t) => {
         // Calculate confidence based on date proximity and description similarity
         const tDate = parseDateSafe(t.transactionDate) ?? new Date();
-        const importTxDate = parseDateSafe(importTx.transactionDate) ?? new Date();
+        const importTxDate =
+          parseDateSafe(importTx.transactionDate) ?? new Date();
         const dateDiff = Math.abs(tDate.getTime() - importTxDate.getTime());
         const dateConfidence = 1 - dateDiff / (3 * 24 * 60 * 60 * 1000);
 

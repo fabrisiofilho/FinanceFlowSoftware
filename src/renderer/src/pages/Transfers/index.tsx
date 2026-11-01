@@ -1,3 +1,10 @@
+import { ContentLoading } from '@renderer/components/ContentLoading';
+import { PageHeader } from '@renderer/components/PageHeader';
+import { DatePicker } from '@renderer/components/Form/DatePicker';
+import { format } from 'date-fns';
+import { AppAlert as Alert } from '@renderer/components/Feedback';
+import { Input as TextField } from '@renderer/components/Form/Input';
+
 import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
@@ -11,15 +18,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Alert,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Refresh as RefreshIcon,
-  Delete as DeleteIcon,
-  ArrowForward as ArrowIcon,
-  SwapHoriz as SwapIcon,
+  AddOutlined as AddIcon,
+  RefreshOutlined as RefreshIcon,
+  DeleteOutlined as DeleteIcon,
+  ArrowForwardOutlined as ArrowIcon,
 } from '@mui/icons-material';
 import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
@@ -27,7 +31,6 @@ import { formatCurrency } from '@renderer/utils/currency';
 import { formatDateToShow, parseDateSafe } from '@renderer/utils/date';
 import {
   TransfersContainer,
-  PageHeaderContainer,
   TransferCard,
   AccountBadge,
   ArrowContainer,
@@ -100,198 +103,191 @@ export function TransfersPage() {
     loadAccounts();
   };
 
-  if (loading && transfers.length === 0) {
-    return (
-      <TransfersContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <CircularProgress />
-        </Stack>
-      </TransfersContainer>
-    );
-  }
-
   return (
     <TransfersContainer>
-      <PageHeaderContainer>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            <SwapIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-            Transferências
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Movimente dinheiro entre suas contas
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Atualizar">
-            <IconButton onClick={loadTransfers}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setIsFormOpen(true)}
-            disabled={accounts.length < 2}
-          >
-            Nova Transferência
-          </Button>
-        </Stack>
-      </PageHeaderContainer>
-
-      {accounts.length < 2 && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Você precisa ter pelo menos 2 contas cadastradas para fazer
-          transferências.
-        </Alert>
-      )}
-
-      {transfers.length === 0 ? (
-        <Alert severity="info">Nenhuma transferência realizada ainda.</Alert>
-      ) : (
-        <Stack spacing={1}>
-          {transfers.map((transfer) => (
-            <TransferCard key={transfer.id}>
-              <AccountBadge>
-                <Typography variant="caption" color="text.secondary">
-                  De
-                </Typography>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {transfer.fromAccountName}
-                </Typography>
-              </AccountBadge>
-              <ArrowContainer>
-                <ArrowIcon />
-              </ArrowContainer>
-              <AccountBadge>
-                <Typography variant="caption" color="text.secondary">
-                  Para
-                </Typography>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {transfer.toAccountName}
-                </Typography>
-              </AccountBadge>
-              <Box flex={1}>
-                <Typography variant="h6" fontWeight={700} color="primary.main">
-                  {formatCurrency(transfer.amount)}
-                </Typography>
-                {transfer.description && (
-                  <Typography variant="body2" color="text.secondary">
-                    {transfer.description}
-                  </Typography>
-                )}
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                {formatDateToShow(transfer.transferDate)}
-              </Typography>
-              <Tooltip title="Excluir">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleDelete(transfer.id)}
-                >
-                  <DeleteIcon />
+      <PageHeader
+        title="Transferências"
+        description={<>Movimente dinheiro entre suas contas</>}
+        actions={
+          <>
+            <Stack direction="row" spacing={1}>
+              <Tooltip title="Atualizar">
+                <IconButton onClick={loadTransfers}>
+                  <RefreshIcon />
                 </IconButton>
               </Tooltip>
-            </TransferCard>
-          ))}
-        </Stack>
-      )}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setIsFormOpen(true)}
+                disabled={accounts.length < 2}
+              >
+                Nova Transferência
+              </Button>
+            </Stack>
+          </>
+        }
+      />
+      <ContentLoading loading={loading} initial="table">
+        {accounts.length < 2 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Você precisa ter pelo menos 2 contas cadastradas para fazer
+            transferências.
+          </Alert>
+        )}
 
-      <Dialog
-        open={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Nova Transferência</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <SelectInput
-              label="Conta de Origem"
-              value={formData.fromAccountId}
-              items={accounts
-                .filter((a) => a.id !== formData.toAccountId)
-                .map((a) => ({
-                  value: a.id,
-                  label: `${a.name} (${formatCurrency(a.balance)})`,
-                }))}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  fromAccountId: e.target.value as number,
-                }))
-              }
-              fullWidth
-            />
-            <SelectInput
-              label="Conta de Destino"
-              value={formData.toAccountId}
-              items={accounts
-                .filter((a) => a.id !== formData.fromAccountId)
-                .map((a) => ({
-                  value: a.id,
-                  label: `${a.name} (${formatCurrency(a.balance)})`,
-                }))}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  toAccountId: e.target.value as number,
-                }))
-              }
-              fullWidth
-            />
-            <CurrencyInput
-              label="Valor"
-              fullWidth
-              value={formData.amount}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, amount: value }))
-              }
-            />
-            <TextField
-              label="Descrição (opcional)"
-              fullWidth
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-            />
-            <TextField
-              label="Data"
-              type="date"
-              fullWidth
-              value={formData.transferDate}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  transferDate: e.target.value,
-                }))
-              }
-              InputLabelProps={{ shrink: true }}
-            />
+        {transfers.length === 0 ? (
+          <Alert severity="info">Nenhuma transferência realizada ainda.</Alert>
+        ) : (
+          <Stack spacing={1}>
+            {transfers.map((transfer) => (
+              <TransferCard key={transfer.id}>
+                <AccountBadge>
+                  <Typography variant="caption" color="text.secondary">
+                    De
+                  </Typography>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    {transfer.fromAccountName}
+                  </Typography>
+                </AccountBadge>
+                <ArrowContainer>
+                  <ArrowIcon />
+                </ArrowContainer>
+                <AccountBadge>
+                  <Typography variant="caption" color="text.secondary">
+                    Para
+                  </Typography>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    {transfer.toAccountName}
+                  </Typography>
+                </AccountBadge>
+                <Box flex={1}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={700}
+                    color="primary.main"
+                  >
+                    {formatCurrency(transfer.amount)}
+                  </Typography>
+                  {transfer.description && (
+                    <Typography variant="body2" color="text.secondary">
+                      {transfer.description}
+                    </Typography>
+                  )}
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  {formatDateToShow(transfer.transferDate)}
+                </Typography>
+                <Tooltip title="Excluir">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleDelete(transfer.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </TransferCard>
+            ))}
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={
-              formLoading ||
-              !formData.fromAccountId ||
-              !formData.toAccountId ||
-              !formData.amount ||
-              formData.fromAccountId === formData.toAccountId
-            }
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Transferir'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        )}
+
+        <Dialog
+          open={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Nova Transferência</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} mt={1}>
+              <SelectInput
+                label="Conta de Origem"
+                value={formData.fromAccountId}
+                items={accounts
+                  .filter((a) => a.id !== formData.toAccountId)
+                  .map((a) => ({
+                    value: a.id,
+                    label: `${a.name} (${formatCurrency(a.balance)})`,
+                  }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    fromAccountId: e.target.value as number,
+                  }))
+                }
+                fullWidth
+              />
+              <SelectInput
+                label="Conta de Destino"
+                value={formData.toAccountId}
+                items={accounts
+                  .filter((a) => a.id !== formData.fromAccountId)
+                  .map((a) => ({
+                    value: a.id,
+                    label: `${a.name} (${formatCurrency(a.balance)})`,
+                  }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    toAccountId: e.target.value as number,
+                  }))
+                }
+                fullWidth
+              />
+              <CurrencyInput
+                label="Valor"
+                fullWidth
+                value={formData.amount}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, amount: value }))
+                }
+              />
+              <TextField
+                label="Descrição (opcional)"
+                fullWidth
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+              />
+              <DatePicker
+                label="Data"
+                fullWidth
+                value={formData.transferDate}
+                onChange={(date) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    transferDate:
+                      date && Number.isFinite(date.getTime())
+                        ? format(date, 'yyyy-MM-dd')
+                        : '',
+                  }))
+                }
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsFormOpen(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={
+                formLoading ||
+                !formData.fromAccountId ||
+                !formData.toAccountId ||
+                !formData.amount ||
+                formData.fromAccountId === formData.toAccountId
+              }
+            >
+              {formLoading ? <CircularProgress size={20} /> : 'Transferir'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </ContentLoading>
     </TransfersContainer>
   );
 }

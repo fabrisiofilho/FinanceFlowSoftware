@@ -15,7 +15,6 @@ import {
 import { repositoryCache } from '../repositories/repository-cache';
 import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 export class CreditCardService {
-  constructor() {}
   private get invoiceRepository() {
     return repositoryCache.creditCardInvoiceRepository;
   }
@@ -76,7 +75,9 @@ export class CreditCardService {
         paymentMethod: t.paymentMethod,
         expenseType: t.expenseType,
         transactionDate: parseDateSafe(t.transactionDate) ?? new Date(),
-        dueDate: t.dueDate ? parseDateSafe(t.dueDate) ?? undefined : undefined,
+        dueDate: t.dueDate
+          ? (parseDateSafe(t.dueDate) ?? undefined)
+          : undefined,
         installmentNumber: t.installmentNumber,
         totalInstallments: t.totalInstallments,
         installmentGroupId: t.installmentGroupId,
@@ -98,7 +99,9 @@ export class CreditCardService {
       totalAmount: Number(entity.totalAmount),
       dueDate: parseDateSafe(entity.dueDate) ?? new Date(),
       status: entity.status as InvoiceStatus,
-      paidAt: entity.paidAt ? parseDateSafe(entity.paidAt) ?? undefined : undefined,
+      paidAt: entity.paidAt
+        ? (parseDateSafe(entity.paidAt) ?? undefined)
+        : undefined,
       paymentAccountId: entity.paymentAccountId ?? undefined,
       paymentAccountName: entity.paymentAccount?.name,
       transactions,

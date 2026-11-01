@@ -4,8 +4,10 @@ import {
   ReportFilters,
   IncomeVsExpense,
   ExportResult,
+  ReportData,
 } from '../types/report.types';
 export interface IReportController {
+  generateReport(filters: ReportFilters): Promise<ApiResponse<ReportData>>;
   generatePDF(filters: ReportFilters): Promise<ApiResponse<ExportResult>>;
   generateCSV(filters: ReportFilters): Promise<ApiResponse<ExportResult>>;
   getExpensesByCategory(

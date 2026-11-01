@@ -9,7 +9,6 @@ import {
 } from '@shared/interfaces/types/alert.types';
 import { repositoryCache } from '../repositories/repository-cache';
 export class AlertService {
-  constructor() {}
   private get alertRepository() {
     return repositoryCache.alertRepository;
   }

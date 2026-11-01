@@ -1,3 +1,4 @@
+import { InvestmentController } from '../investment-controller';
 import { logger } from '@main/infrastructure/log/logger';
 import { AutoUpdaterController } from '../auto-updater-controller';
 import { FinanceAuthController } from '../finance-auth-controller';
@@ -21,6 +22,7 @@ import { CurrencyController } from '../currency-controller';
 import { AttachmentController } from '../attachment-controller';
 
 export function loadIpcControllers() {
+  new InvestmentController();
   logger.info('Loading IPC controllers...');
 
   logger.info('Loading AutoUpdaterController...');

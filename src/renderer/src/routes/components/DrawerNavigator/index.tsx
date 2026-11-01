@@ -1,3 +1,4 @@
+import { RouteTransition } from '@renderer/components/PageLayout/RouteTransition';
 import { type IDrawerItem } from '@renderer/types/drawer/drawerItem';
 import { ResponsiveShow } from '@renderer/components/ResponsiveShow';
 import { DrawerDesktop } from './Drawer/DrawerDesktop';
@@ -32,7 +33,9 @@ export function DrawerNavigator({
 
       <MainContainer>
         <Header />
-        <MainContent id={ROUTES_MAIN_SECTION_ID}>{children}</MainContent>
+        <MainContent id={ROUTES_MAIN_SECTION_ID}>
+          <RouteTransition>{children}</RouteTransition>
+        </MainContent>
       </MainContainer>
     </Container>
   );

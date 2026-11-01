@@ -10,8 +10,11 @@ import {
   TransferSummary,
 } from '@shared/interfaces/types/transfer.types';
 import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
+import { validateTransferValues } from '../../domain/financial-validation';
+import { TransferCategoryService } from './transfer-category-service';
 
 export class TransferService {
+  private readonly categoryService = new TransferCategoryService();
   private get transferRepository() {
     return getDataSource().getRepository(TransferEntity);
   }
@@ -27,7 +30,7 @@ export class TransferService {
   private mapEntityToTransfer(entity: TransferEntity): Transfer {
     const fromAccount = entity.fromAccount as AccountEntity | undefined;
     const toAccount = entity.toAccount as AccountEntity | undefined;
-    
+
     return {
       id: entity.id,
       userId: entity.userId,
@@ -52,6 +55,13 @@ export class TransferService {
   }
 
   async create(userId: number, data: CreateTransferInput): Promise<Transfer> {
+    const convertedAmount = validateTransferValues(
+      data.amount,
+      data.exchangeRate ?? 1,
+    );
+    const transferDate = parseDateSafe(data.transferDate);
+    if (!transferDate || !Number.isFinite(transferDate.getTime()))
+      throw new Error('Data de transferência inválida');
     logger.info('Criando transferência para usuário:', userId);
 
     if (data.fromAccountId === data.toAccountId) {
@@ -75,31 +85,38 @@ export class TransferService {
     await queryRunner.startTransaction();
 
     try {
+      const expenseCategoryId = await this.categoryService.getOrCreate(
+        queryRunner.manager,
+        userId,
+        'expense',
+      );
+      const incomeCategoryId = await this.categoryService.getOrCreate(
+        queryRunner.manager,
+        userId,
+        'income',
+      );
       // Create expense transaction (from account)
       const fromTransaction = this.transactionRepository.create({
         description: data.description || `Transferência para ${toAccount.name}`,
         amount: data.amount,
         type: 'expense',
         paymentMethod: 'pix',
-        transactionDate: parseDateSafe(data.transferDate) ?? new Date(),
+        transactionDate: transferDate,
         accountId: data.fromAccountId,
-        categoryId: 1, // Transfer category - should be created
+        categoryId: expenseCategoryId,
       });
       const savedFromTx = await queryRunner.manager.save(fromTransaction);
 
       // Create income transaction (to account)
-      const convertedAmount = data.exchangeRate
-        ? data.amount * data.exchangeRate
-        : data.amount;
 
       const toTransaction = this.transactionRepository.create({
         description: data.description || `Transferência de ${fromAccount.name}`,
         amount: convertedAmount,
         type: 'income',
         paymentMethod: 'pix',
-        transactionDate: parseDateSafe(data.transferDate) ?? new Date(),
+        transactionDate: transferDate,
         accountId: data.toAccountId,
-        categoryId: 1, // Transfer category
+        categoryId: incomeCategoryId,
       });
       const savedToTx = await queryRunner.manager.save(toTransaction);
 
@@ -112,7 +129,7 @@ export class TransferService {
         exchangeRate: data.exchangeRate ?? 1,
         convertedAmount: data.exchangeRate ? convertedAmount : undefined,
         description: data.description,
-        transferDate: parseDateSafe(data.transferDate) ?? new Date(),
+        transferDate,
         fromTransactionId: savedFromTx.id,
         toTransactionId: savedToTx.id,
       });

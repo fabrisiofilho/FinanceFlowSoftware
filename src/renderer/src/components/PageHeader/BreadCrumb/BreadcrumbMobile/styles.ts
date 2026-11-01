@@ -1,5 +1,5 @@
-import CircleIcon from '@mui/icons-material/Circle';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import CircleIcon from '@mui/icons-material/CircleOutlined';
+import MoreHorizIcon from '@mui/icons-material/MoreHorizOutlined';
 import { IconButton, Menu, styled } from '@mui/material';
 
 export const SeparatorIcon = styled(CircleIcon)(({ theme }) => ({

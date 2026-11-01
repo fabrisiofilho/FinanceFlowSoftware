@@ -1,3 +1,5 @@
+import { ExpandableCard } from '@renderer/components/ExpandableCard';
+import { PageContainer } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
 import { Box, Stack } from '@mui/material';
 type AccountTypeVariant = 'checking' | 'savings' | 'credit_card' | 'wallet';
@@ -26,26 +28,7 @@ const getAccountTypeColors = (theme: any, type: AccountTypeVariant) => {
   };
   return colors[type];
 };
-export const AccountsContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const PageHeaderContainer = styled(Stack).attrs({
-  direction: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-})`
-  margin-bottom: 1.5rem;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-`;
+export const AccountsContainer = PageContainer;
 export const AccountsGrid = styled(Box)`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -55,7 +38,9 @@ export const AccountsGrid = styled(Box)`
     gap: 1rem;
   }
 `;
-export const AccountCard = styled(Box)<{ $type: AccountTypeVariant }>`
+export const AccountCard = styled(ExpandableCard)<{
+  $type: AccountTypeVariant;
+}>`
   display: flex;
   flex-direction: column;
   padding: 1.25rem;
@@ -69,7 +54,7 @@ export const AccountCard = styled(Box)<{ $type: AccountTypeVariant }>`
     transform 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
-    transform: translateY(-2px);
+    filter: brightness(1.04);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
 `;
@@ -86,7 +71,7 @@ export const AccountTypeIcon = styled(Box)<{ $type: AccountTypeVariant }>`
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme, $type }) =>
     getAccountTypeColors(theme, $type).bg};
   svg {
@@ -197,7 +182,7 @@ export const FormRow = styled(Stack).attrs({
     flex-direction: column;
   }
 `;
-export const TotalBalanceCard = styled(Box)`
+export const TotalBalanceCard = styled(ExpandableCard)`
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -214,7 +199,7 @@ export const TotalBalanceIcon = styled(Box)`
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: rgba(255, 255, 255, 0.2);
   svg {
     font-size: 1.5rem;

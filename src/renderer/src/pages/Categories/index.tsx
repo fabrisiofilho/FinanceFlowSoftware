@@ -1,13 +1,16 @@
+import { ContentLoading } from '@renderer/components/ContentLoading';
+import { PageHeader } from '@renderer/components/PageHeader';
+import { AppAlert } from '@renderer/components/Feedback';
+import { ExpandableCard as Paper } from '@renderer/components/ExpandableCard';
+import { Input as TextField } from '@renderer/components/Form/Input';
+
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Box,
   Typography,
   Button,
   IconButton,
   Tooltip,
-  CircularProgress,
   Stack,
-  TextField,
   MenuItem,
   Table,
   TableBody,
@@ -16,16 +19,14 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Paper,
   Chip,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Category as CategoryIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
+  AddOutlined as AddIcon,
+  CategoryOutlined as CategoryIcon,
+  RefreshOutlined as RefreshIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
 } from '@mui/icons-material';
 import * as MuiIcons from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -33,7 +34,6 @@ import { Modal } from '@renderer/components/Modal';
 import { IconPicker } from '@renderer/components/IconPicker';
 import {
   CategoriesContainer,
-  PageHeaderContainer,
   EmptyStateContainer,
   FormContainer,
 } from './styles';
@@ -212,270 +212,252 @@ export function CategoriesPage() {
     page * rowsPerPage + rowsPerPage,
   );
 
-  if (loading && categories.length === 0) {
-    return (
-      <CategoriesContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <CircularProgress size={48} />
-          <Typography variant="body1" color="text.secondary" mt={2}>
-            Carregando categorias...
-          </Typography>
-        </Stack>
-      </CategoriesContainer>
-    );
-  }
-
-  if (error && categories.length === 0) {
-    return (
-      <CategoriesContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <WarningIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
-          <Typography variant="h6" color="error">
-            {error}
-          </Typography>
-          <IconButton onClick={loadCategories} sx={{ mt: 2 }}>
-            <RefreshIcon />
-          </IconButton>
-        </Stack>
-      </CategoriesContainer>
-    );
-  }
-
   return (
     <CategoriesContainer>
-      <PageHeaderContainer>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            Categorias
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gerencie as categorias de receitas e despesas
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Atualizar">
-            <IconButton onClick={loadCategories} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleNewCategory}
-            sx={{ borderRadius: '0.5rem' }}
-          >
-            Nova Categoria
-          </Button>
-        </Stack>
-      </PageHeaderContainer>
+      <PageHeader
+        title="Categorias"
+        description={<>Gerencie as categorias de receitas e despesas</>}
+        actions={
+          <>
+            <Stack direction="row" spacing={1}>
+              <Tooltip title="Atualizar">
+                <IconButton onClick={loadCategories} size="small">
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleNewCategory}
+                sx={{ borderRadius: '0.5rem' }}
+              >
+                Nova Categoria
+              </Button>
+            </Stack>
+          </>
+        }
+      />
+      <ContentLoading loading={loading} initial="cards">
+        {error && (
+          <AppAlert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </AppAlert>
+        )}
 
-      {categories.length > 0 ? (
-        <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '1rem' }}>
-          <TableContainer>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Padrão</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedCategories.map((category) => {
-                  const IconComponent = category.icon
-                    ? (MuiIcons as Record<string, React.ComponentType>)[
-                        category.icon
-                      ]
-                    : CategoryIcon;
-                  return (
-                    <TableRow key={category.id} hover>
-                      <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          {IconComponent && (
-                            <IconComponent fontSize="small" color="action" />
-                          )}
-                          <Typography>{category.name}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={
-                            category.type === 'income' ? 'Receita' : 'Despesa'
-                          }
-                          color={
-                            category.type === 'income' ? 'success' : 'error'
-                          }
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {category.isDefault ? (
+        {categories.length > 0 ? (
+          <Paper
+            sx={{ width: '100%', overflow: 'hidden', borderRadius: '1rem' }}
+          >
+            <TableContainer>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Nome</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell>Padrão</TableCell>
+                    <TableCell align="right">Ações</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedCategories.map((category) => {
+                    const IconComponent = category.icon
+                      ? (MuiIcons as Record<string, React.ComponentType>)[
+                          category.icon
+                        ]
+                      : CategoryIcon;
+                    return (
+                      <TableRow key={category.id} hover>
+                        <TableCell>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                          >
+                            {IconComponent && (
+                              <IconComponent fontSize="small" color="action" />
+                            )}
+                            <Typography>{category.name}</Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
                           <Chip
-                            label="Sim"
+                            label={
+                              category.type === 'income' ? 'Receita' : 'Despesa'
+                            }
+                            color={
+                              category.type === 'income' ? 'success' : 'error'
+                            }
                             size="small"
-                            color="info"
                             variant="outlined"
                           />
-                        ) : (
-                          <Chip label="Não" size="small" variant="outlined" />
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="Editar">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditCategory(category)}
-                            disabled={category.isDefault}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Excluir">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteCategory(category)}
-                            disabled={category.isDefault}
-                            color="error"
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={categories.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Linhas por página:"
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-            }
-          />
-        </Paper>
-      ) : (
-        <EmptyStateContainer>
-          <CategoryIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Nenhuma categoria cadastrada
+                        </TableCell>
+                        <TableCell>
+                          {category.isDefault ? (
+                            <Chip
+                              label="Sim"
+                              size="small"
+                              color="info"
+                              variant="outlined"
+                            />
+                          ) : (
+                            <Chip label="Não" size="small" variant="outlined" />
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Tooltip title="Editar">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditCategory(category)}
+                              disabled={category.isDefault}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Excluir">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteCategory(category)}
+                              disabled={category.isDefault}
+                              color="error"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={categories.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage="Linhas por página:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+              }
+            />
+          </Paper>
+        ) : (
+          <EmptyStateContainer>
+            <CategoryIcon
+              sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }}
+            />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Nenhuma categoria cadastrada
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Clique em "Nova Categoria" para adicionar sua primeira categoria
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleNewCategory}
+            >
+              Nova Categoria
+            </Button>
+          </EmptyStateContainer>
+        )}
+
+        <Modal
+          variant="form"
+          open={isFormOpen}
+          title={selectedCategory ? 'Editar Categoria' : 'Nova Categoria'}
+          handleClose={handleCloseForm}
+          handleConfirm={handleSubmit(handleSaveCategory)}
+          confirmLabel="Salvar"
+          cancelLabel="Cancelar"
+          loading={formLoading}
+          setMaxWidth="400px"
+        >
+          <FormContainer>
+            <Controller
+              name="name"
+              control={control}
+              rules={{ required: 'Nome é obrigatório' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Nome da Categoria"
+                  placeholder="Ex: Alimentação, Salário"
+                  fullWidth
+                  required
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="type"
+              control={control}
+              rules={{ required: 'Tipo é obrigatório' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Tipo"
+                  fullWidth
+                  required
+                  disabled={!!selectedCategory}
+                  error={!!errors.type}
+                  helperText={
+                    errors.type?.message ||
+                    (selectedCategory ? 'O tipo não pode ser alterado' : '')
+                  }
+                >
+                  {categoryTypeOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+
+            <Controller
+              name="icon"
+              control={control}
+              render={({ field }) => (
+                <IconPicker
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  label="Ícone (opcional)"
+                />
+              )}
+            />
+          </FormContainer>
+        </Modal>
+
+        <Modal
+          variant="danger"
+          open={isDeleteModalOpen}
+          title="Excluir Categoria"
+          handleClose={() => {
+            setIsDeleteModalOpen(false);
+            setCategoryToDelete(null);
+          }}
+          handleConfirm={handleConfirmDelete}
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          loading={deleteLoading}
+        >
+          <Typography>
+            Tem certeza que deseja excluir a categoria{' '}
+            <strong>{categoryToDelete?.name}</strong>?
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            Clique em "Nova Categoria" para adicionar sua primeira categoria
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Esta ação não pode ser desfeita. Transações vinculadas a esta
+            categoria podem ser afetadas.
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleNewCategory}
-          >
-            Nova Categoria
-          </Button>
-        </EmptyStateContainer>
-      )}
-
-      {/* Modal de Formulário */}
-      <Modal
-        variant="form"
-        open={isFormOpen}
-        title={selectedCategory ? 'Editar Categoria' : 'Nova Categoria'}
-        handleClose={handleCloseForm}
-        handleConfirm={handleSubmit(handleSaveCategory)}
-        confirmLabel="Salvar"
-        cancelLabel="Cancelar"
-        loading={formLoading}
-        setMaxWidth="400px"
-      >
-        <FormContainer>
-          <Controller
-            name="name"
-            control={control}
-            rules={{ required: 'Nome é obrigatório' }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Nome da Categoria"
-                placeholder="Ex: Alimentação, Salário"
-                fullWidth
-                required
-                error={!!errors.name}
-                helperText={errors.name?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="type"
-            control={control}
-            rules={{ required: 'Tipo é obrigatório' }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                select
-                label="Tipo"
-                fullWidth
-                required
-                disabled={!!selectedCategory}
-                error={!!errors.type}
-                helperText={
-                  errors.type?.message ||
-                  (selectedCategory ? 'O tipo não pode ser alterado' : '')
-                }
-              >
-                {categoryTypeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-
-          <Controller
-            name="icon"
-            control={control}
-            render={({ field }) => (
-              <IconPicker
-                value={field.value || ''}
-                onChange={field.onChange}
-                label="Ícone (opcional)"
-              />
-            )}
-          />
-        </FormContainer>
-      </Modal>
-
-      {/* Modal de Exclusão */}
-      <Modal
-        variant="danger"
-        open={isDeleteModalOpen}
-        title="Excluir Categoria"
-        handleClose={() => {
-          setIsDeleteModalOpen(false);
-          setCategoryToDelete(null);
-        }}
-        handleConfirm={handleConfirmDelete}
-        confirmLabel="Excluir"
-        cancelLabel="Cancelar"
-        loading={deleteLoading}
-      >
-        <Typography>
-          Tem certeza que deseja excluir a categoria{' '}
-          <strong>{categoryToDelete?.name}</strong>?
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Esta ação não pode ser desfeita. Transações vinculadas a esta
-          categoria podem ser afetadas.
-        </Typography>
-      </Modal>
+        </Modal>
+      </ContentLoading>
     </CategoriesContainer>
   );
 }

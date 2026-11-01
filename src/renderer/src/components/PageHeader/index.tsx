@@ -1,34 +1,59 @@
-import type { IBreadCrumbs } from '@renderer/types/breadCrumbs';
-import { muiResponsiveValues } from '@renderer/utils/responsive';
+import type { ReactNode } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
-import { type ReactNode } from 'react';
+import { PageHeading } from '../PageLayout';
+import type { IBreadCrumbs } from '@renderer/types/breadCrumbs';
 import { Breadcrumb } from './BreadCrumb';
-
 type Props = {
   title: string;
-  breadcrumbs: IBreadCrumbs;
+  description?: ReactNode;
+  actions?: ReactNode;
   rightContent?: ReactNode;
+  breadcrumbs?: IBreadCrumbs;
 };
-
-export function PageHeader({ title, breadcrumbs, rightContent }: Props) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+  rightContent,
+  breadcrumbs,
+}: Props) {
   return (
-    <Stack
-      direction="row"
-      justifyContent="space-between"
-      alignItems={muiResponsiveValues('flex-start', 'flex-start', 'center')}
-      pb="2.5rem"
-    >
-      <Stack mt={muiResponsiveValues('0.1rem', '0.1rem', 0)}>
-        <Stack direction="row" alignItems="center">
-          <Typography variant="h4" mr="0.5rem">
-            {title}
+    <PageHeading data-page-header>
+      <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+        <Typography
+          component="h1"
+          variant="h4"
+          sx={{
+            fontSize: 26,
+            fontWeight: 650,
+            letterSpacing: '-.025em',
+            lineHeight: 1.3,
+          }}
+        >
+          {title}
+        </Typography>
+        {description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ lineHeight: 1.6, overflow: 'visible' }}
+          >
+            {description}
           </Typography>
-        </Stack>
-
-        <Breadcrumb breadcrumbs={breadcrumbs} />
+        )}
+        {breadcrumbs && <Breadcrumb breadcrumbs={breadcrumbs} />}
       </Stack>
-
-      <Box>{rightContent}</Box>
-    </Stack>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          flexWrap: 'wrap',
+          minWidth: 0,
+        }}
+      >
+        {actions ?? rightContent}
+      </Box>
+    </PageHeading>
   );
 }

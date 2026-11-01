@@ -8,7 +8,6 @@ import {
   configureLogger,
   LogLevel,
 } from '@main/infrastructure/log/logger';
-import { AutoUpdaterService } from '../auto-updater/auto-updater-service';
 
 export class AppInitializer {
   private mainWindow: BrowserWindow | null = null;
@@ -44,13 +43,6 @@ export class AppInitializer {
       loadIpcControllers();
 
       this.mainWindow = createMainWindow();
-
-      const autoUpdater = AutoUpdaterService.getInstance();
-      autoUpdater.setMainWindow(this.mainWindow);
-
-      if (isProduction) {
-        autoUpdater.startPeriodicCheck(30);
-      }
 
       logger.success('Application initialized successfully');
 

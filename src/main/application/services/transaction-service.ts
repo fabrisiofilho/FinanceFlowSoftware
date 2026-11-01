@@ -1,3 +1,4 @@
+import { assertPositiveAmount } from '../../domain/financial-validation';
 import {
   TransactionRepository,
   TransactionFilters as RepoFilters,
@@ -83,7 +84,9 @@ export class TransactionService {
       paymentMethod: entity.paymentMethod as Transaction['paymentMethod'],
       expenseType: entity.expenseType as Transaction['expenseType'],
       transactionDate: parseDateSafe(entity.transactionDate) ?? new Date(),
-      dueDate: entity.dueDate ? parseDateSafe(entity.dueDate) ?? undefined : undefined,
+      dueDate: entity.dueDate
+        ? (parseDateSafe(entity.dueDate) ?? undefined)
+        : undefined,
       installmentNumber: entity.installmentNumber ?? undefined,
       totalInstallments: entity.totalInstallments ?? undefined,
       installmentGroupId: entity.installmentGroupId ?? undefined,
@@ -102,9 +105,7 @@ export class TransactionService {
     if (data.amount === undefined || data.amount === null) {
       throw new Error('Valor é obrigatório');
     }
-    if (data.amount <= 0) {
-      throw new Error('Valor deve ser maior que zero');
-    }
+    assertPositiveAmount(data.amount);
     if (!data.type) {
       throw new Error('Tipo da transação é obrigatório');
     }
@@ -147,9 +148,7 @@ export class TransactionService {
     ) {
       throw new Error('Descrição não pode ser vazia');
     }
-    if (data.amount !== undefined && data.amount <= 0) {
-      throw new Error('Valor deve ser maior que zero');
-    }
+    if (data.amount !== undefined) assertPositiveAmount(data.amount);
   }
   private async validateAccount(
     userId: number,
@@ -169,7 +168,7 @@ export class TransactionService {
     if (!category) {
       throw new Error('Categoria não encontrada');
     }
-    
+
     // Validar que o tipo da categoria é compatível com o tipo da transação
     if (transactionType && category.type !== transactionType) {
       throw new Error(
@@ -218,7 +217,9 @@ export class TransactionService {
       paymentMethod: data.paymentMethod,
       expenseType: data.expenseType,
       transactionDate: parseDateSafe(data.transactionDate) ?? new Date(),
-      dueDate: data.dueDate ? parseDateSafe(data.dueDate) ?? undefined : undefined,
+      dueDate: data.dueDate
+        ? (parseDateSafe(data.dueDate) ?? undefined)
+        : undefined,
       recurrence: data.recurrence ?? 'once',
       accountId: data.accountId,
       categoryId: data.categoryId,
@@ -239,12 +240,15 @@ export class TransactionService {
   ): Promise<Transaction> {
     const totalInstallments = data.totalInstallments!;
     const installmentGroupId = crypto.randomUUID();
-    
+
     // Calcular valor base das parcelas e ajuste para última parcela
-    const baseInstallmentAmount = Math.floor((data.amount / totalInstallments) * 100) / 100;
+    const baseInstallmentAmount =
+      Math.floor((data.amount / totalInstallments) * 100) / 100;
     const totalBaseAmount = baseInstallmentAmount * totalInstallments;
-    const lastInstallmentAdjustment = Number((data.amount - totalBaseAmount).toFixed(2));
-    
+    const lastInstallmentAdjustment = Number(
+      (data.amount - totalBaseAmount).toFixed(2),
+    );
+
     logger.info(
       `Criando ${totalInstallments} parcelas com valor base ${baseInstallmentAmount} cada (ajuste última: ${lastInstallmentAdjustment})`,
     );
@@ -257,12 +261,13 @@ export class TransactionService {
       const dueDate = data.dueDate
         ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i - 1)
         : undefined;
-      
+
       // Última parcela recebe o ajuste de arredondamento
-      const installmentAmount = i === totalInstallments 
-        ? baseInstallmentAmount + lastInstallmentAdjustment 
-        : baseInstallmentAmount;
-      
+      const installmentAmount =
+        i === totalInstallments
+          ? baseInstallmentAmount + lastInstallmentAdjustment
+          : baseInstallmentAmount;
+
       const transactionData: Partial<TransactionEntity> = {
         description: `${data.description.trim()} (${i}/${totalInstallments})`,
         amount: installmentAmount,
@@ -301,7 +306,10 @@ export class TransactionService {
     logger.info(`Criando ${totalMonths} transações recorrentes mensais`);
     let firstTransaction: TransactionEntity | null = null;
     for (let i = 0; i < totalMonths; i++) {
-      const transactionDate = this.addMonths(parseDateSafe(data.transactionDate) ?? new Date(), i);
+      const transactionDate = this.addMonths(
+        parseDateSafe(data.transactionDate) ?? new Date(),
+        i,
+      );
       const dueDate = data.dueDate
         ? this.addMonths(parseDateSafe(data.dueDate) ?? new Date(), i)
         : undefined;
@@ -350,7 +358,11 @@ export class TransactionService {
     this.validateUpdateInput(data);
     if (data.categoryId) {
       // Usar o tipo existente da transação para validar compatibilidade da categoria
-      await this.validateCategory(userId, data.categoryId, existingEntity.type as Transaction['type']);
+      await this.validateCategory(
+        userId,
+        data.categoryId,
+        existingEntity.type as Transaction['type'],
+      );
     }
     const oldAmount = Number(existingEntity.amount);
     const oldType = existingEntity.type as TransactionType;
@@ -368,7 +380,8 @@ export class TransactionService {
       updateData.expenseType = data.expenseType;
     }
     if (data.transactionDate !== undefined) {
-      updateData.transactionDate = parseDateSafe(data.transactionDate) ?? new Date();
+      updateData.transactionDate =
+        parseDateSafe(data.transactionDate) ?? new Date();
     }
     if (data.dueDate !== undefined) {
       updateData.dueDate = parseDateSafe(data.dueDate) ?? undefined;

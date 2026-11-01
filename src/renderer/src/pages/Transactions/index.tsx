@@ -1,11 +1,15 @@
+import { useRequestSequence } from '@renderer/hooks/requestSequence';
+import { ContentLoading } from '@renderer/components/ContentLoading';
+import { PageHeader } from '@renderer/components/PageHeader';
+import { AppAlert } from '@renderer/components/Feedback';
+import { FilterPanel, MonthRangeFields } from '@renderer/components/Filters';
+
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Box,
   Typography,
   Button,
   IconButton,
   Tooltip,
-  CircularProgress,
   Stack,
   Table,
   TableBody,
@@ -19,16 +23,14 @@ import {
   TableSortLabel,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  FilterList as FilterListIcon,
-  Clear as ClearIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-  DeleteSweep as DeleteSweepIcon,
+  AddOutlined as AddIcon,
+  TrendingUpOutlined as TrendingUpIcon,
+  TrendingDownOutlined as TrendingDownIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  RefreshOutlined as RefreshIcon,
+  WarningAmberRounded as WarningIcon,
+  DeleteSweepOutlined as DeleteSweepIcon,
 } from '@mui/icons-material';
 import {
   SelectInput,
@@ -39,9 +41,6 @@ import { Modal } from '@renderer/components/Modal';
 import { formatDateToShow } from '@renderer/utils/date';
 import {
   TransactionsContainer,
-  PageHeaderContainer,
-  FiltersContainer,
-  FiltersGrid,
   TableContainer as StyledTableContainer,
   AmountCell,
   TypeBadge,
@@ -81,14 +80,6 @@ const MONTH_NAMES = [
   'Novembro',
   'Dezembro',
 ];
-const getAvailableYears = (): number[] => {
-  const currentYear = new Date().getFullYear();
-  const years: number[] = [];
-  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-    years.push(year);
-  }
-  return years;
-};
 export function TransactionsPage() {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth() + 1;
@@ -107,8 +98,6 @@ export function TransactionsPage() {
     endMonth: currentMonth,
     endYear: currentYear,
   });
-  const [showFilters, setShowFilters] = useState(true);
-  const availableYears = getAvailableYears();
   const [sortField, setSortField] =
     useState<TransactionSortField>('transactionDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('DESC');
@@ -142,7 +131,9 @@ export function TransactionsPage() {
       console.error('Erro ao carregar contas:', err);
     }
   }, []);
+  const { begin, isCurrent } = useRequestSequence();
   const loadTransactions = useCallback(async () => {
+    const requestId = begin();
     setLoading(true);
     setError(null);
     try {
@@ -155,6 +146,7 @@ export function TransactionsPage() {
           direction: sortDirection,
         },
       });
+      if (!isCurrent(requestId)) return;
       if (response.success && response.data) {
         setTransactions(response.data.content);
         setTotalElements(response.data.totalElements);
@@ -162,12 +154,13 @@ export function TransactionsPage() {
         setError('Erro ao carregar transações');
       }
     } catch (err) {
+      if (!isCurrent(requestId)) return;
       console.error('Erro ao carregar transações:', err);
       setError('Erro ao carregar transações. Tente novamente.');
     } finally {
-      setLoading(false);
+      if (isCurrent(requestId)) setLoading(false);
     }
-  }, [filters, page, rowsPerPage, sortField, sortDirection]);
+  }, [filters, page, rowsPerPage, sortField, sortDirection, begin, isCurrent]);
   useEffect(() => {
     loadCategories();
     loadAccounts();
@@ -194,86 +187,6 @@ export function TransactionsPage() {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
     setSelectedIds([]);
-  };
-  const handleStartMonthChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as number;
-    setFilters((prev) => {
-      const newFilters = { ...prev, startMonth: value };
-      const startDate = new Date(
-        newFilters.startYear ?? currentYear,
-        (newFilters.startMonth ?? currentMonth) - 1,
-      );
-      const endDate = new Date(
-        newFilters.endYear ?? currentYear,
-        (newFilters.endMonth ?? currentMonth) - 1,
-      );
-      if (endDate < startDate) {
-        newFilters.endMonth = newFilters.startMonth;
-        newFilters.endYear = newFilters.startYear;
-      }
-      return newFilters;
-    });
-    setPage(0);
-  };
-  const handleStartYearChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as number;
-    setFilters((prev) => {
-      const newFilters = { ...prev, startYear: value };
-      const startDate = new Date(
-        newFilters.startYear ?? currentYear,
-        (newFilters.startMonth ?? currentMonth) - 1,
-      );
-      const endDate = new Date(
-        newFilters.endYear ?? currentYear,
-        (newFilters.endMonth ?? currentMonth) - 1,
-      );
-      if (endDate < startDate) {
-        newFilters.endMonth = newFilters.startMonth;
-        newFilters.endYear = newFilters.startYear;
-      }
-      return newFilters;
-    });
-    setPage(0);
-  };
-  const handleEndMonthChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as number;
-    setFilters((prev) => {
-      const newFilters = { ...prev, endMonth: value };
-      const startDate = new Date(
-        newFilters.startYear ?? currentYear,
-        (newFilters.startMonth ?? currentMonth) - 1,
-      );
-      const endDate = new Date(
-        newFilters.endYear ?? currentYear,
-        (newFilters.endMonth ?? currentMonth) - 1,
-      );
-      if (endDate < startDate) {
-        newFilters.startMonth = newFilters.endMonth;
-        newFilters.startYear = newFilters.endYear;
-      }
-      return newFilters;
-    });
-    setPage(0);
-  };
-  const handleEndYearChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as number;
-    setFilters((prev) => {
-      const newFilters = { ...prev, endYear: value };
-      const startDate = new Date(
-        newFilters.startYear ?? currentYear,
-        (newFilters.startMonth ?? currentMonth) - 1,
-      );
-      const endDate = new Date(
-        newFilters.endYear ?? currentYear,
-        (newFilters.endMonth ?? currentMonth) - 1,
-      );
-      if (endDate < startDate) {
-        newFilters.startMonth = newFilters.endMonth;
-        newFilters.startYear = newFilters.endYear;
-      }
-      return newFilters;
-    });
-    setPage(0);
   };
   const handleCategoryChange = (event: { target: { value: unknown } }) => {
     const value = event.target.value as string | number;
@@ -441,500 +354,403 @@ export function TransactionsPage() {
       label: acc.name,
     })),
   ];
-  if (loading && transactions.length === 0) {
-    return (
-      <TransactionsContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <CircularProgress size={48} />
-          <Typography variant="body1" color="text.secondary" mt={2}>
-            Carregando transações...
-          </Typography>
-        </Stack>
-      </TransactionsContainer>
-    );
-  }
-  if (error && transactions.length === 0) {
-    return (
-      <TransactionsContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <WarningIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
-          <Typography variant="h6" color="error">
-            {error}
-          </Typography>
-          <IconButton onClick={loadTransactions} sx={{ mt: 2 }}>
-            <RefreshIcon />
-          </IconButton>
-        </Stack>
-      </TransactionsContainer>
-    );
-  }
+
   return (
     <TransactionsContainer>
-      {}
-      <PageHeaderContainer>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            Transações
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gerencie suas receitas e despesas
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
-          {selectedIds.length > 0 && (
-            <Chip
-              label={`${selectedIds.length} selecionada(s)`}
-              color="primary"
-              size="small"
-              onDelete={() => setSelectedIds([])}
-            />
-          )}
-          {selectedIds.length > 0 && (
-            <Tooltip title="Excluir selecionadas">
+      <PageHeader
+        title="Transações"
+        description={<>Gerencie suas receitas e despesas</>}
+        actions={
+          <>
+            <Stack direction="row" spacing={1} alignItems="center">
+              {selectedIds.length > 0 && (
+                <Chip
+                  label={`${selectedIds.length} selecionada(s)`}
+                  color="primary"
+                  size="small"
+                  onDelete={() => setSelectedIds([])}
+                />
+              )}
+              {selectedIds.length > 0 && (
+                <Tooltip title="Excluir selecionadas">
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<DeleteSweepIcon />}
+                    onClick={handleOpenDeleteMany}
+                  >
+                    Excluir ({selectedIds.length})
+                  </Button>
+                </Tooltip>
+              )}
+              <Tooltip title="Atualizar">
+                <IconButton onClick={loadTransactions} size="small">
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
               <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                startIcon={<DeleteSweepIcon />}
-                onClick={handleOpenDeleteMany}
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleNewTransaction}
+                sx={{ borderRadius: '0.5rem' }}
               >
-                Excluir ({selectedIds.length})
+                Nova Transação
               </Button>
-            </Tooltip>
-          )}
-          <Tooltip title="Atualizar">
-            <IconButton onClick={loadTransactions} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleNewTransaction}
-            sx={{ borderRadius: '0.5rem' }}
-          >
-            Nova Transação
-          </Button>
-        </Stack>
-      </PageHeaderContainer>
-      {}
-      <FiltersContainer>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={showFilters ? 2 : 0}
-        >
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <FilterListIcon color="action" />
-            <Typography variant="subtitle1" fontWeight={600}>
-              Filtros
-            </Typography>
-            {hasActiveFilters() && (
+            </Stack>
+          </>
+        }
+      />
+      {error && (
+        <AppAlert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </AppAlert>
+      )}
+
+      <FilterPanel
+        onClear={handleClearFilters}
+        summary={
+          <FiltersSummary>
+            <Chip
+              label={`Período: ${formatPeriod()}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+            {filters.categoryId && (
               <Chip
-                label="Filtros ativos"
+                label={`Categoria: ${getCategoryName(filters.categoryId)}`}
                 size="small"
-                color="primary"
-                variant="outlined"
+                onDelete={() => handleCategoryChange({ target: { value: '' } })}
               />
             )}
-          </Stack>
-          <Stack direction="row" spacing={1}>
-            {hasActiveFilters() && (
-              <Button
+            {filters.type && (
+              <Chip
+                label={`Tipo: ${filters.type === 'income' ? 'Receitas' : 'Despesas'}`}
                 size="small"
-                startIcon={<ClearIcon />}
-                onClick={handleClearFilters}
-              >
-                Limpar
-              </Button>
+                onDelete={() => handleTypeChange({ target: { value: '' } })}
+              />
             )}
-            <IconButton
-              size="small"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? <TrendingUpIcon /> : <TrendingDownIcon />}
-            </IconButton>
-          </Stack>
-        </Stack>
-        {showFilters && (
-          <FiltersGrid>
-            {}
-            <SelectInput
-              label="Mês Inicial"
-              value={filters.startMonth ?? currentMonth}
-              items={MONTH_NAMES.map((month, index) => ({
-                value: index + 1,
-                label: month,
-              }))}
-              onChange={handleStartMonthChange}
-              fullWidth
-            />
-            {}
-            <SelectInput
-              label="Ano Inicial"
-              value={filters.startYear ?? currentYear}
-              items={availableYears.map((year) => ({
-                value: year,
-                label: String(year),
-              }))}
-              onChange={handleStartYearChange}
-              fullWidth
-            />
-            {}
-            <SelectInput
-              label="Mês Final"
-              value={filters.endMonth ?? currentMonth}
-              items={MONTH_NAMES.map((month, index) => ({
-                value: index + 1,
-                label: month,
-              }))}
-              onChange={handleEndMonthChange}
-              fullWidth
-            />
-            {}
-            <SelectInput
-              label="Ano Final"
-              value={filters.endYear ?? currentYear}
-              items={availableYears.map((year) => ({
-                value: year,
-                label: String(year),
-              }))}
-              onChange={handleEndYearChange}
-              fullWidth
-            />
-            {}
-            <SelectInput
-              label="Categoria"
-              value={filters.categoryId ?? ''}
-              items={categoryOptions}
-              onChange={handleCategoryChange}
-              fullWidth
-            />
-            {}
-            <SelectInput
-              label="Tipo"
-              value={filters.type ?? ''}
-              items={typeOptions}
-              onChange={handleTypeChange}
-              fullWidth
-            />
-            {}
-            <SelectInput
-              label="Conta"
-              value={filters.accountId ?? ''}
-              items={accountOptions}
-              onChange={handleAccountChange}
-              fullWidth
-            />
-          </FiltersGrid>
-        )}
-        {}
-        <FiltersSummary>
-          <Chip
-            label={`Período: ${formatPeriod()}`}
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-          {filters.categoryId && (
-            <Chip
-              label={`Categoria: ${getCategoryName(filters.categoryId)}`}
-              size="small"
-              onDelete={() => handleCategoryChange({ target: { value: '' } })}
-            />
-          )}
-          {filters.type && (
-            <Chip
-              label={`Tipo: ${filters.type === 'income' ? 'Receitas' : 'Despesas'}`}
-              size="small"
-              onDelete={() => handleTypeChange({ target: { value: '' } })}
-            />
-          )}
-          {filters.accountId && (
-            <Chip
-              label={`Conta: ${getAccountName(filters.accountId)}`}
-              size="small"
-              onDelete={() => handleAccountChange({ target: { value: '' } })}
-            />
-          )}
-        </FiltersSummary>
-      </FiltersContainer>
-      {}
-      <StyledTableContainer>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    indeterminate={
-                      selectedIds.length > 0 &&
-                      selectedIds.length < transactions.length
-                    }
-                    checked={
-                      transactions.length > 0 &&
-                      selectedIds.length === transactions.length
-                    }
-                    onChange={handleSelectAll}
-                  />
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === 'description'}
-                    direction={
-                      sortField === 'description'
-                        ? (sortDirection.toLowerCase() as 'asc' | 'desc')
-                        : 'desc'
-                    }
-                    onClick={() => handleSort('description')}
-                  >
-                    Descrição
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">
-                  <TableSortLabel
-                    active={sortField === 'amount'}
-                    direction={
-                      sortField === 'amount'
-                        ? (sortDirection.toLowerCase() as 'asc' | 'desc')
-                        : 'desc'
-                    }
-                    onClick={() => handleSort('amount')}
-                  >
-                    Valor
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>Categoria</TableCell>
-                <TableCell>Conta</TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === 'transactionDate'}
-                    direction={
-                      sortField === 'transactionDate'
-                        ? (sortDirection.toLowerCase() as 'asc' | 'desc')
-                        : 'desc'
-                    }
-                    onClick={() => handleSort('transactionDate')}
-                  >
-                    Data
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === 'type'}
-                    direction={
-                      sortField === 'type'
-                        ? (sortDirection.toLowerCase() as 'asc' | 'desc')
-                        : 'desc'
-                    }
-                    onClick={() => handleSort('type')}
-                  >
-                    Tipo
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
+            {filters.accountId && (
+              <Chip
+                label={`Conta: ${getAccountName(filters.accountId)}`}
+                size="small"
+                onDelete={() => handleAccountChange({ target: { value: '' } })}
+              />
+            )}
+          </FiltersSummary>
+        }
+      >
+        <MonthRangeFields
+          value={{
+            startMonth: filters.startMonth ?? currentMonth,
+            startYear: filters.startYear ?? currentYear,
+            endMonth: filters.endMonth ?? currentMonth,
+            endYear: filters.endYear ?? currentYear,
+          }}
+          onChange={(range) => {
+            setFilters((prev) => ({ ...prev, ...range }));
+            setPage(0);
+          }}
+        />
+        <SelectInput
+          label="Categoria"
+          value={filters.categoryId ?? ''}
+          items={categoryOptions}
+          onChange={handleCategoryChange}
+          fullWidth
+        />
+        <SelectInput
+          label="Conta"
+          value={filters.accountId ?? ''}
+          items={accountOptions}
+          onChange={handleAccountChange}
+          fullWidth
+        />
+        <SelectInput
+          label="Tipo"
+          value={filters.type ?? ''}
+          items={typeOptions}
+          onChange={handleTypeChange}
+          fullWidth
+        />
+      </FilterPanel>
+      <ContentLoading loading={loading} initial="table">
+        <StyledTableContainer>
+          <TableContainer>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    <CircularProgress size={24} />
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      indeterminate={
+                        selectedIds.length > 0 &&
+                        selectedIds.length < transactions.length
+                      }
+                      checked={
+                        transactions.length > 0 &&
+                        selectedIds.length === transactions.length
+                      }
+                      onChange={handleSelectAll}
+                    />
                   </TableCell>
-                </TableRow>
-              ) : transactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8}>
-                    <EmptyStateContainer>
-                      <WarningIcon
-                        sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }}
-                      />
-                      <Typography variant="h6" color="text.secondary">
-                        Nenhuma transação encontrada
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {hasActiveFilters()
-                          ? 'Tente ajustar os filtros para ver mais resultados'
-                          : 'Clique em "Nova Transação" para adicionar sua primeira transação'}
-                      </Typography>
-                    </EmptyStateContainer>
+                  <TableCell>
+                    <TableSortLabel
+                      active={sortField === 'description'}
+                      direction={
+                        sortField === 'description'
+                          ? (sortDirection.toLowerCase() as 'asc' | 'desc')
+                          : 'desc'
+                      }
+                      onClick={() => handleSort('description')}
+                    >
+                      Descrição
+                    </TableSortLabel>
                   </TableCell>
+                  <TableCell align="right">
+                    <TableSortLabel
+                      active={sortField === 'amount'}
+                      direction={
+                        sortField === 'amount'
+                          ? (sortDirection.toLowerCase() as 'asc' | 'desc')
+                          : 'desc'
+                      }
+                      onClick={() => handleSort('amount')}
+                    >
+                      Valor
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>Categoria</TableCell>
+                  <TableCell>Conta</TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={sortField === 'transactionDate'}
+                      direction={
+                        sortField === 'transactionDate'
+                          ? (sortDirection.toLowerCase() as 'asc' | 'desc')
+                          : 'desc'
+                      }
+                      onClick={() => handleSort('transactionDate')}
+                    >
+                      Data
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={sortField === 'type'}
+                      direction={
+                        sortField === 'type'
+                          ? (sortDirection.toLowerCase() as 'asc' | 'desc')
+                          : 'desc'
+                      }
+                      onClick={() => handleSort('type')}
+                    >
+                      Tipo
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell align="right">Ações</TableCell>
                 </TableRow>
-              ) : (
-                transactions.map((transaction) => (
-                  <TableRow
-                    key={transaction.id}
-                    hover
-                    selected={selectedIds.includes(transaction.id)}
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
-                    {}
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={selectedIds.includes(transaction.id)}
-                        onChange={() => handleSelectTransaction(transaction.id)}
-                      />
-                    </TableCell>
-                    {}
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={500}>
-                        {transaction.description}
-                      </Typography>
-                      {transaction.installmentNumber &&
-                        transaction.totalInstallments && (
-                          <Typography variant="caption" color="text.secondary">
-                            Parcela {transaction.installmentNumber}/
-                            {transaction.totalInstallments}
-                          </Typography>
-                        )}
-                    </TableCell>
-                    {}
-                    <TableCell align="right">
-                      <AmountCell $type={transaction.type}>
-                        {transaction.type === 'income' ? '+' : '-'}
-                        {formatCurrency(transaction.amount)}
-                      </AmountCell>
-                    </TableCell>
-                    {}
-                    <TableCell>
-                      <CategoryChip>
-                        {getCategoryName(transaction.categoryId)}
-                      </CategoryChip>
-                    </TableCell>
-                    {}
-                    <TableCell>
-                      <Typography variant="body2">
-                        {getAccountName(transaction.accountId)}
-                      </Typography>
-                    </TableCell>
-                    {}
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatDateToShow(transaction.transactionDate)}
-                      </Typography>
-                      {transaction.dueDate && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Venc: {formatDateToShow(transaction.dueDate)}
+              </TableHead>
+              <TableBody>
+                {transactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <EmptyStateContainer>
+                        <WarningIcon
+                          sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }}
+                        />
+                        <Typography variant="h6" color="text.secondary">
+                          Nenhuma transação encontrada
                         </Typography>
-                      )}
-                    </TableCell>
-                    {}
-                    <TableCell>
-                      <TypeBadge $type={transaction.type}>
-                        {transaction.type === 'income' ? (
-                          <>
-                            <TrendingUpIcon />
-                            Receita
-                          </>
-                        ) : (
-                          <>
-                            <TrendingDownIcon />
-                            Despesa
-                          </>
-                        )}
-                      </TypeBadge>
-                    </TableCell>
-                    {}
-                    <TableCell align="right">
-                      <ActionsContainer>
-                        <Tooltip title="Editar">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditTransaction(transaction)}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Excluir">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteTransaction(transaction)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </ActionsContainer>
+                        <Typography variant="body2" color="text.secondary">
+                          {hasActiveFilters()
+                            ? 'Tente ajustar os filtros para ver mais resultados'
+                            : 'Clique em "Nova Transação" para adicionar sua primeira transação'}
+                        </Typography>
+                      </EmptyStateContainer>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        {}
-        <TablePagination
-          component="div"
-          count={totalElements}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          labelRowsPerPage="Resultados por página:"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}–${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
+                ) : (
+                  transactions.map((transaction) => (
+                    <TableRow
+                      key={transaction.id}
+                      hover
+                      selected={selectedIds.includes(transaction.id)}
+                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={selectedIds.includes(transaction.id)}
+                          onChange={() =>
+                            handleSelectTransaction(transaction.id)
+                          }
+                        />
+                      </TableCell>
+
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={500}>
+                          {transaction.description}
+                        </Typography>
+                        {transaction.installmentNumber &&
+                          transaction.totalInstallments && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Parcela {transaction.installmentNumber}/
+                              {transaction.totalInstallments}
+                            </Typography>
+                          )}
+                      </TableCell>
+
+                      <TableCell align="right">
+                        <AmountCell $type={transaction.type}>
+                          {transaction.type === 'income' ? '+' : '-'}
+                          {formatCurrency(transaction.amount)}
+                        </AmountCell>
+                      </TableCell>
+
+                      <TableCell>
+                        <CategoryChip>
+                          {getCategoryName(transaction.categoryId)}
+                        </CategoryChip>
+                      </TableCell>
+
+                      <TableCell>
+                        <Typography variant="body2">
+                          {getAccountName(transaction.accountId)}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell>
+                        <Typography variant="body2">
+                          {formatDateToShow(transaction.transactionDate)}
+                        </Typography>
+                        {transaction.dueDate && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                          >
+                            Venc: {formatDateToShow(transaction.dueDate)}
+                          </Typography>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <TypeBadge $type={transaction.type}>
+                          {transaction.type === 'income' ? (
+                            <>
+                              <TrendingUpIcon />
+                              Receita
+                            </>
+                          ) : (
+                            <>
+                              <TrendingDownIcon />
+                              Despesa
+                            </>
+                          )}
+                        </TypeBadge>
+                      </TableCell>
+
+                      <TableCell align="right">
+                        <ActionsContainer>
+                          <Tooltip title="Editar">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditTransaction(transaction)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Excluir">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                handleDeleteTransaction(transaction)
+                              }
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </ActionsContainer>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <TablePagination
+            component="div"
+            count={totalElements}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Resultados por página:"
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}–${to} de ${count !== -1 ? count : `mais de ${to}`}`
+            }
+          />
+        </StyledTableContainer>
+
+        <TransactionForm
+          open={isFormOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveTransaction}
+          transaction={selectedTransaction}
+          categories={categories}
+          accounts={accounts}
+          loading={formLoading}
         />
-      </StyledTableContainer>
-      {}
-      <TransactionForm
-        open={isFormOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveTransaction}
-        transaction={selectedTransaction}
-        categories={categories}
-        accounts={accounts}
-        loading={formLoading}
-      />
-      {}
-      <Modal
-        variant="danger"
-        open={isDeleteModalOpen}
-        title="Excluir Transação"
-        handleClose={() => {
-          setIsDeleteModalOpen(false);
-          setTransactionToDelete(null);
-        }}
-        handleConfirm={handleConfirmDelete}
-        confirmLabel="Excluir"
-        cancelLabel="Cancelar"
-        loading={deleteLoading}
-      >
-        <Typography>
-          Tem certeza que deseja excluir a transação{' '}
-          <strong>{transactionToDelete?.description}</strong>?
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Esta ação não pode ser desfeita.
-        </Typography>
-      </Modal>
-      {}
-      <Modal
-        variant="danger"
-        open={isDeleteManyModalOpen}
-        title="Excluir Transações"
-        handleClose={() => {
-          setIsDeleteManyModalOpen(false);
-        }}
-        handleConfirm={handleConfirmDeleteMany}
-        confirmLabel={`Excluir ${selectedIds.length} transações`}
-        cancelLabel="Cancelar"
-        loading={deleteLoading}
-      >
-        <Typography>
-          Tem certeza que deseja excluir{' '}
-          <strong>{selectedIds.length} transações</strong> selecionadas?
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Esta ação não pode ser desfeita.
-        </Typography>
-      </Modal>
+
+        <Modal
+          variant="danger"
+          open={isDeleteModalOpen}
+          title="Excluir Transação"
+          handleClose={() => {
+            setIsDeleteModalOpen(false);
+            setTransactionToDelete(null);
+          }}
+          handleConfirm={handleConfirmDelete}
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          loading={deleteLoading}
+        >
+          <Typography>
+            Tem certeza que deseja excluir a transação{' '}
+            <strong>{transactionToDelete?.description}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Esta ação não pode ser desfeita.
+          </Typography>
+        </Modal>
+
+        <Modal
+          variant="danger"
+          open={isDeleteManyModalOpen}
+          title="Excluir Transações"
+          handleClose={() => {
+            setIsDeleteManyModalOpen(false);
+          }}
+          handleConfirm={handleConfirmDeleteMany}
+          confirmLabel={`Excluir ${selectedIds.length} transações`}
+          cancelLabel="Cancelar"
+          loading={deleteLoading}
+        >
+          <Typography>
+            Tem certeza que deseja excluir{' '}
+            <strong>{selectedIds.length} transações</strong> selecionadas?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Esta ação não pode ser desfeita.
+          </Typography>
+        </Modal>
+      </ContentLoading>
     </TransactionsContainer>
   );
 }

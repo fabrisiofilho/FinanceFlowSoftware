@@ -5,6 +5,7 @@ import type {
   ReportFilters,
   ExportResult,
   IncomeVsExpense,
+  ReportData,
 } from '@shared/interfaces/types/report.types';
 import type { CategoryExpense } from '@shared/interfaces/types/transaction.types';
 import type { ApiResponse } from '@shared/interfaces/types/common.types';
@@ -12,6 +13,14 @@ import { IpcMethod } from '@main/infrastructure/decorators/ipc.decorator';
 import { BaseHandler } from './config/base-handler';
 import { wrap } from '@main/infrastructure/utils/try-catch';
 export class ReportController extends BaseHandler implements IReportController {
+  @IpcMethod('report:generateReport')
+  async generateReport(
+    filters: ReportFilters,
+  ): Promise<ApiResponse<ReportData>> {
+    return wrap(() =>
+      this.reportService.generateReport(this.getUserId(), filters),
+    )();
+  }
   private _reportService: ReportService | null = null;
   private financeAuthService = FinanceAuthService.getInstance();
   private get reportService(): ReportService {

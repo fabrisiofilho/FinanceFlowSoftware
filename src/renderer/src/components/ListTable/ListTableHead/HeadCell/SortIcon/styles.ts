@@ -1,5 +1,5 @@
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownwardOutlined';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpwardOutlined';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
 import { styled } from '@mui/material/styles';

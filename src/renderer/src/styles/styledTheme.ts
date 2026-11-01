@@ -1,87 +1,22 @@
-const lightColors = {
-  primary: '#135bec',
-  primary_100: '#e8f0fd',
-  primary_200: '#a3c4f7',
-  primary_300: '#5b94f1',
-  primary_400: '#0d4abf',
-  primary_gradient: 'linear-gradient(135deg, #5b94f1 0%, #135bec 100%)',
-
-  secondary: '#8C65E2',
-  secondary_100: '#f3eefb',
-  secondary_200: '#c9b8f0',
-  secondary_300: '#a07de8',
-  secondary_400: '#6838D2',
-  secondary_gradient: 'linear-gradient(135deg, #b689ff 0%, #612fcf 100%)',
-
-  info: '#00B8D9',
-  info_100: '#e5f8fb',
-  info_200: '#92E5FF',
-  info_300: '#006C9C',
-  info_400: '#003768',
-
-  success: '#36B37E',
-  success_100: '#e8f7f0',
-  success_200: '#9DEDBB',
-  success_300: '#1B806A',
-  success_400: '#0A5554',
-  success_gradient: 'linear-gradient(135deg, #86e8ab 0%, #36b37e 100%)',
-
-  warn: '#FFAB00',
-  warn_100: '#fff8e5',
-  warn_200: '#FFD666',
-  warn_300: '#CB7220',
-  warn_400: '#7A4100',
-
-  error: '#FF5630',
-  error_100: '#ffebe6',
-  error_200: '#FFAC82',
-  error_300: '#C21434',
-  error_400: '#7A0916',
-
-  white: '#FFFFFF',
-
-  grey_100: '#f6f6f8',
-  grey_200: '#f0f2f7',
-  grey_300: '#e7ebf3',
-  grey_400: '#cfd7e7',
-  grey_500: '#919EAB',
-  grey_600: '#4c669a',
-  grey_700: '#2d3748',
-  grey_800: '#0d121b',
-  grey_900: '#080b10',
-
-  purple_100: '#ad0af8',
-  purple_400: '#500fd7',
-
-  background: '#f6f6f8',
-  surface: '#FFFFFF',
-  surfaceAlt: '#f0f2f7',
-  text: '#0d121b',
-  textSecondary: '#4c669a',
-  border: '#e7ebf3',
-  borderLight: '#cfd7e7',
-  divider: '#e7ebf3',
-};
-
 const darkColors = {
-  primary: '#5b94f1',
-  primary_100: '#0d1520',
-  primary_200: '#142238',
-  primary_300: '#5b94f1',
-  primary_400: '#a3c4f7',
-  primary_gradient: 'linear-gradient(135deg, #135bec 0%, #5b94f1 100%)',
+  primary: '#9bd9b5',
+  primary_100: '#22262e',
+  primary_200: '#343c49',
+  primary_300: '#9bd9b5',
+  primary_400: '#b5e7ca',
+  primary_gradient: 'linear-gradient(135deg, #252e2b 0%, #d7dce5 100%)',
 
-  secondary: '#a07de8',
-  secondary_100: '#120e1c',
-  secondary_200: '#2a1d4a',
-  secondary_300: '#a07de8',
-  secondary_400: '#c9b8f0',
-  secondary_gradient: 'linear-gradient(135deg, #612fcf 0%, #b689ff 100%)',
+  secondary: '#9bd9b5',
+  secondary_100: '#202c29',
+  secondary_200: '#30423a',
+  secondary_300: '#8dceaa',
+  secondary_400: '#ccecd8',
+  secondary_gradient: 'linear-gradient(135deg, #30423a 0%, #8dceaa 100%)',
 
-  info: '#92E5FF',
+  info: '#8fc9db',
   info_100: '#061820',
   info_200: '#006C9C',
-  info_300: '#92E5FF',
+  info_300: '#8fc9db',
   info_400: '#CDF2FD',
 
   success: '#9DEDBB',
@@ -103,14 +38,14 @@ const darkColors = {
   error_300: '#FFAC82',
   error_400: '#FFE9D5',
 
-  white: '#0d1117',
+  white: '#191c22',
 
-  grey_100: '#080b10',
-  grey_200: '#0d1117',
-  grey_300: '#161b22',
-  grey_400: '#21262d',
+  grey_100: '#101216',
+  grey_200: '#191c22',
+  grey_300: '#22262e',
+  grey_400: '#30353f',
   grey_500: '#6e7681',
-  grey_600: '#8b949e',
+  grey_600: '#a2a8b4',
   grey_700: '#c9d1d9',
   grey_800: '#e6edf3',
   grey_900: '#f0f6fc',
@@ -118,28 +53,14 @@ const darkColors = {
   purple_100: '#500fd7',
   purple_400: '#ad0af8',
 
-  background: '#080b10',
-  surface: '#0d1117',
-  surfaceAlt: '#161b22',
+  background: '#101216',
+  surface: '#191c22',
+  surfaceAlt: '#22262e',
   text: '#f0f6fc',
-  textSecondary: '#8b949e',
-  border: '#21262d',
-  borderLight: '#30363d',
-  divider: '#21262d',
-};
-
-const shadows = {
-  z_01: '0rem 0.063rem 0.125rem 0rem rgba(0, 0, 0, 0.1)',
-  z_04: '0rem 0.25rem 0.5rem 0rem rgba(0, 0, 0, 0.1)',
-  z_08: '0rem 0.5rem 1rem 0rem rgba(0, 0, 0, 0.1)',
-  z_12: '0rem 0.75rem 1.5rem -0.25rem rgba(0, 0, 0, 0.15)',
-  z_16: '0rem 1rem 2rem -0.25rem rgba(0, 0, 0, 0.15)',
-  z_20: '0rem 1.25rem 2.5rem -0.25rem rgba(0, 0, 0, 0.15)',
-  z_24: '0rem 1.5rem 3rem 0rem rgba(0, 0, 0, 0.15)',
-  cards: '0rem 0.25rem 1rem -0.25rem rgba(0, 0, 0, 0.08)',
-  dialogs: '-2.5rem 2.5rem 5rem -0.5rem rgba(0, 0, 0, 0.2)',
-  dropdown: '0rem 0.5rem 1.5rem -0.25rem rgba(0, 0, 0, 0.15)',
-  circle_button: '0 0 0.15rem rgba(0, 0, 0, 0.2)',
+  textSecondary: '#aeb6c3',
+  border: '#30353f',
+  borderLight: '#454c59',
+  divider: '#30353f',
 };
 
 const darkShadows = {
@@ -157,34 +78,14 @@ const darkShadows = {
 };
 
 export const styledTheme = {
-  COLORS: lightColors,
-  SHADOWS: shadows,
-  BORDERS: {
-    b_01: `0.063rem solid ${lightColors.border}`,
-  },
-  FONTS: {
-    montserrat: 'Montserrat',
-    manrope: 'Manrope',
-    sansSerif: 'sans-serif',
-  },
-  SIZES: {
-    xs: '(max-width: 600px)',
-    sm: '(max-width: 900px)',
-    md: '(max-width: 1200px)',
-    lg: '(max-width: 1536px)',
-    xl: '(min-width: 1536px)',
-  },
-};
-
-export const styledThemeDark = {
   COLORS: darkColors,
   SHADOWS: darkShadows,
   BORDERS: {
     b_01: `0.063rem solid ${darkColors.border}`,
   },
   FONTS: {
-    montserrat: 'Montserrat',
-    manrope: 'Manrope',
+    montserrat: 'Segoe UI',
+    manrope: 'Segoe UI',
     sansSerif: 'sans-serif',
   },
   SIZES: {
@@ -243,8 +144,9 @@ export type ColorsType = `${ColorsEnum}`;
 
 export type ScreenSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'dark';
 
-export function getStyledTheme(mode: ThemeMode) {
-  return mode === 'dark' ? styledThemeDark : styledTheme;
+export const styledThemeDark = styledTheme;
+export function getStyledTheme(_mode: ThemeMode) {
+  return styledTheme;
 }

@@ -20,7 +20,7 @@ export function ProfileDrawer({ open, onClose }: Props) {
 
         <Stack pb="0.5rem" alignItems="stretch">
           <Stack alignItems="center" py={2}>
-            <Typography variant="h6">FinanceFlow</Typography>
+            <Typography variant="h6">Contabily</Typography>
           </Stack>
 
           <SignOutButton variant="listItem" onClick={onClose} />

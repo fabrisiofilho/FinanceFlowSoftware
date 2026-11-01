@@ -4,7 +4,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker as MuiDatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { ptBR } from 'date-fns/locale/pt-BR';
+import { ptBR as pickerLocale } from '@mui/x-date-pickers/locales';
 import { parseDateSafe } from '@renderer/utils/date';
+import type { Ref, FocusEventHandler } from 'react';
 
 export type DatePickerProps = {
   value: string | Date | null;
@@ -23,6 +25,9 @@ export type DatePickerProps = {
   required?: boolean;
   views?: ('year' | 'month' | 'day')[];
   format?: string;
+  inputRef?: Ref<HTMLInputElement>;
+  name?: string;
+  onBlur?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 };
 
 export function DatePicker({
@@ -41,6 +46,9 @@ export function DatePicker({
   maxDate,
   views = ['year', 'month', 'day'],
   format = 'dd/MM/yyyy',
+  inputRef,
+  name,
+  onBlur,
 }: Readonly<DatePickerProps>) {
   const handleChange = (newValue: Date | null) => {
     onChange(newValue);
@@ -57,12 +65,47 @@ export function DatePicker({
           disabled={disabled}
           disableFuture={disableFuture}
           disablePast={disablePast}
-          minDate={parseDateSafe(minDate)}
-          maxDate={parseDateSafe(maxDate)}
+          minDate={parseDateSafe(minDate) ?? undefined}
+          maxDate={parseDateSafe(maxDate) ?? undefined}
           views={views}
+          openTo={views.includes('day') ? 'day' : 'month'}
           format={format}
+          sx={{
+            '& .MuiPickersInputBase-root': {
+              height: 44,
+              borderRadius: 1,
+              bgcolor: 'background.paper',
+            },
+            '& .MuiPickersSectionList-root': { padding: 0, lineHeight: '20px' },
+          }}
           slotProps={{
+            desktopPaper: {
+              sx: {
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                '& .MuiDateCalendar-root': {
+                  height: 'auto',
+                  maxHeight: 'none',
+                },
+                '& .MuiMonthCalendar-root': {
+                  height: 224,
+                  minHeight: 0,
+                  padding: 1,
+                },
+                '& .MuiYearCalendar-root': { height: 240 },
+                '& .MuiPickersCalendarHeader-root': {
+                  marginTop: 1,
+                  marginBottom: 1,
+                },
+                backgroundImage: 'none',
+              },
+            },
+            mobilePaper: { sx: { borderRadius: 3, backgroundImage: 'none' } },
             textField: {
+              inputRef,
+              name,
+              onBlur,
               fullWidth,
               required,
               error,
@@ -72,10 +115,12 @@ export function DatePicker({
               },
             },
             actionBar: {
-              actions: ['clear', 'today'],
+              actions: views.includes('day') ? ['clear', 'today'] : ['today'],
             },
           }}
           localeText={{
+            ...pickerLocale.components.MuiLocalizationProvider.defaultProps
+              .localeText,
             clearButtonLabel: 'Limpar',
             todayButtonLabel: 'Hoje',
             cancelButtonLabel: 'Cancelar',

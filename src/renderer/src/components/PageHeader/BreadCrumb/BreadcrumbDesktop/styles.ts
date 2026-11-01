@@ -1,4 +1,4 @@
-import CircleIcon from '@mui/icons-material/Circle';
+import CircleIcon from '@mui/icons-material/CircleOutlined';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import { Breadcrumbs, styled as muiStyled } from '@mui/material';
 import { NavLink } from 'react-router-dom';

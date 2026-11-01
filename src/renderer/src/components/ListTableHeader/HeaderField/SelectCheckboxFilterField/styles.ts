@@ -1,4 +1,5 @@
-import { Select, TextField } from '@mui/material';
+import { Input as TextField } from '@renderer/components/Form/Input';
+import { Select } from '@mui/material';
 import { styled as styledMui } from '@mui/material/styles';
 import styled from 'styled-components';
 

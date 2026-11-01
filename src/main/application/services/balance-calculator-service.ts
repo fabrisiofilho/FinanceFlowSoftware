@@ -34,13 +34,13 @@ export class BalanceCalculatorService {
     amount: number,
   ): number {
     const numericAmount = Number(amount);
-    
+
     // Validar que o valor é um número válido e positivo
     if (isNaN(numericAmount) || numericAmount < 0) {
       logger.warning(`Valor inválido detectado: ${amount}, usando 0`);
       return 0;
     }
-    
+
     const normalizedAmount = Math.abs(numericAmount);
     return type === 'income' ? normalizedAmount : -normalizedAmount;
   }

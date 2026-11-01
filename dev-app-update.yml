@@ -1,5 +1,1 @@
-provider: github
-owner: fabrisiofilho
-repo: Finance_Local_Electron
-token: token
-updaterCacheDirName: financeflow-updater
+# Atualizações desativadas até a configuração de um canal próprio do Contabily.

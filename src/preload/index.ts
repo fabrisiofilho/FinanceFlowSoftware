@@ -1,3 +1,4 @@
+import type { InvestmentAPI } from '@shared/interfaces/types/investment.types';
 import { contextBridge, ipcRenderer, shell } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 import {
@@ -92,6 +93,10 @@ function createControllerFromConfig<T extends object>(
 }
 
 const api: CustomElectronAPI = {
+  investment: createControllerFromConfig<InvestmentAPI>(
+    CONTROLLER_CONFIG.investment.prefix,
+    CONTROLLER_CONFIG.investment.methods,
+  ),
   financeAuth: createControllerFromConfig<IFinanceAuthController>(
     CONTROLLER_CONFIG.financeAuth.prefix,
     CONTROLLER_CONFIG.financeAuth.methods,
@@ -202,6 +207,11 @@ const api: CustomElectronAPI = {
 
   openExternalUrl: (url: string) => {
     shell.openExternal(url);
+  },
+  windowControls: {
+    minimize: () => ipcRenderer.send('window:control', 'minimize'),
+    toggleMaximize: () => ipcRenderer.send('window:control', 'toggle-maximize'),
+    close: () => ipcRenderer.send('window:control', 'close'),
   },
 
   onAutoUpdaterStatus: (

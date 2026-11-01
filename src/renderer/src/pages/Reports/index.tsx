@@ -1,4 +1,11 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRequestSequence } from '@renderer/hooks/requestSequence';
+import { ContentLoading } from '@renderer/components/ContentLoading';
+import { PageHeader } from '@renderer/components/PageHeader';
+import { FilterPanel, MonthRangeFields } from '@renderer/components/Filters';
+import { SelectInput } from '@renderer/components/Form/SelectInput';
+import { AppAlert as Alert } from '@renderer/components/Feedback';
+
+import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -7,34 +14,19 @@ import {
   Tooltip,
   CircularProgress,
   Stack,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Alert,
 } from '@mui/material';
 import {
-  AssessmentOutlined as ReportsIcon,
-  Refresh as RefreshIcon,
-  TrendingUp as IncomeIcon,
-  TrendingDown as ExpenseIcon,
-  AccountBalance as BalanceIcon,
-  PictureAsPdf as PdfIcon,
-  TableChart as CsvIcon,
-  FilterList as FilterIcon,
-  Clear as ClearIcon,
-  DateRange as DateRangeIcon,
-  Category as CategoryIcon,
-  AccountBalanceWallet as AccountIcon,
+  RefreshOutlined as RefreshIcon,
+  TrendingUpOutlined as IncomeIcon,
+  TrendingDownOutlined as ExpenseIcon,
+  AccountBalanceOutlined as BalanceIcon,
+  PictureAsPdfOutlined as PdfIcon,
+  TableChartOutlined as CsvIcon,
 } from '@mui/icons-material';
 import { CategoryChart } from '@renderer/components/Charts/CategoryChart';
 import { IncomeExpenseChart } from '@renderer/components/Charts/IncomeExpenseChart';
 import {
   ReportsContainer,
-  PageHeaderContainer,
-  FiltersContainer,
-  FiltersGrid,
-  FilterActionsContainer,
   SummaryContainer,
   SummaryCard,
   SummaryIcon,
@@ -44,9 +36,6 @@ import {
   ChartCard,
   ChartHeader,
   ExportButtonsContainer,
-  EmptyStateContainer,
-  LoadingContainer,
-  PeriodInfo,
 } from './styles';
 import type { ReportFilters } from '@shared/interfaces/types/report.types';
 import type { Category } from '@shared/interfaces/types/category.types';
@@ -70,14 +59,6 @@ const MONTH_NAMES = [
   'Novembro',
   'Dezembro',
 ];
-const getAvailableYears = (): number[] => {
-  const currentYear = new Date().getFullYear();
-  const years: number[] = [];
-  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-    years.push(year);
-  }
-  return years;
-};
 interface FilterState {
   startMonth: number;
   startYear: number;
@@ -125,7 +106,6 @@ export function ReportsPage() {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
-  const availableYears = useMemo(() => getAvailableYears(), []);
   const loadCategories = useCallback(async () => {
     setLoadingCategories(true);
     try {
@@ -163,62 +143,35 @@ export function ReportsPage() {
       type: filters.type !== '' ? filters.type : undefined,
     };
   };
+  const { begin, isCurrent } = useRequestSequence();
   const loadReportData = useCallback(async () => {
+    const requestId = begin();
     setLoading(true);
     setError(null);
     try {
-      const { startMonth, startYear, endMonth, endYear } = filters;
-      const monthsDiff = Math.max(
-        1,
-        (endYear - startYear) * 12 + (endMonth - startMonth) + 1,
-      );
-      const categoryResponse =
-        await window.electronAPI.report.getExpensesByCategory(
-          startYear,
-          startMonth,
-        );
-      if (categoryResponse.success && categoryResponse.data) {
-        setExpensesByCategory(categoryResponse.data);
-      } else {
-        setExpensesByCategory([]);
-      }
-      const monthsToFetch = Math.max(monthsDiff + 12, 24);
-      const incomeExpenseResponse =
-        await window.electronAPI.report.getIncomeVsExpenses(monthsToFetch);
-      if (incomeExpenseResponse.success && incomeExpenseResponse.data) {
-        const filteredData = incomeExpenseResponse.data.filter((item) => {
-          const itemYear = item.year;
-          const itemMonth = item.month;
-          if (itemYear < startYear || itemYear > endYear) return false;
-          if (itemYear === startYear && itemMonth < startMonth) return false;
-          if (itemYear === endYear && itemMonth > endMonth) return false;
-          return true;
-        });
-        setIncomeVsExpenses(filteredData);
-        const totalIncome = filteredData.reduce(
-          (sum, item) => sum + item.income,
-          0,
-        );
-        const totalExpenses = filteredData.reduce(
-          (sum, item) => sum + item.expense,
-          0,
-        );
-        setSummary({
-          totalIncome,
-          totalExpenses,
-          balance: totalIncome - totalExpenses,
-        });
-      } else {
-        setIncomeVsExpenses([]);
-        setSummary({ totalIncome: 0, totalExpenses: 0, balance: 0 });
-      }
+      const response = await window.electronAPI.report.generateReport({
+        startDate: new Date(filters.startYear, filters.startMonth - 1, 1),
+        endDate: new Date(filters.endYear, filters.endMonth, 0),
+        categoryId: filters.categoryId || undefined,
+        accountId: filters.accountId || undefined,
+        type: filters.type || undefined,
+      });
+      if (!isCurrent(requestId)) return;
+      if (!response.success || !response.data)
+        throw new Error(response.error || 'Erro ao carregar relatório.');
+      setExpensesByCategory(response.data.summary.expensesByCategory);
+      setIncomeVsExpenses(response.data.incomeVsExpenses);
+      setSummary(response.data.summary);
     } catch (err) {
+      if (!isCurrent(requestId)) return;
       console.error('Erro ao carregar dados do relatório:', err);
-      setError('Erro ao carregar dados do relatório. Tente novamente.');
+      setError(
+        err instanceof Error ? err.message : 'Erro ao carregar relatório.',
+      );
     } finally {
-      setLoading(false);
+      if (isCurrent(requestId)) setLoading(false);
     }
-  }, [filters]);
+  }, [filters, begin, isCurrent]);
   useEffect(() => {
     loadCategories();
     loadAccounts();
@@ -320,63 +273,45 @@ export function ReportsPage() {
     incomeVsExpenses.length > 0 ||
     summary.totalIncome > 0 ||
     summary.totalExpenses > 0;
-  if (loadingCategories || loadingAccounts) {
-    return (
-      <ReportsContainer>
-        <LoadingContainer>
-          <CircularProgress size={48} />
-          <Typography variant="body1" color="text.secondary" mt={2}>
-            Carregando...
-          </Typography>
-        </LoadingContainer>
-      </ReportsContainer>
-    );
-  }
+
   return (
     <ReportsContainer>
-      {}
-      <PageHeaderContainer>
-        <Box>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <ReportsIcon color="primary" />
-            <Typography variant="h5" fontWeight={600}>
-              Relatórios
-            </Typography>
-          </Stack>
-          <PeriodInfo>
-            <DateRangeIcon />
-            <span>{formatPeriod()}</span>
-          </PeriodInfo>
-        </Box>
-        <ExportButtonsContainer>
-          <Tooltip title="Atualizar dados">
-            <IconButton onClick={loadReportData} disabled={loading}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="outlined"
-            startIcon={
-              exportingCsv ? <CircularProgress size={16} /> : <CsvIcon />
-            }
-            onClick={handleExportCsv}
-            disabled={exportingCsv || !hasData}
-          >
-            Exportar CSV
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={
-              exportingPdf ? <CircularProgress size={16} /> : <PdfIcon />
-            }
-            onClick={handleExportPdf}
-            disabled={exportingPdf || !hasData}
-          >
-            Exportar PDF
-          </Button>
-        </ExportButtonsContainer>
-      </PageHeaderContainer>
-      {}
+      <PageHeader
+        title="Relatórios"
+        description={formatPeriod()}
+        actions={
+          <>
+            <ExportButtonsContainer>
+              <Tooltip title="Atualizar dados">
+                <IconButton onClick={loadReportData} disabled={loading}>
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                variant="outlined"
+                startIcon={
+                  exportingCsv ? <CircularProgress size={16} /> : <CsvIcon />
+                }
+                onClick={handleExportCsv}
+                disabled={exportingCsv || !hasData}
+              >
+                Exportar CSV
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={
+                  exportingPdf ? <CircularProgress size={16} /> : <PdfIcon />
+                }
+                onClick={handleExportPdf}
+                disabled={exportingPdf || !hasData}
+              >
+                Exportar PDF
+              </Button>
+            </ExportButtonsContainer>
+          </>
+        }
+      />
+
       {exportSuccess && (
         <Alert
           severity="success"
@@ -391,231 +326,118 @@ export function ReportsPage() {
           {error}
         </Alert>
       )}
-      {}
-      <FiltersContainer>
-        <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
-          <FilterIcon color="action" />
-          <Typography variant="subtitle1" fontWeight={600}>
-            Filtros
-          </Typography>
-        </Stack>
-        <FiltersGrid>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Mês Inicial</InputLabel>
-            <Select
-              value={filters.startMonth}
-              label="Mês Inicial"
-              onChange={(e) =>
-                handleFilterChange('startMonth', e.target.value as number)
-              }
-            >
-              {MONTH_NAMES.map((month, index) => (
-                <MenuItem key={index} value={index + 1}>
-                  {month}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Ano Inicial</InputLabel>
-            <Select
-              value={filters.startYear}
-              label="Ano Inicial"
-              onChange={(e) =>
-                handleFilterChange('startYear', e.target.value as number)
-              }
-            >
-              {availableYears.map((year) => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Mês Final</InputLabel>
-            <Select
-              value={filters.endMonth}
-              label="Mês Final"
-              onChange={(e) =>
-                handleFilterChange('endMonth', e.target.value as number)
-              }
-            >
-              {MONTH_NAMES.map((month, index) => (
-                <MenuItem key={index} value={index + 1}>
-                  {month}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Ano Final</InputLabel>
-            <Select
-              value={filters.endYear}
-              label="Ano Final"
-              onChange={(e) =>
-                handleFilterChange('endYear', e.target.value as number)
-              }
-            >
-              {availableYears.map((year) => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Categoria</InputLabel>
-            <Select
-              value={filters.categoryId}
-              label="Categoria"
-              onChange={(e) => handleFilterChange('categoryId', e.target.value)}
-              startAdornment={
-                <CategoryIcon sx={{ mr: 1, color: 'action.active' }} />
-              }
-            >
-              <MenuItem value="">Todas</MenuItem>
-              {categories.map((category) => (
-                <MenuItem key={category.id} value={category.id}>
-                  {category.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Conta</InputLabel>
-            <Select
-              value={filters.accountId}
-              label="Conta"
-              onChange={(e) => handleFilterChange('accountId', e.target.value)}
-              startAdornment={
-                <AccountIcon sx={{ mr: 1, color: 'action.active' }} />
-              }
-            >
-              <MenuItem value="">Todas</MenuItem>
-              {accounts.map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {}
-          <FormControl size="small" fullWidth>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              value={filters.type}
-              label="Tipo"
-              onChange={(e) => handleFilterChange('type', e.target.value)}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="INCOME">Receitas</MenuItem>
-              <MenuItem value="EXPENSE">Despesas</MenuItem>
-            </Select>
-          </FormControl>
-        </FiltersGrid>
-        <FilterActionsContainer>
-          <Button
-            variant="text"
-            startIcon={<ClearIcon />}
-            onClick={handleClearFilters}
-            size="small"
-          >
-            Limpar Filtros
-          </Button>
-        </FilterActionsContainer>
-      </FiltersContainer>
-      {}
-      {loading ? (
-        <LoadingContainer>
-          <CircularProgress size={48} />
-          <Typography variant="body1" color="text.secondary" mt={2}>
-            Carregando relatório...
-          </Typography>
-        </LoadingContainer>
-      ) : !hasData ? (
-        <EmptyStateContainer>
-          <ReportsIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Nenhum dado encontrado
-          </Typography>
-          <Typography variant="body2" color="text.disabled">
-            Não há transações no período selecionado. Tente ajustar os filtros.
-          </Typography>
-        </EmptyStateContainer>
-      ) : (
-        <>
-          {}
-          <SummaryContainer>
-            <SummaryCard $variant="income">
-              <Stack direction="row" alignItems="center" spacing={1.5}>
-                <SummaryIcon $variant="income">
-                  <IncomeIcon />
-                </SummaryIcon>
-                <Box>
-                  <SummaryLabel>Total de Receitas</SummaryLabel>
-                  <SummaryValue $variant="income">
-                    {formatCurrency(summary.totalIncome)}
-                  </SummaryValue>
-                </Box>
-              </Stack>
-            </SummaryCard>
-            <SummaryCard $variant="expense">
-              <Stack direction="row" alignItems="center" spacing={1.5}>
-                <SummaryIcon $variant="expense">
-                  <ExpenseIcon />
-                </SummaryIcon>
-                <Box>
-                  <SummaryLabel>Total de Despesas</SummaryLabel>
-                  <SummaryValue $variant="expense">
-                    {formatCurrency(summary.totalExpenses)}
-                  </SummaryValue>
-                </Box>
-              </Stack>
-            </SummaryCard>
-            <SummaryCard $variant="balance">
-              <Stack direction="row" alignItems="center" spacing={1.5}>
-                <SummaryIcon $variant="balance">
-                  <BalanceIcon />
-                </SummaryIcon>
-                <Box>
-                  <SummaryLabel>Saldo do Período</SummaryLabel>
-                  <SummaryValue $variant="balance">
-                    {formatCurrency(summary.balance)}
-                  </SummaryValue>
-                </Box>
-              </Stack>
-            </SummaryCard>
-          </SummaryContainer>
-          {}
-          <ChartsContainer>
-            {}
-            <ChartCard>
-              <ChartHeader>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Despesas por Categoria
-                </Typography>
-              </ChartHeader>
-              <CategoryChart data={expensesByCategory} />
-            </ChartCard>
-            {}
-            <ChartCard>
-              <ChartHeader>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Receitas vs Despesas
-                </Typography>
-              </ChartHeader>
-              <IncomeExpenseChart data={incomeVsExpenses} />
-            </ChartCard>
-          </ChartsContainer>
-        </>
-      )}
+
+      <FilterPanel onClear={handleClearFilters}>
+        <MonthRangeFields
+          value={filters}
+          onChange={(range) => setFilters((prev) => ({ ...prev, ...range }))}
+        />
+        <SelectInput
+          label="Categoria"
+          fullWidth
+          value={filters.categoryId}
+          items={[
+            { value: '', label: 'Todas' },
+            ...categories.map((item) => ({ value: item.id, label: item.name })),
+          ]}
+          onChange={(e) =>
+            handleFilterChange('categoryId', e.target.value as string | number)
+          }
+        />
+        <SelectInput
+          label="Conta"
+          fullWidth
+          value={filters.accountId}
+          items={[
+            { value: '', label: 'Todas' },
+            ...accounts.map((item) => ({ value: item.id, label: item.name })),
+          ]}
+          onChange={(e) =>
+            handleFilterChange('accountId', e.target.value as string | number)
+          }
+        />
+        <SelectInput
+          label="Tipo"
+          fullWidth
+          value={filters.type}
+          items={[
+            { value: '', label: 'Todos' },
+            { value: 'income', label: 'Receitas' },
+            { value: 'expense', label: 'Despesas' },
+          ]}
+          onChange={(e) => handleFilterChange('type', e.target.value as string)}
+        />
+      </FilterPanel>
+      <ContentLoading
+        loading={loading || loadingCategories || loadingAccounts}
+        initial="inline"
+      >
+        {
+          <>
+            <SummaryContainer>
+              <SummaryCard $variant="income">
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <SummaryIcon $variant="income">
+                    <IncomeIcon />
+                  </SummaryIcon>
+                  <Box>
+                    <SummaryLabel>Total de Receitas</SummaryLabel>
+                    <SummaryValue $variant="income">
+                      {formatCurrency(summary.totalIncome)}
+                    </SummaryValue>
+                  </Box>
+                </Stack>
+              </SummaryCard>
+              <SummaryCard $variant="expense">
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <SummaryIcon $variant="expense">
+                    <ExpenseIcon />
+                  </SummaryIcon>
+                  <Box>
+                    <SummaryLabel>Total de Despesas</SummaryLabel>
+                    <SummaryValue $variant="expense">
+                      {formatCurrency(summary.totalExpenses)}
+                    </SummaryValue>
+                  </Box>
+                </Stack>
+              </SummaryCard>
+              <SummaryCard $variant="balance">
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <SummaryIcon $variant="balance">
+                    <BalanceIcon />
+                  </SummaryIcon>
+                  <Box>
+                    <SummaryLabel>Saldo do Período</SummaryLabel>
+                    <SummaryValue $variant="balance">
+                      {formatCurrency(summary.balance)}
+                    </SummaryValue>
+                  </Box>
+                </Stack>
+              </SummaryCard>
+            </SummaryContainer>
+
+            <ChartsContainer>
+              <ChartCard>
+                <ChartHeader>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Despesas por Categoria
+                  </Typography>
+                </ChartHeader>
+                <CategoryChart data={expensesByCategory} />
+              </ChartCard>
+
+              <ChartCard>
+                <ChartHeader>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Receitas vs Despesas
+                  </Typography>
+                </ChartHeader>
+                <IncomeExpenseChart data={incomeVsExpenses} />
+              </ChartCard>
+            </ChartsContainer>
+          </>
+        }
+      </ContentLoading>
     </ReportsContainer>
   );
 }

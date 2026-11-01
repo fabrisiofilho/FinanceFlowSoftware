@@ -69,18 +69,14 @@ export class ImportService {
       const secondVal = secondRow[i]?.trim() || '';
 
       // Check if first row value looks like a header (text, no numbers)
-      if (
-        firstVal &&
-        !/^\d/.test(firstVal) &&
-        !/^\d{1,2}[\/\-]/.test(firstVal)
-      ) {
+      if (firstVal && !/^\d/.test(firstVal) && !/^\d{1,2}[-/]/.test(firstVal)) {
         firstRowTextCount++;
       }
 
       // Check if second row value looks like data (number or date)
       if (
         secondVal &&
-        (/^\d/.test(secondVal) || /^\d{1,2}[\/\-]/.test(secondVal))
+        (/^\d/.test(secondVal) || /^\d{1,2}[-/]/.test(secondVal))
       ) {
         secondRowNumberCount++;
       }
@@ -158,7 +154,7 @@ export class ImportService {
         case 'DD/MM/YYYY':
         case 'DD-MM-YYYY':
         case 'DD.MM.YYYY': {
-          const parts = cleanDate.split(/[\/\-\.]/);
+          const parts = cleanDate.split(/[-/.]/);
           day = parseInt(parts[0]);
           month = parseInt(parts[1]) - 1;
           year = parseInt(parts[2]);

@@ -1,3 +1,8 @@
+import { ContentLoading } from '@renderer/components/ContentLoading';
+import { PageHeader } from '@renderer/components/PageHeader';
+import { AppAlert } from '@renderer/components/Feedback';
+import { Input as TextField } from '@renderer/components/Form/Input';
+
 import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
@@ -7,15 +12,13 @@ import {
   Tooltip,
   CircularProgress,
   Stack,
-  TextField,
   MenuItem,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  AccountBalanceWallet as WalletIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-  Calculate as CalculateIcon,
+  AddOutlined as AddIcon,
+  AccountBalanceWalletOutlined as WalletIcon,
+  RefreshOutlined as RefreshIcon,
+  CalculateOutlined as CalculateIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
@@ -23,7 +26,6 @@ import { AccountCard } from '@renderer/components/AccountCard';
 import { FormCurrencyField } from '@renderer/components/Form/FormCurrencyField';
 import {
   AccountsContainer,
-  PageHeaderContainer,
   AccountsGrid,
   EmptyStateContainer,
   FormContainer,
@@ -229,7 +231,8 @@ export function AccountsPage() {
   const handleRecalculateBalances = async () => {
     setRecalculateLoading(true);
     try {
-      const response = await window.electronAPI.account.recalculateAllBalances();
+      const response =
+        await window.electronAPI.account.recalculateAllBalances();
       if (response.success) {
         loadAccounts();
       } else {
@@ -241,354 +244,345 @@ export function AccountsPage() {
       setRecalculateLoading(false);
     }
   };
-  if (loading && accounts.length === 0) {
-    return (
-      <AccountsContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <CircularProgress size={48} />
-          <Typography variant="body1" color="text.secondary" mt={2}>
-            Carregando contas...
-          </Typography>
-        </Stack>
-      </AccountsContainer>
-    );
-  }
-  if (error && accounts.length === 0) {
-    return (
-      <AccountsContainer>
-        <Stack alignItems="center" justifyContent="center" minHeight="60vh">
-          <WarningIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
-          <Typography variant="h6" color="error">
-            {error}
-          </Typography>
-          <IconButton onClick={loadAccounts} sx={{ mt: 2 }}>
-            <RefreshIcon />
-          </IconButton>
-        </Stack>
-      </AccountsContainer>
-    );
-  }
+
   return (
     <AccountsContainer>
-      {}
-      <PageHeaderContainer>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            Minhas Contas
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gerencie suas contas financeiras
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Recalcular saldos baseado nas transações">
-            <IconButton 
-              onClick={handleRecalculateBalances} 
-              size="small"
-              disabled={recalculateLoading}
-            >
-              {recalculateLoading ? <CircularProgress size={20} /> : <CalculateIcon />}
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Atualizar">
-            <IconButton onClick={loadAccounts} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleNewAccount}
-            sx={{ borderRadius: '0.5rem' }}
-          >
-            Nova Conta
-          </Button>
-        </Stack>
-      </PageHeaderContainer>
-      {}
-      <TotalBalanceCard>
-        <TotalBalanceIcon>
-          <WalletIcon />
-        </TotalBalanceIcon>
-        <TotalBalanceContent>
-          <TotalBalanceLabel>Saldo Total</TotalBalanceLabel>
-          <TotalBalanceValue $negative={totalBalance < 0}>
-            {formatCurrency(totalBalance)}
-          </TotalBalanceValue>
-        </TotalBalanceContent>
-      </TotalBalanceCard>
-      {}
-      {accounts.length > 0 ? (
-        <AccountsGrid>
-          {accounts.map((account) => (
-            <AccountCard
-              key={account.id}
-              account={account}
-              onEdit={handleEditAccount}
-              onDelete={handleDeleteAccount}
-            />
-          ))}
-        </AccountsGrid>
-      ) : (
-        <EmptyStateContainer>
-          <WalletIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Nenhuma conta cadastrada
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            Clique em "Nova Conta" para adicionar sua primeira conta financeira
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleNewAccount}
-          >
-            Nova Conta
-          </Button>
-        </EmptyStateContainer>
-      )}
-      {}
-      <Modal
-        variant="form"
-        open={isFormOpen}
-        title={selectedAccount ? 'Editar Conta' : 'Nova Conta'}
-        handleClose={handleCloseForm}
-        handleConfirm={handleSubmit(handleSaveAccount)}
-        confirmLabel="Salvar"
-        cancelLabel="Cancelar"
-        loading={formLoading}
-        setMaxWidth="500px"
-      >
-        <FormContainer>
-          {}
-          <Controller
-            name="name"
-            control={control}
-            rules={{ required: 'Nome é obrigatório' }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Nome da Conta"
-                placeholder="Ex: Nubank, Itaú, Carteira"
-                fullWidth
-                required
-                error={!!errors.name}
-                helperText={errors.name?.message}
-              />
-            )}
-          />
-          {}
-          <Controller
-            name="type"
-            control={control}
-            rules={{ required: 'Tipo é obrigatório' }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                select
-                label="Tipo de Conta"
-                fullWidth
-                required
-                disabled={!!selectedAccount}
-                error={!!errors.type}
-                helperText={
-                  errors.type?.message ||
-                  (selectedAccount ? 'O tipo não pode ser alterado' : '')
-                }
+      <PageHeader
+        title="Contas"
+        description={<>Gerencie suas contas financeiras</>}
+        actions={
+          <>
+            <Stack direction="row" spacing={1}>
+              <Tooltip title="Recalcular saldos baseado nas transações">
+                <IconButton
+                  onClick={handleRecalculateBalances}
+                  size="small"
+                  disabled={recalculateLoading}
+                >
+                  {recalculateLoading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <CalculateIcon />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Atualizar">
+                <IconButton onClick={loadAccounts} size="small">
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleNewAccount}
+                sx={{ borderRadius: '0.5rem' }}
               >
-                {accountTypeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-          {}
-          {!selectedAccount && (
-            <FormCurrencyField
-              name="balance"
-              control={control}
-              label="Saldo Inicial"
-              fullWidth
-              required
-              rules={{
-                required: 'Saldo inicial é obrigatório',
-              }}
-            />
-          )}
-          {}
-          {isCreditCard && (
-            <FormRow>
-              {}
-              <FormCurrencyField
-                name="creditLimit"
-                control={control}
-                label="Limite de Crédito"
-                fullWidth
-                required={isCreditCard}
-                rules={{
-                  required: isCreditCard
-                    ? 'Limite é obrigatório para cartão de crédito'
-                    : false,
-                  validate: (value: number) =>
-                    !isCreditCard ||
-                    value > 0 ||
-                    'Limite deve ser maior que zero',
-                }}
+                Nova Conta
+              </Button>
+            </Stack>
+          </>
+        }
+      />
+      <ContentLoading loading={loading} initial="cards">
+        {error && (
+          <AppAlert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </AppAlert>
+        )}
+
+        <TotalBalanceCard>
+          <TotalBalanceIcon>
+            <WalletIcon />
+          </TotalBalanceIcon>
+          <TotalBalanceContent>
+            <TotalBalanceLabel>Saldo Total</TotalBalanceLabel>
+            <TotalBalanceValue $negative={totalBalance < 0}>
+              {formatCurrency(totalBalance)}
+            </TotalBalanceValue>
+          </TotalBalanceContent>
+        </TotalBalanceCard>
+
+        {accounts.length > 0 ? (
+          <AccountsGrid>
+            {accounts.map((account) => (
+              <AccountCard
+                key={account.id}
+                account={account}
+                onEdit={handleEditAccount}
+                onDelete={handleDeleteAccount}
               />
-              {}
-              <Controller
-                name="closingDay"
-                control={control}
-                rules={{
-                  required: isCreditCard
-                    ? 'Dia de fechamento é obrigatório'
-                    : false,
-                  min: { value: 1, message: 'Dia deve ser entre 1 e 31' },
-                  max: { value: 31, message: 'Dia deve ser entre 1 e 31' },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Dia de Fechamento"
-                    type="number"
-                    fullWidth
-                    required={isCreditCard}
-                    error={!!errors.closingDay}
-                    helperText={errors.closingDay?.message || 'Dia 1 a 31'}
-                    slotProps={{
-                      input: {
-                        inputProps: { min: 1, max: 31 },
-                      },
-                    }}
-                  />
-                )}
-              />
-            </FormRow>
-          )}
-          {isCreditCard && (
-            <FormRow>
-              <Controller
-                name="cardBrand"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    label="Bandeira"
-                    fullWidth
-                    value={field.value || ''}
-                  >
-                    <MenuItem value="">Selecione...</MenuItem>
-                    {Object.entries(CARD_BRAND_LABELS).map(([value, label]) => (
-                      <MenuItem key={value} value={value}>
-                        {label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="bankName"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    label="Banco"
-                    fullWidth
-                    value={field.value || ''}
-                  >
-                    <MenuItem value="">Selecione...</MenuItem>
-                    {BANK_OPTIONS.map((bank) => (
-                      <MenuItem key={bank} value={bank}>
-                        {bank}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </FormRow>
-          )}
-          {isCreditCard && (
+            ))}
+          </AccountsGrid>
+        ) : (
+          <EmptyStateContainer>
+            <WalletIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Nenhuma conta cadastrada
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Clique em "Nova Conta" para adicionar sua primeira conta
+              financeira
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleNewAccount}
+            >
+              Nova Conta
+            </Button>
+          </EmptyStateContainer>
+        )}
+
+        <Modal
+          variant="form"
+          open={isFormOpen}
+          title={selectedAccount ? 'Editar Conta' : 'Nova Conta'}
+          handleClose={handleCloseForm}
+          handleConfirm={handleSubmit(handleSaveAccount)}
+          confirmLabel="Salvar"
+          cancelLabel="Cancelar"
+          loading={formLoading}
+          setMaxWidth="500px"
+        >
+          <FormContainer>
             <Controller
-              name="cardColor"
+              name="name"
               control={control}
+              rules={{ required: 'Nome é obrigatório' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Nome da Conta"
+                  placeholder="Ex: Nubank, Itaú, Carteira"
+                  fullWidth
+                  required
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="type"
+              control={control}
+              rules={{ required: 'Tipo é obrigatório' }}
               render={({ field }) => (
                 <TextField
                   {...field}
                   select
-                  label="Cor do Cartão"
+                  label="Tipo de Conta"
                   fullWidth
-                  value={field.value || '#1a1a2e'}
-                  SelectProps={{
-                    renderValue: (selected) => {
-                      const option = CARD_COLOR_OPTIONS.find(
-                        (opt) => opt.value === selected,
-                      );
-                      return (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: '4px',
-                              backgroundColor: selected as string,
-                              border: '1px solid rgba(0,0,0,0.2)',
-                            }}
-                          />
-                          {option?.label || 'Selecione...'}
-                        </Box>
-                      );
-                    },
-                  }}
+                  required
+                  disabled={!!selectedAccount}
+                  error={!!errors.type}
+                  helperText={
+                    errors.type?.message ||
+                    (selectedAccount ? 'O tipo não pode ser alterado' : '')
+                  }
                 >
-                  {CARD_COLOR_OPTIONS.map((option) => (
+                  {accountTypeOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box
-                          sx={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: '4px',
-                            backgroundColor: option.value,
-                            border: '1px solid rgba(0,0,0,0.2)',
-                          }}
-                        />
-                        {option.label}
-                      </Box>
+                      {option.label}
                     </MenuItem>
                   ))}
                 </TextField>
               )}
             />
-          )}
-        </FormContainer>
-      </Modal>
-      {}
-      <Modal
-        variant="danger"
-        open={isDeleteModalOpen}
-        title="Excluir Conta"
-        handleClose={() => {
-          setIsDeleteModalOpen(false);
-          setAccountToDelete(null);
-        }}
-        handleConfirm={handleConfirmDelete}
-        confirmLabel="Excluir"
-        cancelLabel="Cancelar"
-        loading={deleteLoading}
-      >
-        <Typography>
-          Tem certeza que deseja excluir a conta{' '}
-          <strong>{accountToDelete?.name}</strong>?
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Esta ação não pode ser desfeita. Todas as transações vinculadas a esta
-          conta também serão afetadas.
-        </Typography>
-      </Modal>
+
+            {!selectedAccount && (
+              <FormCurrencyField
+                name="balance"
+                control={control}
+                label="Saldo Inicial"
+                fullWidth
+                required
+                rules={{
+                  required: 'Saldo inicial é obrigatório',
+                }}
+              />
+            )}
+
+            {isCreditCard && (
+              <FormRow>
+                <FormCurrencyField
+                  name="creditLimit"
+                  control={control}
+                  label="Limite de Crédito"
+                  fullWidth
+                  required={isCreditCard}
+                  rules={{
+                    required: isCreditCard
+                      ? 'Limite é obrigatório para cartão de crédito'
+                      : false,
+                    validate: (value: number) =>
+                      !isCreditCard ||
+                      value > 0 ||
+                      'Limite deve ser maior que zero',
+                  }}
+                />
+
+                <Controller
+                  name="closingDay"
+                  control={control}
+                  rules={{
+                    required: isCreditCard
+                      ? 'Dia de fechamento é obrigatório'
+                      : false,
+                    min: { value: 1, message: 'Dia deve ser entre 1 e 31' },
+                    max: { value: 31, message: 'Dia deve ser entre 1 e 31' },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Dia de Fechamento"
+                      type="number"
+                      fullWidth
+                      required={isCreditCard}
+                      error={!!errors.closingDay}
+                      helperText={errors.closingDay?.message || 'Dia 1 a 31'}
+                      slotProps={{
+                        input: {
+                          inputProps: { min: 1, max: 31 },
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </FormRow>
+            )}
+            {isCreditCard && (
+              <FormRow>
+                <Controller
+                  name="cardBrand"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="Bandeira"
+                      fullWidth
+                      value={field.value || ''}
+                    >
+                      <MenuItem value="">Selecione...</MenuItem>
+                      {Object.entries(CARD_BRAND_LABELS).map(
+                        ([value, label]) => (
+                          <MenuItem key={value} value={value}>
+                            {label}
+                          </MenuItem>
+                        ),
+                      )}
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="bankName"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="Banco"
+                      fullWidth
+                      value={field.value || ''}
+                    >
+                      <MenuItem value="">Selecione...</MenuItem>
+                      {BANK_OPTIONS.map((bank) => (
+                        <MenuItem key={bank} value={bank}>
+                          {bank}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </FormRow>
+            )}
+            {isCreditCard && (
+              <Controller
+                name="cardColor"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Cor do Cartão"
+                    fullWidth
+                    value={field.value || '#1a1a2e'}
+                    SelectProps={{
+                      renderValue: (selected) => {
+                        const option = CARD_COLOR_OPTIONS.find(
+                          (opt) => opt.value === selected,
+                        );
+                        return (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: '4px',
+                                backgroundColor: selected as string,
+                                border: '1px solid rgba(0,0,0,0.2)',
+                              }}
+                            />
+                            {option?.label || 'Selecione...'}
+                          </Box>
+                        );
+                      },
+                    }}
+                  >
+                    {CARD_COLOR_OPTIONS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <Box
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: '4px',
+                              backgroundColor: option.value,
+                              border: '1px solid rgba(0,0,0,0.2)',
+                            }}
+                          />
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            )}
+          </FormContainer>
+        </Modal>
+
+        <Modal
+          variant="danger"
+          open={isDeleteModalOpen}
+          title="Excluir Conta"
+          handleClose={() => {
+            setIsDeleteModalOpen(false);
+            setAccountToDelete(null);
+          }}
+          handleConfirm={handleConfirmDelete}
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          loading={deleteLoading}
+        >
+          <Typography>
+            Tem certeza que deseja excluir a conta{' '}
+            <strong>{accountToDelete?.name}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Esta ação não pode ser desfeita. Todas as transações vinculadas a
+            esta conta também serão afetadas.
+          </Typography>
+        </Modal>
+      </ContentLoading>
     </AccountsContainer>
   );
 }

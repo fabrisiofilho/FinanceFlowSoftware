@@ -1,3 +1,5 @@
+import { ExpandableCard } from '@renderer/components/ExpandableCard';
+import { PageContainer } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
 import { Box, Stack, LinearProgress } from '@mui/material';
 import type { AlertStatus } from '@shared/interfaces/types/alert.types';
@@ -25,26 +27,7 @@ const getStatusBgColor = (theme: any, status: AlertStatus): string => {
       return theme.COLORS.surfaceAlt;
   }
 };
-export const AlertsContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const PageHeaderContainer = styled(Stack).attrs({
-  direction: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-})`
-  margin-bottom: 1.5rem;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-`;
+export const AlertsContainer = PageContainer;
 export const AlertsGrid = styled(Box)`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -54,7 +37,7 @@ export const AlertsGrid = styled(Box)`
     gap: 1rem;
   }
 `;
-export const AlertCard = styled(Box)<{ $status: AlertStatus }>`
+export const AlertCard = styled(ExpandableCard)<{ $status: AlertStatus }>`
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
@@ -68,7 +51,7 @@ export const AlertCard = styled(Box)<{ $status: AlertStatus }>`
     transform 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
-    transform: translateY(-2px);
+    filter: brightness(1.04);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
 `;
@@ -85,7 +68,7 @@ export const AlertIcon = styled(Box)<{ $status: AlertStatus }>`
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme, $status }) => getStatusBgColor(theme, $status)};
   svg {
     font-size: 1.5rem;

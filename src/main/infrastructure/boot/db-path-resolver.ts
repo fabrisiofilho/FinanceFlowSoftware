@@ -65,7 +65,7 @@ export function resolveAndSetupDbPath(): string {
         console.warn(' Trying APPDATA alternative location...');
         dbPath = path.join(
           alternativeBase,
-          'catraca',
+          'contabily',
           'database',
           'finance.db',
         );
@@ -153,12 +153,16 @@ export function getDatabaseDirectoryInfo(dbPath: string): {
   try {
     fs.accessSync(dbDir, fs.constants.W_OK);
     writable = true;
-  } catch {}
+  } catch {
+    writable = false;
+  }
 
   try {
     fs.accessSync(dbDir, fs.constants.R_OK);
     readable = true;
-  } catch {}
+  } catch {
+    readable = false;
+  }
 
   if (exists) {
     try {

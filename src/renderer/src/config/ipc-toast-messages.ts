@@ -131,6 +131,7 @@ export const IPC_TOAST_MESSAGES: IpcToastMessages = {
     success: 'Relatório CSV gerado com sucesso!',
     error: 'Erro ao gerar relatório CSV',
   },
+  'report:generateReport': { silent: true },
   'report:getExpensesByCategory': { silent: true },
   'report:getIncomeVsExpenses': { silent: true },
 
@@ -165,6 +166,17 @@ export const IPC_TOAST_MESSAGES: IpcToastMessages = {
   'financeAuth:checkAuth': { silent: true },
   'financeAuth:getCurrentUser': { silent: true },
 
+  'investment:list': { silent: true },
+  'investment:create': { silent: true },
+  'investment:recordYield': { silent: true },
+  'investment:remove': { silent: true },
+  'notification:refresh': { silent: true },
+  'notification:getSettings': { silent: true },
+  'notification:updateSettings': { silent: true },
+  'notification:getSummary': { silent: true },
+  'notification:findAll': { silent: true },
+  'notification:markAsRead': { silent: true },
+  'notification:markAllAsRead': { silent: true },
   // ==================== AUTO UPDATER ====================
   'autoUpdater:getAppVersion': { silent: true },
   'autoUpdater:checkForUpdates': { silent: true },

@@ -1,9 +1,4 @@
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DatePicker as MuiDatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { ptBR } from 'date-fns/locale/pt-BR';
-import { parseDateSafe } from '@renderer/utils/date';
-
+import { DatePicker } from '@renderer/components/Form/DatePicker';
 type Props = {
   label: string;
   value: string | Date | null;
@@ -29,19 +24,17 @@ export function DatePickerField({
   disablePast,
 }: Readonly<Props>) {
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
-      <MuiDatePicker
-        views={['year', 'day']}
-        minDate={parseDateSafe(minDate)}
-        maxDate={parseDateSafe(maxDate)}
-        label={label}
-        value={parseDateSafe(value)}
-        disabled={disabledDatePicker}
-        disableFuture={disableFuture}
-        disablePast={disablePast}
-        onChange={handleChange}
-        onAccept={onAccept}
-      />
-    </LocalizationProvider>
+    <DatePicker
+      label={label}
+      value={value}
+      disabled={disabledDatePicker}
+      onAccept={onAccept}
+      onChange={handleChange}
+      minDate={minDate}
+      maxDate={maxDate}
+      disableFuture={disableFuture}
+      disablePast={disablePast}
+      fullWidth
+    />
   );
 }

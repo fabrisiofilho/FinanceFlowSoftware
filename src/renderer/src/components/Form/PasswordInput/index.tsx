@@ -1,4 +1,7 @@
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  VisibilityOutlined as Visibility,
+  VisibilityOffOutlined as VisibilityOff,
+} from '@mui/icons-material';
 import {
   FormControl,
   FormHelperText,
@@ -43,7 +46,8 @@ export const PasswordInput = forwardRef(function PasswordInput(
         endAdornment={
           <InputAdornment position="end">
             <IconButton
-              aria-label="password-visibility"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
               onClick={handleClickShowPassword}
               onMouseDown={handleMouseDownPassword}
             >

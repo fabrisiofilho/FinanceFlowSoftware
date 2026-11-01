@@ -1,4 +1,4 @@
-import { Grid, Stack, Typography, Link as MuiLink, Card } from '@mui/material';
+import { Grid, Stack, Typography, Link as MuiLink, Box } from '@mui/material';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { FormTextField } from '@renderer/components/Form/FormTextField';
 import { useForm } from 'react-hook-form';
@@ -60,9 +60,9 @@ export function RegisterPage() {
   };
   return (
     <AuthPageTemplate>
-      <Card sx={{ width: '100%', p: 4 }}>
+      <Box sx={{ width: '100%' }}>
         <form noValidate onSubmit={handleSubmit(onSubmit)}>
-          <Stack alignItems="center">
+          <Stack alignItems="flex-start">
             <Typography variant="h4" color="primary" fontWeight={700}>
               Criar Conta
             </Typography>
@@ -138,7 +138,7 @@ export function RegisterPage() {
             </Grid>
           </Grid>
         </form>
-      </Card>
+      </Box>
     </AuthPageTemplate>
   );
 }

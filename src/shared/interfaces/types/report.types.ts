@@ -15,6 +15,7 @@ export interface ReportSummary {
   expensesByCategory: CategoryExpense[];
 }
 export interface ReportData {
+  incomeVsExpenses: IncomeVsExpense[];
   filters: ReportFilters;
   summary: ReportSummary;
   generatedAt: Date;

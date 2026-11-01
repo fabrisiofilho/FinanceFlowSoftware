@@ -1,9 +1,9 @@
 import styled, { css } from 'styled-components';
-import { rgba } from 'polished';
+
 import {
-  KeyboardArrowRight,
-  KeyboardArrowDown,
-  FiberManualRecord,
+  KeyboardArrowRightOutlined as KeyboardArrowRight,
+  KeyboardArrowDownOutlined as KeyboardArrowDown,
+  FiberManualRecordOutlined as FiberManualRecord,
 } from '@mui/icons-material';
 import { NavLink } from 'react-router-dom';
 
@@ -14,7 +14,12 @@ export const ListItem = styled(NavLink)`
   align-items: center;
 
   position: relative;
-  padding: 0.67rem 0.45rem 0.67rem 2rem;
+  padding: 0.8rem 1rem;
+  margin-left: 0.75rem;
+  border-radius: 0.85rem;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
   margin-right: 0.75rem;
 
   border-top-right-radius: 2.5rem;
@@ -33,7 +38,7 @@ export const ListItem = styled(NavLink)`
   }
 
   &.active {
-    background-color: ${({ theme }) => rgba(theme.COLORS.primary, 0.04)};
+    background-color: ${({ theme }) => theme.COLORS.secondary_100};
     color: ${({ theme }) => theme.COLORS.primary};
 
     p {

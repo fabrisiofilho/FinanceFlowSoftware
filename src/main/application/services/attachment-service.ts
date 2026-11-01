@@ -50,7 +50,9 @@ export class AttachmentService {
 
     try {
       // Validate file
-      if (!ALLOWED_MIME_TYPES.includes(data.file.mimeType as any)) {
+      if (
+        !ALLOWED_MIME_TYPES.some((mimeType) => mimeType === data.file.mimeType)
+      ) {
         return {
           success: false,
           errorMessage: `Tipo de arquivo não permitido: ${data.file.mimeType}`,

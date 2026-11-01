@@ -1,4 +1,4 @@
-import Close from '@mui/icons-material/Close';
+import Close from '@mui/icons-material/CloseOutlined';
 import {
   Dialog,
   DialogActions,

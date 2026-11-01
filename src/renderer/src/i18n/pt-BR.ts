@@ -49,7 +49,7 @@ export const ptBR = {
     selectOption: 'Selecione uma opção',
   },
   auth: {
-    welcome: 'Bem-vindo ao FinanceFlow',
+    welcome: 'Bem-vindo ao Contabily',
     login: 'Entrar',
     register: 'Cadastrar',
     createAccount: 'Criar Conta',

@@ -1,6 +1,5 @@
 import { Button, type ButtonProps, CircularProgress } from '@mui/material';
 import type { ReactNode } from 'react';
-import { ChildrenContainer, Content, LoadingContainer } from './styles';
 
 type LoadingButtonProps = Omit<ButtonProps, 'loading'> & {
   children: ReactNode;
@@ -13,14 +12,19 @@ export function LoadingButton({
   ...rest
 }: Readonly<LoadingButtonProps>) {
   return (
-    <Button {...rest} disabled={loading || rest.disabled}>
-      <Content>
-        <LoadingContainer>
-          {loading && <CircularProgress size={20} color="inherit" />}
-        </LoadingContainer>
-
-        <ChildrenContainer $hide={loading}>{children}</ChildrenContainer>
-      </Content>
+    <Button
+      {...rest}
+      aria-busy={loading}
+      disabled={loading || rest.disabled}
+      startIcon={
+        loading ? (
+          <CircularProgress size={18} color="inherit" />
+        ) : (
+          rest.startIcon
+        )
+      }
+    >
+      {children}
     </Button>
   );
 }

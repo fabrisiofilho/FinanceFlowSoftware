@@ -1,64 +1,10 @@
+import { ExpandableCard as Card } from '@renderer/components/ExpandableCard';
+import { metricCardStyles } from '@renderer/components/PageLayout';
+import { PageContainer } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
-import { Box, Stack, Paper, Card } from '@mui/material';
-export const ReportsContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const PageHeaderContainer = styled(Stack).attrs({
-  direction: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-})`
-  margin-bottom: 1.5rem;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-`;
-export const FiltersContainer = styled(Paper)`
-  padding: 1rem 1.5rem;
-  border-radius: 1rem;
-  margin-bottom: 1.5rem;
-  background-color: ${({ theme }) => theme.COLORS.surface};
-  box-shadow: ${({ theme }) => theme.SHADOWS.cards};
-  border: 1px solid ${({ theme }) => theme.COLORS.border};
-`;
-export const FiltersGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  align-items: end;
-  @media ${({ theme }) => theme.SIZES.lg} {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  @media ${({ theme }) => theme.SIZES.sm} {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  @media ${({ theme }) => theme.SIZES.xs} {
-    grid-template-columns: 1fr;
-  }
-`;
-export const FilterActionsContainer = styled(Stack).attrs({
-  direction: 'row',
-  spacing: 1,
-  justifyContent: 'flex-end',
-  alignItems: 'center',
-})`
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid ${({ theme }) => theme.COLORS.border};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    button {
-      width: 100%;
-    }
-  }
-`;
+import { Box, Stack } from '@mui/material';
+export const ReportsContainer = PageContainer;
+
 export const SummaryContainer = styled(Box)`
   display: flex;
   gap: 1rem;
@@ -74,7 +20,7 @@ export const SummaryCard = styled(Card)<{
   flex: 1;
   min-width: 200px;
   padding: 1rem 1.25rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.surface};
   box-shadow: ${({ theme }) => theme.SHADOWS.cards};
   border: 1px solid ${({ theme }) => theme.COLORS.border};
@@ -91,6 +37,7 @@ export const SummaryCard = styled(Card)<{
           return theme.COLORS.grey_400;
       }
     }};
+  ${metricCardStyles};
 `;
 export const SummaryIcon = styled(Box)<{
   $variant?: 'income' | 'expense' | 'balance';
@@ -165,7 +112,7 @@ export const ChartsContainer = styled(Box)`
 `;
 export const ChartCard = styled(Card)`
   padding: 1rem 1.25rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.surface};
   box-shadow: ${({ theme }) => theme.SHADOWS.cards};
   border: 1px solid ${({ theme }) => theme.COLORS.border};
@@ -197,7 +144,7 @@ export const EmptyStateContainer = styled(Box)`
   padding: 3rem 2rem;
   text-align: center;
   background-color: ${({ theme }) => theme.COLORS.surface};
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   box-shadow: ${({ theme }) => theme.SHADOWS.cards};
   border: 1px solid ${({ theme }) => theme.COLORS.border};
 `;

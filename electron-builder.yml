@@ -1,5 +1,5 @@
-appId: com.electron.financeflow
-productName: FinanceFlow
+appId: br.com.contabily.desktop
+productName: Contabily
 
 directories:
   buildResources: build
@@ -14,7 +14,7 @@ asarUnpack:
   - out/main/migrations/**
 
 npmRebuild: true
-buildDependenciesFromSource: true
+buildDependenciesFromSource: false
 
 files:
   - out/main/**
@@ -35,7 +35,7 @@ extraResources:
 
 # ----------- WINDOWS -----------
 win:
-  executableName: financeflow
+  executableName: contabily
   icon: build/icon.ico
   target: nsis
   defaultArch: x64
@@ -62,14 +62,10 @@ linux:
     - deb
     - snap
   icon: build/icon.png
-  maintainer: 'FinanceFlow'
+  maintainer: 'fabrisiofilho'
   category: Finance
   artifactName: ${productName}-${version}.${ext}
   synopsis: 'Controle financeiro pessoal'
   description: 'Aplicação desktop para controle financeiro pessoal com gestão de contas, transações, metas e cartões de crédito.'
 # ----------- AUTO UPDATE / PUBLISH -----------
-publish:
-  provider: github
-  owner: fabrisiofilho
-  repo: Finance_Local_Electron
-  releaseType: release
+publish: null

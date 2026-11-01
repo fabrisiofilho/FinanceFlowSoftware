@@ -1,44 +1,10 @@
+import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
-import { Box, Stack, Paper } from '@mui/material';
-export const TransactionsContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const PageHeaderContainer = styled(Stack).attrs({
-  direction: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-})`
-  margin-bottom: 1.5rem;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-`;
-export const FiltersContainer = styled(Paper)`
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  border-radius: 0.75rem;
-  background-color: ${({ theme }) => theme.COLORS.surface};
-  box-shadow: ${({ theme }) => theme.SHADOWS.cards};
-  border: 1px solid ${({ theme }) => theme.COLORS.border};
-`;
-export const FiltersGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  align-items: end;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    grid-template-columns: 1fr;
-  }
-`;
-export const TableContainer = styled(Paper)`
-  border-radius: 0.75rem;
+import { Box, Stack } from '@mui/material';
+export const TransactionsContainer = PageContainer;
+
+export const TableContainer = styled(ContentSurface)`
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.surface};
   box-shadow: ${({ theme }) => theme.SHADOWS.cards};
   border: 1px solid ${({ theme }) => theme.COLORS.border};

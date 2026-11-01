@@ -1,3 +1,6 @@
+import { ExpandableCard } from '@renderer/components/ExpandableCard';
+import { metricCardStyles } from '@renderer/components/PageLayout';
+import { PageContainer } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
 import { Box, Stack } from '@mui/material';
 type CardVariant = 'primary' | 'success' | 'error' | 'info' | 'warning';
@@ -31,15 +34,8 @@ const getVariantColors = (theme: any, variant: CardVariant) => {
   };
   return variants[variant];
 };
-export const DashboardContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const SummaryCard = styled(Box)<{ $variant: CardVariant }>`
+export const DashboardContainer = PageContainer;
+export const SummaryCard = styled(ExpandableCard)<{ $variant: CardVariant }>`
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -52,13 +48,14 @@ export const SummaryCard = styled(Box)<{ $variant: CardVariant }>`
     transform 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
-    transform: translateY(-2px);
+    filter: brightness(1.04);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
   @media ${({ theme }) => theme.SIZES.xs} {
     padding: 1rem;
     gap: 0.75rem;
   }
+  ${metricCardStyles};
 `;
 export const SummaryCardIcon = styled(Box)<{ $variant: CardVariant }>`
   display: flex;
@@ -66,7 +63,7 @@ export const SummaryCardIcon = styled(Box)<{ $variant: CardVariant }>`
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme, $variant }) =>
     getVariantColors(theme, $variant).bg};
   svg {

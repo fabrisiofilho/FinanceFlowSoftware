@@ -5,8 +5,8 @@ import {
   UpdateState,
   UpdateStatus,
 } from '@shared/interfaces/types/auto-updater.types';
-import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAltOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { Modal } from '../Modal';
 const ContentContainer = styled(Box)({
   display: 'flex',

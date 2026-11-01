@@ -1,7 +1,6 @@
-import { Stack } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
+import { SpaOutlined } from '@mui/icons-material';
 import { Loading } from '@renderer/components/Loading';
-import financeLogo from '@renderer/assets/finance.png';
-import { Image } from './styles';
 import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@renderer/hooks/redux';
 import { loadAuthData } from '@renderer/redux/slices/auth/thunks';
@@ -37,8 +36,16 @@ export function LoadingPage() {
   }, [authDataLoading, handleDataLoaded]);
 
   return (
-    <Stack flex={1} height="100vh" alignItems="center" justifyContent="center">
-      <Image src={financeLogo} />
+    <Stack
+      flex={1}
+      height="var(--app-height)"
+      alignItems="center"
+      justifyContent="center"
+    >
+      <SpaOutlined sx={{ fontSize: 40, color: 'secondary.main', mb: 2 }} />
+      <Typography color="text.secondary" sx={{ mb: 3 }}>
+        Preparando seu espaço financeiro…
+      </Typography>
 
       <Loading size="3.5rem" />
     </Stack>

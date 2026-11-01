@@ -1,22 +1,12 @@
+import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 
-export const ReportsContainer = styled(Box)`
+export const ReportsContainer = PageContainer;
+
+export const ReportCard = styled(ContentSurface)`
   padding: 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-`;
-
-export const PageHeaderContainer = styled(Box)`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-`;
-
-export const ReportCard = styled(Paper)`
-  padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: 1.5rem;
   height: 100%;
 `;
 
@@ -27,13 +17,18 @@ export const HealthScoreCircle = styled(Box)<{ $score: number }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ $score }) =>
+  background: ${({ theme, $score }) =>
     $score >= 70
-      ? 'linear-gradient(135deg, #4caf50, #81c784)'
+      ? theme.COLORS.success_100
       : $score >= 40
-        ? 'linear-gradient(135deg, #ff9800, #ffb74d)'
-        : 'linear-gradient(135deg, #f44336, #e57373)'};
-  color: white;
+        ? theme.COLORS.warn_100
+        : theme.COLORS.error_100};
+  color: ${({ theme, $score }) =>
+    $score >= 70
+      ? theme.COLORS.success
+      : $score >= 40
+        ? theme.COLORS.warn
+        : theme.COLORS.error};
   font-size: 2rem;
   font-weight: 700;
 `;

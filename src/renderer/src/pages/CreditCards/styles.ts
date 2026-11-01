@@ -1,25 +1,8 @@
+import { ExpandableCard } from '@renderer/components/ExpandableCard';
+import { PageContainer } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
 import { Box, Stack, LinearProgress } from '@mui/material';
-export const CreditCardsContainer = styled(Box)`
-  padding: 1.5rem;
-  min-height: 100%;
-  background-color: ${({ theme }) => theme.COLORS.background};
-  @media ${({ theme }) => theme.SIZES.xs} {
-    padding: 1rem;
-  }
-`;
-export const PageHeaderContainer = styled(Stack).attrs({
-  direction: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-})`
-  margin-bottom: 1.5rem;
-  @media ${({ theme }) => theme.SIZES.xs} {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-`;
+export const CreditCardsContainer = PageContainer;
 export const CreditCardsGrid = styled(Box)`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -29,7 +12,7 @@ export const CreditCardsGrid = styled(Box)`
     gap: 1rem;
   }
 `;
-export const CreditCardCard = styled(Box)<{ $cardColor?: string }>`
+export const CreditCardCard = styled(ExpandableCard)<{ $cardColor?: string }>`
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
@@ -37,12 +20,13 @@ export const CreditCardCard = styled(Box)<{ $cardColor?: string }>`
   background-color: ${({ theme }) => theme.COLORS.surface};
   box-shadow: ${({ theme }) => theme.SHADOWS.cards};
   border: 1px solid ${({ theme }) => theme.COLORS.border};
-  border-left: 4px solid ${({ $cardColor, theme }) => $cardColor || theme.COLORS.secondary_200};
+  border-left: 4px solid
+    ${({ $cardColor, theme }) => $cardColor || theme.COLORS.secondary_200};
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
-    transform: translateY(-2px);
+    filter: brightness(1.04);
     box-shadow: ${({ theme }) => theme.SHADOWS.z_12};
   }
 `;
@@ -79,7 +63,7 @@ export const CardIcon = styled(Box)`
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.secondary_100};
   svg {
     font-size: 1.5rem;
@@ -107,7 +91,7 @@ export const CardSubtitle = styled.span`
 export const LimitSection = styled(Box)`
   margin-top: 1rem;
   padding: 1rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.surfaceAlt};
 `;
 export const LimitProgressBar = styled(LinearProgress)<{ $percentage: number }>`
@@ -159,7 +143,7 @@ export const LimitValue = styled.span<{
 export const InvoiceSection = styled(Box)`
   margin-top: 1rem;
   padding: 1rem;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.COLORS.surface};
   border: 1px solid ${({ theme }) => theme.COLORS.border};
 `;

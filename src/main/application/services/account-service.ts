@@ -11,7 +11,6 @@ import { repositoryCache } from '../repositories/repository-cache';
 export class AccountService {
   private static readonly MIN_CLOSING_DAY = 1;
   private static readonly MAX_CLOSING_DAY = 31;
-  constructor() {}
   private get accountRepository() {
     return repositoryCache.accountRepository;
   }

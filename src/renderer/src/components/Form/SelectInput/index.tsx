@@ -1,8 +1,8 @@
+import { Input as TextField } from '@renderer/components/Form/Input';
 import {
   CircularProgress,
   MenuItem,
   Stack,
-  TextField,
   type TextFieldProps,
 } from '@mui/material';
 import { type ChangeEvent, type Ref, forwardRef } from 'react';
@@ -140,6 +140,13 @@ export const SelectInput = forwardRef(function SelectInput(
       onBlur={onBlur}
       slotProps={{
         select: {
+          displayEmpty: true,
+          renderValue: (selected) =>
+            items.find(
+              (item) =>
+                String(handleGetItemKeyAndValue(item).value) ===
+                String(selected),
+            )?.label ?? 'Selecione',
           ...rest?.slotProps?.select,
           MenuProps: {
             style: {
@@ -148,6 +155,7 @@ export const SelectInput = forwardRef(function SelectInput(
           },
         },
         inputLabel: {
+          shrink: true,
           required,
         },
       }}

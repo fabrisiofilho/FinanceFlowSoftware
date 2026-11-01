@@ -43,13 +43,11 @@ export default defineConfig(({ mode }) => {
 
   const API_URL = env.VITE_API_URL || 'http://localhost:8080';
   const FRONTEND_URL = env.VITE_FRONTEND_URL || 'http://localhost:5173';
-  const GH_TOKEN = process.env.GH_TOKEN || '';
 
   console.log('Building with environment:', {
     mode,
     API_URL,
     FRONTEND_URL,
-    GH_TOKEN: GH_TOKEN ? '***configured***' : 'not set',
   });
 
   return {
@@ -71,7 +69,6 @@ export default defineConfig(({ mode }) => {
       define: {
         'process.env.VITE_API_URL': JSON.stringify(API_URL),
         'process.env.VITE_FRONTEND_URL': JSON.stringify(FRONTEND_URL),
-        'process.env.GH_TOKEN': JSON.stringify(GH_TOKEN),
       },
     },
 

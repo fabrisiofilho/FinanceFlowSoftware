@@ -36,6 +36,7 @@ export interface CreateNotificationInput {
 }
 
 export interface NotificationSettings {
+  investmentYieldEnabled: boolean;
   id: number;
   userId: number;
   billDueEnabled: boolean;
@@ -54,6 +55,7 @@ export interface NotificationSettings {
 }
 
 export interface UpdateNotificationSettingsInput {
+  investmentYieldEnabled?: boolean;
   billDueEnabled?: boolean;
   billDueDaysBefore?: number;
   budgetExceededEnabled?: boolean;

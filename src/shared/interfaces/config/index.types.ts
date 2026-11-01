@@ -1,3 +1,4 @@
+import type { InvestmentAPI } from '../types/investment.types';
 import { IFinanceAuthController } from '../controllers/finance-auth.controller.interface';
 import { IAccountController } from '../controllers/account.controller.interface';
 import { ICategoryController } from '../controllers/category.controller.interface';
@@ -29,6 +30,7 @@ export interface IpcResultEvent {
 }
 
 export interface CustomElectronAPI {
+  investment: InvestmentAPI;
   financeAuth: IFinanceAuthController;
   account: IAccountController;
   category: ICategoryController;
@@ -52,6 +54,11 @@ export interface CustomElectronAPI {
   autoUpdater: IAutoUpdaterController;
 
   openExternalUrl: (url: string) => void;
+  windowControls: {
+    minimize: () => void;
+    toggleMaximize: () => void;
+    close: () => void;
+  };
 
   onAutoUpdaterStatus: (callback: (state: UpdateState) => void) => () => void;
 

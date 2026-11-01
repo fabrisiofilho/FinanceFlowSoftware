@@ -29,6 +29,7 @@ export function FormDatePickerField<T extends FieldValues>({
         <DatePicker
           {...rest}
           {...field}
+          inputRef={field.ref}
           value={field.value ?? null}
           disabled={disabled}
           helperText={error?.message ?? ''}

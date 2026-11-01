@@ -1,3 +1,9 @@
+import { PageHeader } from '@renderer/components/PageHeader';
+import { ExpandableCard as Card } from '@renderer/components/ExpandableCard';
+import { ExpandableCard as Paper } from '@renderer/components/ExpandableCard';
+import { DateStringField } from '@renderer/components/Form/DatePicker/DateStringField';
+import { AppAlert as Alert } from '@renderer/components/Feedback';
+import { Input as TextField } from '@renderer/components/Form/Input';
 import { useEffect, useState, useCallback, useRef, useMemo, memo } from 'react';
 import {
   Box,
@@ -6,21 +12,17 @@ import {
   CircularProgress,
   Stack,
   Chip,
-  Alert,
   Stepper,
   Step,
   StepLabel,
-  Card,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   MenuItem,
   FormControlLabel,
   Switch,
-  Paper,
   IconButton,
   Tooltip,
   Dialog,
@@ -30,23 +32,26 @@ import {
   TablePagination,
 } from '@mui/material';
 import {
-  CloudUpload as UploadIcon,
-  Check as CheckIcon,
-  AccountBalance as BankIcon,
-  CheckCircle,
-  Error as ErrorIcon,
-  TrendingUp,
-  TrendingDown,
-  Settings as SettingsIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Restore as RestoreIcon,
+  CloudUploadOutlined as UploadIcon,
+  CheckOutlined as CheckIcon,
+  CheckCircleOutlineRounded as CheckCircle,
+  ErrorOutlineRounded as ErrorIcon,
+  TrendingUpOutlined as TrendingUp,
+  TrendingDownOutlined as TrendingDown,
+  SettingsOutlined as SettingsIcon,
+  DeleteOutlined as DeleteIcon,
+  EditOutlined as EditIcon,
+  RestoreOutlined as RestoreIcon,
 } from '@mui/icons-material';
 import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
 import { formatCurrency } from '@renderer/utils/currency';
-import { formatDateToShow, parseDateSafe, formatDateToISO } from '@renderer/utils/date';
-import { ImportContainer, PageHeaderContainer, UploadArea } from './styles';
+import {
+  formatDateToShow,
+  parseDateSafe,
+  formatDateToISO,
+} from '@renderer/utils/date';
+import { ImportContainer, UploadArea } from './styles';
 import type { Account } from '@shared/interfaces/types/account.types';
 import type {
   CSVPreviewData,
@@ -470,18 +475,15 @@ export function BankImportPage() {
 
   return (
     <ImportContainer>
-      <PageHeaderContainer>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            <BankIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-            Importar Transações
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+      <PageHeader
+        title="Importar transações"
+        description={
+          <>
             Importe transações de arquivos CSV com mapeamento flexível de
             colunas
-          </Typography>
-        </Box>
-      </PageHeaderContainer>
+          </>
+        }
+      />
 
       <Stepper activeStep={step} sx={{ mb: 4 }}>
         {STEPS.map((label) => (
@@ -875,15 +877,13 @@ export function BankImportPage() {
         <DialogTitle>Editar Transação</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
+            <DateStringField
               label="Data"
-              type="date"
               fullWidth
               value={editForm.date}
-              onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, date: e.target.value }))
+              onChange={(value) =>
+                setEditForm((prev) => ({ ...prev, date: value }))
               }
-              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               label="Descrição"

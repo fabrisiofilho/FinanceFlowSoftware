@@ -1,3 +1,4 @@
+import { NotificationService } from './notification-service';
 import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { RecurringTransactionEntity } from '../entities/recurring-transaction.entity';
@@ -31,7 +32,7 @@ export class RecurringTransactionService {
   ): RecurringTransaction {
     const account = entity.account as AccountEntity | undefined;
     const category = entity.category as CategoryEntity | undefined;
-    
+
     return {
       id: entity.id,
       userId: entity.userId,
@@ -49,10 +50,12 @@ export class RecurringTransactionService {
       categoryName: category?.name,
       categoryIcon: category?.icon ?? undefined,
       startDate: parseDateSafe(entity.startDate) ?? new Date(),
-      endDate: entity.endDate ? parseDateSafe(entity.endDate) ?? undefined : undefined,
+      endDate: entity.endDate
+        ? (parseDateSafe(entity.endDate) ?? undefined)
+        : undefined,
       nextOccurrence: parseDateSafe(entity.nextOccurrence) ?? new Date(),
       lastGenerated: entity.lastGenerated
-        ? parseDateSafe(entity.lastGenerated) ?? undefined
+        ? (parseDateSafe(entity.lastGenerated) ?? undefined)
         : undefined,
       isActive: Boolean(entity.isActive),
       autoConfirm: Boolean(entity.autoConfirm),
@@ -87,7 +90,9 @@ export class RecurringTransactionService {
       accountId: data.accountId,
       categoryId: data.categoryId,
       startDate: parseDateSafe(data.startDate) ?? new Date(),
-      endDate: data.endDate ? parseDateSafe(data.endDate) ?? undefined : undefined,
+      endDate: data.endDate
+        ? (parseDateSafe(data.endDate) ?? undefined)
+        : undefined,
       nextOccurrence,
       isActive: true,
       autoConfirm: data.autoConfirm ?? false,
@@ -257,6 +262,26 @@ export class RecurringTransactionService {
       `Geradas ${generated.length} transações, ${errors.length} erros`,
     );
 
+    if (generated.length > 0) {
+      try {
+        const notifications = new NotificationService();
+        const settings = await notifications.getSettings(userId);
+        if (settings.recurringGeneratedEnabled)
+          await notifications.create(userId, {
+            type: 'recurring_generated',
+            title: 'Recorrências geradas',
+            message:
+              generated.length + ' lançamentos recorrentes foram registrados.',
+            referenceType: 'recurring',
+            priority: 'normal',
+          });
+      } catch (error) {
+        logger.warning(
+          'Não foi possível registrar aviso de recorrências',
+          error,
+        );
+      }
+    }
     return {
       generated,
       errors,

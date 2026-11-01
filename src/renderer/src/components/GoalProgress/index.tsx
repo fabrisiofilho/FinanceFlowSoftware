@@ -1,8 +1,8 @@
 import {
-  Flag as FlagIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  EmojiEvents as TrophyIcon,
+  FlagOutlined as FlagIcon,
+  CheckCircleOutlineRounded as CheckCircleIcon,
+  ScheduleOutlined as ScheduleIcon,
+  EmojiEventsOutlined as TrophyIcon,
 } from '@mui/icons-material';
 import type {
   Goal,

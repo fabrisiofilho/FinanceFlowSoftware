@@ -1,4 +1,5 @@
-import { TextField, styled } from '@mui/material';
+import { Input as TextField } from '@renderer/components/Form/Input';
+import { styled } from '@mui/material';
 
 export const CustomTextField = styled(TextField)({
   '.MuiOutlinedInput-root': {

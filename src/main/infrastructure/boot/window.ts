@@ -2,6 +2,7 @@ import { app, BrowserWindow, globalShortcut } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { logger } from '@main/infrastructure/log/logger';
+import { registerWindowControls } from './window-controls';
 
 function resolveBuildIcon(filename: string) {
   if (app.isPackaged) {
@@ -40,6 +41,8 @@ export const createMainWindow = (): BrowserWindow => {
   }
 
   const mainWindow = new BrowserWindow({
+    backgroundColor: '#101216',
+    frame: false,
     width: 1200,
     height: 800,
     minWidth: 1200,
@@ -51,12 +54,13 @@ export const createMainWindow = (): BrowserWindow => {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      nodeIntegrationInWorker: true,
+      nodeIntegrationInWorker: false,
       sandbox: false,
     },
   });
 
   mainWindow.setMenu(null);
+  registerWindowControls(mainWindow);
 
   globalShortcut.register('Control+Shift+I', () => {
     const win = BrowserWindow.getFocusedWindow();
@@ -85,7 +89,6 @@ export const createMainWindow = (): BrowserWindow => {
       process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173';
     logger.info(`Development mode - loading from ${devServerUrl}`);
     mainWindow.loadURL(devServerUrl).catch(logger.error);
-    mainWindow.webContents.openDevTools();
   } else {
     logger.info('Production mode - loading local file');
     const indexPath = path.join(__dirname, '../renderer/index.html');

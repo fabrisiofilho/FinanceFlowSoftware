@@ -1,5 +1,5 @@
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeftOutlined';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import { Box, styled } from '@mui/material';
 
 export const OpenIcon = styled(KeyboardArrowRightIcon)(({ theme }) => ({

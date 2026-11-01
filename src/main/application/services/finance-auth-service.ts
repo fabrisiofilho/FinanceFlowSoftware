@@ -13,7 +13,7 @@ export class FinanceAuthService {
   private static readonly MIN_PASSWORD_LENGTH = 6;
   private static readonly BCRYPT_SALT_ROUNDS = 10;
   private static readonly EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  private constructor() {}
+  private;
   private get userRepository() {
     return repositoryCache.financeUserRepository;
   }

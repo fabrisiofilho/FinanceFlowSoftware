@@ -1,11 +1,14 @@
+import { createRequire } from 'node:module';
 import * as fs from 'fs';
 import * as path from 'path';
+
+const loadModule = createRequire(__filename);
 let electronApp: { getPath: (name: string) => string } | null = null;
 function getElectronApp(): { getPath: (name: string) => string } | null {
   if (electronApp !== null) return electronApp;
   try {
     const moduleName = 'electron';
-    const electron = require(moduleName);
+    const electron = loadModule(moduleName);
     electronApp = electron.app || null;
     return electronApp;
   } catch {

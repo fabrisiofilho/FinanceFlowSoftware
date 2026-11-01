@@ -11,7 +11,8 @@ class RepositoryCache {
   private _accountRepository: AccountRepository | null = null;
   private _alertRepository: AlertRepository | null = null;
   private _categoryRepository: CategoryRepository | null = null;
-  private _creditCardInvoiceRepository: CreditCardInvoiceRepository | null = null;
+  private _creditCardInvoiceRepository: CreditCardInvoiceRepository | null =
+    null;
   private _financeUserRepository: FinanceUserRepository | null = null;
   private _goalContributionRepository: GoalContributionRepository | null = null;
   private _goalRepository: GoalRepository | null = null;
@@ -55,7 +56,10 @@ class RepositoryCache {
   }
 
   get creditCardInvoiceRepository(): CreditCardInvoiceRepository {
-    if (!this._creditCardInvoiceRepository && !this._creditCardInvoiceRepositoryInitializing) {
+    if (
+      !this._creditCardInvoiceRepository &&
+      !this._creditCardInvoiceRepositoryInitializing
+    ) {
       this._creditCardInvoiceRepositoryInitializing = true;
       this._creditCardInvoiceRepository = new CreditCardInvoiceRepository();
       this._creditCardInvoiceRepositoryInitializing = false;
@@ -64,7 +68,10 @@ class RepositoryCache {
   }
 
   get financeUserRepository(): FinanceUserRepository {
-    if (!this._financeUserRepository && !this._financeUserRepositoryInitializing) {
+    if (
+      !this._financeUserRepository &&
+      !this._financeUserRepositoryInitializing
+    ) {
       this._financeUserRepositoryInitializing = true;
       this._financeUserRepository = new FinanceUserRepository();
       this._financeUserRepositoryInitializing = false;
@@ -73,7 +80,10 @@ class RepositoryCache {
   }
 
   get goalContributionRepository(): GoalContributionRepository {
-    if (!this._goalContributionRepository && !this._goalContributionRepositoryInitializing) {
+    if (
+      !this._goalContributionRepository &&
+      !this._goalContributionRepositoryInitializing
+    ) {
       this._goalContributionRepositoryInitializing = true;
       this._goalContributionRepository = new GoalContributionRepository();
       this._goalContributionRepositoryInitializing = false;
@@ -91,7 +101,10 @@ class RepositoryCache {
   }
 
   get transactionRepository(): TransactionRepository {
-    if (!this._transactionRepository && !this._transactionRepositoryInitializing) {
+    if (
+      !this._transactionRepository &&
+      !this._transactionRepositoryInitializing
+    ) {
       this._transactionRepositoryInitializing = true;
       this._transactionRepository = new TransactionRepository();
       this._transactionRepositoryInitializing = false;

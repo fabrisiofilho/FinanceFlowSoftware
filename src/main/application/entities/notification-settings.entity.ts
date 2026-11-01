@@ -11,6 +11,8 @@ import type { FinanceUserEntity } from './finance-user.entity';
 
 @Entity('notification_settings')
 export class NotificationSettingsEntity extends AuditableEntity {
+  @Column({ name: 'investment_yield_enabled', type: 'integer', default: 1 })
+  investmentYieldEnabled!: boolean;
   @PrimaryGeneratedColumn()
   id!: number;
 

@@ -11,13 +11,16 @@ export const Container = styled.div`
 export const DrawerContent = styled.aside``;
 
 export const MainContainer = styled.div`
+  min-width: 0;
   width: 100%;
   overflow: hidden;
   background-color: ${({ theme }) => theme.COLORS.surface};
 `;
 
 export const MainContent = styled.main`
-  height: calc(100vh - 6rem);
+  background-image: radial-gradient(#ffffff07 1px, transparent 1px);
+  background-size: 24px 24px;
+  height: calc(var(--app-height) - 3.5rem);
   overflow-y: auto;
 
   background-color: ${({ theme }) => theme.COLORS.background};
