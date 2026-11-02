@@ -1,3 +1,4 @@
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { contributeToGoal } from '@shared/finance/ledger';
 import { GoalEntity } from '../entities/goal.entity';
@@ -69,12 +70,13 @@ export class GoalService {
     if (data.targetAmount === undefined || data.targetAmount === null) {
       throw new Error('Valor alvo é obrigatório');
     }
+    amountToCents(data.targetAmount);
     if (data.targetAmount <= 0) {
       throw new Error('Valor alvo deve ser maior que zero');
     }
     if (data.deadline) {
-      const deadlineDate = new Date(data.deadline);
-      if (isNaN(deadlineDate.getTime())) {
+      const deadlineDate = parseDateSafe(data.deadline);
+      if (!deadlineDate) {
         throw new Error('Data limite inválida');
       }
     }
@@ -83,12 +85,13 @@ export class GoalService {
     if (data.name !== undefined && data.name.trim().length === 0) {
       throw new Error('Nome da meta não pode ser vazio');
     }
+    if (data.targetAmount !== undefined) amountToCents(data.targetAmount);
     if (data.targetAmount !== undefined && data.targetAmount <= 0) {
       throw new Error('Valor alvo deve ser maior que zero');
     }
     if (data.deadline) {
-      const deadlineDate = new Date(data.deadline);
-      if (isNaN(deadlineDate.getTime())) {
+      const deadlineDate = parseDateSafe(data.deadline);
+      if (!deadlineDate) {
         throw new Error('Data limite inválida');
       }
     }
@@ -97,12 +100,13 @@ export class GoalService {
     if (data.amount === undefined || data.amount === null) {
       throw new Error('Valor da contribuição é obrigatório');
     }
+    amountToCents(data.amount);
     if (data.amount <= 0) {
       throw new Error('Valor da contribuição deve ser maior que zero');
     }
     if (data.contributionDate) {
-      const contributionDate = new Date(data.contributionDate);
-      if (isNaN(contributionDate.getTime())) {
+      const contributionDate = parseDateSafe(data.contributionDate);
+      if (!contributionDate) {
         throw new Error('Data da contribuição inválida');
       }
     }

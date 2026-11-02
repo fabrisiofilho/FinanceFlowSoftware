@@ -1,4 +1,5 @@
 import { moneyColumn } from '@main/infrastructure/database/money-column';
+import type { MonthlyRule } from '@shared/finance/recurring-schedule';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -51,6 +52,9 @@ export class RecurringTransactionEntity extends AuditableEntity {
 
   @Column({ type: 'text' })
   frequency!: RecurringFrequency;
+
+  @Column({ name: 'monthly_rule', type: 'text', default: 'calendar_day' })
+  monthlyRule!: MonthlyRule;
 
   @Column({ name: 'day_of_month', type: 'integer', nullable: true })
   dayOfMonth?: number;

@@ -1,3 +1,8 @@
+import {
+  MONTHLY_RULES,
+  nextRecurringDate,
+  type MonthlyRule,
+} from '@shared/finance/recurring-schedule';
 import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { requireAccountOwner, requireCategoryOwner } from './ownership';
 import { validateEntryCreate } from '@shared/finance/commands';
@@ -58,6 +63,14 @@ export class RecurringTransactionService {
         parseDateSafe(data.endDate)! < parseDateSafe(data.startDate)!)
     )
       throw new Error('Data final deve ser igual ou posterior à inicial.');
+    const rule = data.monthlyRule ?? 'calendar_day';
+    if (
+      !MONTHLY_RULES.some((item) => item.value === rule) ||
+      (rule !== 'calendar_day' && data.frequency !== 'monthly')
+    )
+      throw new Error('Regra mensal inválida para esta frequência.');
+    if (data.autoConfirm != null && typeof data.autoConfirm !== 'boolean')
+      throw new Error('Confirmação automática inválida.');
     await requireAccountOwner(userId, data.accountId);
     await requireCategoryOwner(userId, data.categoryId, data.type);
   }
@@ -85,6 +98,7 @@ export class RecurringTransactionService {
       paymentMethod: entity.paymentMethod,
       expenseType: entity.expenseType,
       frequency: entity.frequency,
+      monthlyRule: entity.monthlyRule,
       dayOfMonth: entity.dayOfMonth,
       dayOfWeek: entity.dayOfWeek,
       accountId: entity.accountId,
@@ -119,17 +133,24 @@ export class RecurringTransactionService {
       data.frequency,
       data.dayOfMonth,
       data.dayOfWeek,
+      false,
+      data.monthlyRule,
     );
+    if (data.endDate && nextOccurrence > parseDateSafe(data.endDate)!)
+      throw new Error(
+        'Não há ocorrência entre a data inicial e a final para esta regra.',
+      );
 
     const recurring = this.recurringRepository.create({
       userId,
-      description: data.description,
+      description: data.description.trim(),
       amount: data.amount,
       type: data.type,
       paymentMethod: data.paymentMethod,
       expenseType: data.expenseType,
       frequency: data.frequency,
-      dayOfMonth: data.dayOfMonth,
+      monthlyRule: data.monthlyRule ?? 'calendar_day',
+      dayOfMonth: data.dayOfMonth ?? parseDateSafe(data.startDate)!.getDate(),
       dayOfWeek: data.dayOfWeek,
       accountId: data.accountId,
       categoryId: data.categoryId,
@@ -163,22 +184,42 @@ export class RecurringTransactionService {
       throw new Error('Transação recorrente não encontrada');
     }
 
-    await this.validate(userId, { ...recurring, ...data });
-    Object.assign(recurring, {
+    if (data.isActive !== undefined && typeof data.isActive !== 'boolean')
+      throw new Error('Situação da recorrência inválida.');
+    const scheduleChanged = (
+      ['frequency', 'monthlyRule', 'dayOfMonth', 'dayOfWeek'] as const
+    ).some((key) => data[key] !== undefined && data[key] !== recurring[key]);
+    await this.validate(userId, {
+      ...recurring,
+      autoConfirm: Boolean(recurring.autoConfirm),
       ...data,
+    });
+    Object.assign(recurring, {
+      amount: data.amount ?? recurring.amount,
+      paymentMethod: data.paymentMethod ?? recurring.paymentMethod,
+      expenseType: data.expenseType ?? recurring.expenseType,
+      frequency: data.frequency ?? recurring.frequency,
+      monthlyRule: data.monthlyRule ?? recurring.monthlyRule,
+      dayOfMonth: data.dayOfMonth ?? recurring.dayOfMonth,
+      dayOfWeek: data.dayOfWeek ?? recurring.dayOfWeek,
+      accountId: data.accountId ?? recurring.accountId,
+      categoryId: data.categoryId ?? recurring.categoryId,
+      isActive: data.isActive ?? recurring.isActive,
+      autoConfirm: data.autoConfirm ?? recurring.autoConfirm,
+      description: data.description?.trim() ?? recurring.description,
       endDate: data.endDate ? parseDateSafe(data.endDate) : recurring.endDate,
     });
 
-    if (
-      data.frequency ||
-      data.dayOfMonth !== undefined ||
-      data.dayOfWeek !== undefined
-    ) {
+    if (scheduleChanged) {
       recurring.nextOccurrence = this.calculateNextOccurrence(
-        new Date(),
+        new Date(
+          Math.max(Date.now(), parseDateSafe(recurring.startDate)!.getTime()),
+        ),
         data.frequency ?? recurring.frequency,
         data.dayOfMonth ?? recurring.dayOfMonth,
         data.dayOfWeek ?? recurring.dayOfWeek,
+        false,
+        data.monthlyRule ?? recurring.monthlyRule,
       );
     }
 
@@ -278,7 +319,7 @@ export class RecurringTransactionService {
       .where('r.user_id = :userId', { userId })
       .andWhere('r.is_active = 1')
       .andWhere('r.next_occurrence <= :today', { today })
-      .andWhere('(r.end_date IS NULL OR r.end_date >= :today)', { today })
+      .andWhere('(r.end_date IS NULL OR r.next_occurrence <= r.end_date)')
       .getMany();
 
     const generated: RecurringGenerationResult['generated'] = [];
@@ -287,6 +328,7 @@ export class RecurringTransactionService {
     for (const recurring of pendingRecurrings) {
       try {
         const transaction = await this.generateTransaction(userId, recurring);
+        if (!transaction) continue;
         generated.push({
           recurringId: recurring.id,
           transactionId: transaction.id,
@@ -337,7 +379,7 @@ export class RecurringTransactionService {
   private async generateTransaction(
     userId: number,
     recurring: RecurringTransactionEntity,
-  ): Promise<TransactionEntity> {
+  ): Promise<TransactionEntity | null> {
     return financialTransaction(async (manager) => {
       const rules = manager.getRepository(RecurringTransactionEntity);
       const current = await rules.findOne({
@@ -345,13 +387,29 @@ export class RecurringTransactionService {
       });
       if (!current || !current.isActive)
         throw new Error('Regra recorrente indisponível.');
-      await this.validate(userId, current);
+      await this.validate(userId, {
+        ...current,
+        autoConfirm: Boolean(current.autoConfirm),
+      });
       const date = parseDateSafe(current.nextOccurrence)!;
+      if (current.endDate && date > parseDateSafe(current.endDate)!)
+        throw new Error('Recorrência encerrada.');
       const entries = manager.getRepository(TransactionEntity);
       const existing = await entries.findOne({
         where: { recurringRuleId: current.id, transactionDate: date },
       });
-      if (existing) return existing;
+      if (existing) {
+        current.nextOccurrence = this.calculateNextOccurrence(
+          date,
+          current.frequency,
+          current.dayOfMonth ?? parseDateSafe(current.startDate)!.getDate(),
+          current.dayOfWeek,
+          true,
+          current.monthlyRule,
+        );
+        await rules.save(current);
+        return null;
+      }
       const entity = await entries.save(
         entries.create({
           description: current.description,
@@ -392,9 +450,10 @@ export class RecurringTransactionService {
       current.nextOccurrence = this.calculateNextOccurrence(
         date,
         current.frequency,
-        current.dayOfMonth,
+        current.dayOfMonth ?? parseDateSafe(current.startDate)!.getDate(),
         current.dayOfWeek,
         true,
+        current.monthlyRule,
       );
       await rules.save(current);
       return entity;
@@ -406,64 +465,17 @@ export class RecurringTransactionService {
     frequency: RecurringFrequency,
     dayOfMonth?: number,
     dayOfWeek?: number,
-    skipCurrent: boolean = false,
+    skipCurrent = false,
+    monthlyRule: MonthlyRule = 'calendar_day',
   ): Date {
-    const result = new Date(fromDate);
-
-    if (skipCurrent) {
-      switch (frequency) {
-        case 'daily':
-          result.setDate(result.getDate() + 1);
-          break;
-        case 'weekly':
-          result.setDate(result.getDate() + 7);
-          break;
-        case 'biweekly':
-          result.setDate(result.getDate() + 14);
-          break;
-        case 'monthly':
-          result.setDate(1);
-          result.setMonth(result.getMonth() + 1);
-          result.setDate(
-            Math.min(
-              dayOfMonth ?? fromDate.getDate(),
-              this.getDaysInMonth(result),
-            ),
-          );
-          break;
-        case 'yearly':
-          result.setDate(1);
-          result.setFullYear(result.getFullYear() + 1);
-          result.setDate(
-            Math.min(
-              dayOfMonth ?? fromDate.getDate(),
-              this.getDaysInMonth(result),
-            ),
-          );
-          break;
-      }
-    }
-
-    if (dayOfMonth && (frequency === 'monthly' || frequency === 'yearly')) {
-      result.setDate(Math.min(dayOfMonth, this.getDaysInMonth(result)));
-    }
-
-    if (
-      dayOfWeek !== undefined &&
-      (frequency === 'weekly' || frequency === 'biweekly')
-    ) {
-      const currentDay = result.getDay();
-      const daysUntil = (dayOfWeek - currentDay + 7) % 7;
-      if (daysUntil > 0) {
-        result.setDate(result.getDate() + daysUntil);
-      }
-    }
-
-    return result;
-  }
-
-  private getDaysInMonth(date: Date): number {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    return nextRecurringDate(
+      fromDate,
+      frequency,
+      dayOfMonth,
+      dayOfWeek,
+      skipCurrent,
+      monthlyRule,
+    );
   }
 
   private getNextRunDate(): Date {

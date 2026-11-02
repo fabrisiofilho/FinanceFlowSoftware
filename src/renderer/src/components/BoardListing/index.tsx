@@ -11,6 +11,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Chip,
   Stack,
   Typography,
 } from '@mui/material';
@@ -36,14 +37,50 @@ export function MultiFilter({
   return (
     <Autocomplete
       multiple
-      limitTags={1}
+      renderTags={(selected, getTagProps) => (
+        <Box
+          data-multi-values
+          sx={{
+            display: 'flex',
+            flex: '0 1 auto',
+            minWidth: 0,
+            maxWidth: 'calc(100% - 48px)',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            scrollbarWidth: 'thin',
+            gap: 0.5,
+          }}
+        >
+          {selected.map((item, index) => {
+            const { key, ...tagProps } = getTagProps({ index });
+            return (
+              <Chip
+                key={key}
+                {...tagProps}
+                label={item.label}
+                size="small"
+                sx={{ flexShrink: 0, maxWidth: 'none' }}
+              />
+            );
+          })}
+        </Box>
+      )}
       options={options}
       value={options.filter((o) => value.includes(o.id))}
       isOptionEqualToValue={(a, b) => a.id === b.id}
       getOptionLabel={(o) => o.label}
       onChange={(_, items) => onChange(items.map((item) => item.id))}
       renderInput={(params) => <Input {...params} label={label} />}
-      sx={{ minWidth: 0, width: '100%', flex: 1 }}
+      sx={{
+        minWidth: 0,
+        width: '100%',
+        flex: 1,
+        '& .MuiAutocomplete-inputRoot': { flexWrap: 'nowrap' },
+        '& .MuiAutocomplete-input': {
+          minWidth: '24px !important',
+          flex: '1 1 24px',
+        },
+      }}
     />
   );
 }

@@ -1,5 +1,11 @@
 # Histórico de validação do Contabily
 
+## Formulários e recorrências — 2.3.0, 2026-11-02
+
+40 testes unitários aprovados, incluindo primeiro/último dia útil, feriados nacionais e Sexta-feira da Paixão, bissexto, virada de ano, início posterior ao primeiro dia útil e âncora 31 após fevereiro. SQLite e ORM real validam as 12 migrações, gravação da regra mensal, geração dentro do período, ausência de duplicação, descrição e valores inválidos, proteção de campos internos e preservação de agenda em edição de descrição. Typecheck e build aprovados; lint sem erros e com 13 avisos preexistentes remanescentes.
+
+Ensaio Electron das 19 telas com IPC fictício: seis seleções em campo estreito permanecem em linha com rolagem lateral; formulários vazios de orçamento, transferência e recorrência mostram erros sem enviar gravação; descrição obrigatória e regras de dia útil apresentadas. Capturas em `.qa/multi-filter-single-line.png` e `.qa/recurring-validation.png`. Escopo da revisão por formulário em [REVISAO-FORMULARIOS-2.3.0.md](REVISAO-FORMULARIOS-2.3.0.md). Não significa homologação de todas as combinações possíveis.
+
 ## Contraste dos ícones — 2.2.2, 2026-11-02
 
 Corrigida a herança de cor dos ícones e botões de remoção de todos os chips, incluindo os chips padrão do guia. O tema usa uma escala cinza própria em ordem oposta à pressuposta pelo Chip/Switch do MUI; a correção fica nos componentes e preserva as superfícies existentes. Interruptores desmarcados usam texto secundário e desabilitados usam a cor específica de desabilitação.

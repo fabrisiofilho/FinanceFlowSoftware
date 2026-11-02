@@ -457,16 +457,19 @@ export function InvestmentsPage() {
               {error && <AppAlert severity="error">{error}</AppAlert>}
               <Input
                 label="Nome"
+                required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
               />
               <Input
                 label="Tipo (CDB, Tesouro, fundo…)"
+                required
                 value={kind}
                 onChange={(event) => setKind(event.target.value)}
               />
               <CurrencyInput
                 label="Valor aplicado"
+                required
                 value={principal}
                 onChange={setPrincipal}
               />
@@ -543,6 +546,7 @@ export function InvestmentsPage() {
               <Typography variant="h6">Movimentar investimento</Typography>
               <SelectInput
                 label="Operação"
+                required
                 value={eventKind}
                 items={[
                   { value: 'deposit', label: 'Aporte' },
@@ -558,11 +562,13 @@ export function InvestmentsPage() {
               />
               <CurrencyInput
                 label="Valor da operação"
+                required
                 value={eventAmount}
                 onChange={setEventAmount}
               />
               <DateStringField
                 label="Data da operação"
+                required
                 value={eventDate}
                 onChange={setEventDate}
               />

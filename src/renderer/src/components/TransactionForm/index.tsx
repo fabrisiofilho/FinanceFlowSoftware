@@ -81,6 +81,7 @@ const createValidationSchema = (type: TransactionType) =>
       .required('Tipo é obrigatório'),
     description: yup
       .string()
+      .trim()
       .required('Descrição é obrigatória')
       .min(3, 'Descrição deve ter no mínimo 3 caracteres')
       .max(100, 'Descrição deve ter no máximo 100 caracteres'),
@@ -107,6 +108,11 @@ const createValidationSchema = (type: TransactionType) =>
     settlementDate: yup
       .date()
       .nullable()
+      .when('status', {
+        is: 'settled',
+        then: (schema) => schema.required('Informe a data de liquidação'),
+        otherwise: (schema) => schema.nullable(),
+      })
       .typeError('Data de liquidação inválida'),
     dueDate: yup.date().nullable().typeError('Data de vencimento inválida'),
     paymentMethod:

@@ -1,3 +1,4 @@
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { AppAlert } from '@renderer/components/Feedback';
 import { QuickCreate } from '@renderer/components/QuickCreate';
 import {
@@ -81,9 +82,26 @@ export function TransfersPage() {
   }, [loadAccounts, loadTransfers]);
 
   const handleSave = async () => {
-    if (!formData.fromAccountId || !formData.toAccountId || !formData.amount)
+    if (!formData.fromAccountId || !formData.toAccountId) {
+      setFormError('Selecione as contas de origem e destino.');
       return;
-    if (formData.fromAccountId === formData.toAccountId) return;
+    }
+    if (formData.fromAccountId === formData.toAccountId) {
+      setFormError('Origem e destino devem ser diferentes.');
+      return;
+    }
+    try {
+      amountToCents(formData.amount);
+    } catch {
+      setFormError(
+        'Informe um valor positivo válido, com até duas casas decimais.',
+      );
+      return;
+    }
+    if (!parseDateSafe(formData.transferDate)) {
+      setFormError('Informe uma data válida.');
+      return;
+    }
     setFormError('');
     setFormLoading(true);
     try {
@@ -92,7 +110,7 @@ export function TransfersPage() {
         toAccountId: formData.toAccountId,
         amount: formData.amount,
         description: formData.description || undefined,
-        transferDate: parseDateSafe(formData.transferDate) ?? new Date(),
+        transferDate: parseDateSafe(formData.transferDate)!,
       });
       if (!response.success)
         throw new Error(
@@ -229,6 +247,7 @@ export function TransfersPage() {
             <Stack spacing={2} mt={1}>
               <SelectInput
                 label="Conta de Origem"
+                required
                 onCreate={() => {
                   setQuick('account');
                   setQuickField('fromAccountId');
@@ -250,6 +269,7 @@ export function TransfersPage() {
               />
               <SelectInput
                 label="Conta de Destino"
+                required
                 onCreate={() => {
                   setQuick('account');
                   setQuickField('toAccountId');
@@ -271,6 +291,7 @@ export function TransfersPage() {
               />
               <CurrencyInput
                 label="Valor"
+                required
                 fullWidth
                 value={formData.amount}
                 onChange={(value) =>
@@ -290,6 +311,7 @@ export function TransfersPage() {
               />
               <DatePicker
                 label="Data"
+                required
                 fullWidth
                 value={formData.transferDate}
                 onChange={(date) =>

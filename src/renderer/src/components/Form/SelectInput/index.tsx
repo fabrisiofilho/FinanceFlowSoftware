@@ -142,6 +142,7 @@ export const SelectInput = forwardRef(function SelectInput(
       ref={ref as Ref<HTMLDivElement>}
       {...rest}
       name={name}
+      required={required}
       select
       value={handleGetValue(value) ?? ''}
       defaultValue={handleGetValue(defaultValue) ?? ''}

@@ -1,3 +1,4 @@
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { moneyColumn } from '@main/infrastructure/database/money-column';
 import { AccountEntity } from '../entities/account.entity';
@@ -84,6 +85,7 @@ export class AccountService {
       throw new Error('Tipo de conta inválido');
     }
     if (data.type === 'credit_card') {
+      amountToCents(data.creditLimit!);
       if (data.creditLimit === undefined || data.creditLimit === null) {
         throw new Error(
           'Limite de crédito é obrigatório para cartão de crédito',
@@ -110,7 +112,10 @@ export class AccountService {
     if (
       data.balance !== undefined &&
       data.balance !== null &&
-      isNaN(data.balance)
+      (!Number.isFinite(data.balance) ||
+        !Number.isSafeInteger(Math.round(data.balance * 100)) ||
+        Math.abs(data.balance * 100 - Math.round(data.balance * 100)) >
+          0.000001)
     ) {
       throw new Error('Saldo inicial inválido');
     }
@@ -123,6 +128,7 @@ export class AccountService {
       throw new Error('Nome da conta não pode ser vazio');
     }
     if (currentType === 'credit_card') {
+      if (data.creditLimit !== undefined) amountToCents(data.creditLimit);
       if (data.creditLimit !== undefined && data.creditLimit <= 0) {
         throw new Error('Limite de crédito deve ser maior que zero');
       }

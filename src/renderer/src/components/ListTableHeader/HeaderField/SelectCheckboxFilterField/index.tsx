@@ -109,20 +109,27 @@ export function SelectCheckboxFilterField({
           {...params}
           InputProps={{
             ...params.InputProps,
-            onKeyDown: (event) => {
-              return event.preventDefault();
-            },
           }}
           label={label}
           size={size}
         />
       )}
       renderTags={() => (
-        <Typography maxWidth={maxWidth ? `${maxWidth / 16}rem` : 'auto'}>
+        <Typography
+          maxWidth={maxWidth ? `${maxWidth / 16}rem` : 'auto'}
+          sx={{
+            whiteSpace: 'nowrap',
+            overflowX: 'auto',
+            flexShrink: 1,
+            minWidth: 0,
+            scrollbarWidth: 'thin',
+          }}
+        >
           {renderValue(selectedItems)}
         </Typography>
       )}
       {...rest}
+      sx={{ '& .MuiAutocomplete-inputRoot': { flexWrap: 'nowrap' } }}
     />
   );
 }

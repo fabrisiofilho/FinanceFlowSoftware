@@ -14,9 +14,14 @@ import * as yup from 'yup';
 const RegisterCredentialsSchema = yup.object({
   name: yup
     .string()
+    .trim()
     .required('Nome é obrigatório')
     .min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  email: yup.string().email('E-mail inválido').required('E-mail é obrigatório'),
+  email: yup
+    .string()
+    .trim()
+    .email('E-mail inválido')
+    .required('E-mail é obrigatório'),
   password: yup
     .string()
     .required('Senha é obrigatória')

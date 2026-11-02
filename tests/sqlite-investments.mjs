@@ -23,12 +23,29 @@ import Database from 'better-sqlite3';
         "INSERT INTO finance_users(id,name,email,password_hash) VALUES(999,'Migração','migration@example.test','dummy'); INSERT INTO accounts(id,user_id,name,type,balance,initial_balance) VALUES(999,999,'Conta preservada','wallet',12345,12345); INSERT INTO categories(id,name,type,icon,is_default) VALUES(999,'Moradia','expense','home',1);",
       );
     }
+    if (file.startsWith('012_'))
+      db.exec(
+        "INSERT INTO recurring_transactions(id,user_id,description,amount,type,frequency,account_id,category_id,start_date,next_occurrence) VALUES(999,999,'Regra preservada',1234,'expense','monthly',999,999,'2026-01-31','2026-02-28')",
+      );
     db.exec(
       fs.readFileSync(
         'src/main/infrastructure/database/migrations/' + file,
         'utf8',
       ),
     );
+    if (file.startsWith('012_')) {
+      const rule = db
+        .prepare(
+          'SELECT amount,monthly_rule,day_of_month,next_occurrence FROM recurring_transactions WHERE id=999',
+        )
+        .get();
+      assert.deepEqual(rule, {
+        amount: 1234,
+        monthly_rule: 'calendar_day',
+        day_of_month: 31,
+        next_occurrence: '2026-02-28',
+      });
+    }
     if (file.startsWith('011_')) {
       assert.equal(
         db.prepare('SELECT balance FROM accounts WHERE id=999').get().balance,

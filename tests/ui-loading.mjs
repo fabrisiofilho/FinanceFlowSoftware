@@ -77,7 +77,7 @@ for (const { prefix, methods } of Object.values(
             ),
           },
         };
-      if (prefix === 'category' && method === 'findAll')
+      if (prefix === 'category' && ['findAll','findByType'].includes(method))
         return {
           success: true,
           data: [
@@ -88,6 +88,12 @@ for (const { prefix, methods } of Object.values(
               icon: 'Restaurant',
             },
             { id: 101, name: 'Salário', type: 'income', icon: 'Payments' },
+            {
+              id: 102,
+              name: 'Transporte',
+              type: 'expense',
+              icon: 'DirectionsCar',
+            },
           ],
         };
       if (prefix === 'category' && method === 'create')
@@ -421,6 +427,76 @@ app
       assert(!!state.title, 'cabeçalho ' + route);
       assert(!state.emptyErrors, 'sem alerta vazio ' + route);
       assert(await checkChipIcons(), 'ícones de chips legíveis ' + route);
+      if (['recurring', 'budget', 'transfers'].includes(route)) {
+        const title = {
+          recurring: 'Nova Recorrência',
+          budget: 'Novo Orçamento',
+          transfers: 'Nova Transferência',
+        }[route];
+        const prefix = {
+          recurring: 'recurring',
+          budget: 'budget',
+          transfers: 'transfer',
+        }[route];
+        const before = requests.filter(
+          (r) => r.prefix === prefix && r.method === 'create',
+        ).length;
+        await run(
+          `Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='${title}').click()`,
+        );
+        await sleep(100);
+        await run(
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Salvar').click()",
+        );
+        await sleep(100);
+        assert(
+          await run(
+            "document.querySelector('[role=dialog] [role=alert]')?.textContent.length>0",
+          ),
+          'cadastro vazio mostra erros em ' + route,
+        );
+        assert(
+          requests.filter((r) => r.prefix === prefix && r.method === 'create')
+            .length === before,
+          'cadastro vazio não enviado em ' + route,
+        );
+        if (route === 'recurring') {
+          assert(
+            await run(
+              "Array.from(document.querySelectorAll('[role=dialog] label')).some(l=>l.textContent.includes('Descrição')&&l.textContent.includes('*')) && document.querySelector('[role=dialog]').textContent.includes('Descrição é obrigatória.')",
+            ),
+            'recorrência exige descrição e identifica o campo',
+          );
+          await run(
+            "Array.from(document.querySelectorAll('[role=dialog] label')).find(l=>l.textContent.includes('Regra mensal')).parentElement.querySelector('[role=combobox]').click()",
+          );
+          await sleep(100);
+          assert(
+            await run(
+              "document.body.innerText.includes('Primeiro dia útil do mês')&&document.body.innerText.includes('Último dia útil do mês')",
+            ),
+            'regras de dias úteis disponíveis',
+          );
+          await run(
+            "Array.from(document.querySelectorAll('[role=option]')).find(o=>o.textContent==='Primeiro dia útil do mês').click()",
+          );
+          await sleep(100);
+          assert(
+            await run(
+              "document.querySelector('[role=dialog]').textContent.includes('excluindo feriados nacionais')",
+            ),
+            'calendário nacional explicado no formulário',
+          );
+          fs.writeFileSync(
+            path.join(__dirname, 'recurring-validation.png'),
+            (await window.webContents.capturePage()).toPNG(),
+          );
+        }
+        await run(
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Cancelar').click()",
+        );
+        await sleep(100);
+      }
       if (route === 'external-data') {
         assert(
           await run(
@@ -682,6 +758,36 @@ app
           (await window.webContents.capturePage()).toPNG(),
         );
       if (route === 'investments') {
+        await run(
+          "(()=>{const l=Array.from(document.querySelectorAll('label')).find(l=>l.textContent==='Tipos de investimento');window.qaMulti=document.getElementById(l.htmlFor).closest('.MuiAutocomplete-root');qaMulti.style.maxWidth='240px';window.qaMultiHeight=qaMulti.getBoundingClientRect().height;})()",
+        );
+        for (const label of [
+          'CDB',
+          'LCI',
+          'LCA',
+          'Tesouro Direto',
+          'Poupança',
+          'Outros',
+        ]) {
+          await run(
+            "qaMulti.querySelector('.MuiAutocomplete-popupIndicator')?.click()",
+          );
+          await sleep(40);
+          await run(
+            `Array.from(document.querySelectorAll('[role=option]')).find(o=>o.textContent==='${label}').click()`,
+          );
+          await sleep(40);
+        }
+        assert(
+          await run(
+            "(()=>{const row=qaMulti.querySelector('[data-multi-values]');return row.scrollWidth>row.clientWidth && getComputedStyle(qaMulti.querySelector('.MuiAutocomplete-inputRoot')).flexWrap==='nowrap' && qaMulti.getBoundingClientRect().height<=qaMultiHeight+8;})()",
+          ),
+          'seleção múltipla mantém uma linha e permite rolagem lateral',
+        );
+        fs.writeFileSync(
+          path.join(__dirname, 'multi-filter-single-line.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
         await run(
           "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Rendimentos e simulação')?.click()",
         );

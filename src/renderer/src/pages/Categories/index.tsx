@@ -364,7 +364,11 @@ export function CategoriesPage() {
             <Controller
               name="name"
               control={control}
-              rules={{ required: 'Nome é obrigatório' }}
+              rules={{
+                required: 'Nome é obrigatório',
+                validate: (value) =>
+                  Boolean(value.trim()) || 'Nome é obrigatório',
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}

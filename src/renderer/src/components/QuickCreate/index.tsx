@@ -119,6 +119,7 @@ export function QuickCreate({
           <>
             <SelectInput
               label="Tipo de conta"
+              required
               value={accountType}
               onChange={(e) => setAccountType(e.target.value as AccountType)}
               items={[
@@ -141,17 +142,20 @@ export function QuickCreate({
               <>
                 <CurrencyInput
                   label="Limite de crédito"
+                  required
                   value={limit}
                   onChange={setLimit}
                 />
                 <Input
                   label="Dia de fechamento"
+                  required
                   type="number"
                   value={closing}
                   onChange={(e) => setClosing(e.target.value)}
                 />
                 <Input
                   label="Dia de vencimento"
+                  required
                   type="number"
                   value={due}
                   onChange={(event) => setDue(event.target.value)}

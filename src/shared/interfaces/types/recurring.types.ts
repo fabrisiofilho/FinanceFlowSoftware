@@ -3,6 +3,7 @@ import {
   PaymentMethod,
   ExpenseType,
 } from './transaction.types';
+import type { MonthlyRule } from '../../finance/recurring-schedule';
 
 export type RecurringFrequency =
   | 'daily'
@@ -20,6 +21,7 @@ export interface RecurringTransaction {
   paymentMethod?: PaymentMethod;
   expenseType?: ExpenseType;
   frequency: RecurringFrequency;
+  monthlyRule?: MonthlyRule;
   dayOfMonth?: number;
   dayOfWeek?: number;
   accountId: number;
@@ -44,6 +46,7 @@ export interface CreateRecurringTransactionInput {
   paymentMethod?: PaymentMethod;
   expenseType?: ExpenseType;
   frequency: RecurringFrequency;
+  monthlyRule?: MonthlyRule;
   dayOfMonth?: number;
   dayOfWeek?: number;
   accountId: number;
@@ -59,6 +62,7 @@ export interface UpdateRecurringTransactionInput {
   paymentMethod?: PaymentMethod;
   expenseType?: ExpenseType;
   frequency?: RecurringFrequency;
+  monthlyRule?: MonthlyRule;
   dayOfMonth?: number;
   dayOfWeek?: number;
   accountId?: number;

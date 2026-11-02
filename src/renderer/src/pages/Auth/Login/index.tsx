@@ -13,7 +13,11 @@ import { isThunkLoading } from '@renderer/utils/thunk';
 import * as yup from 'yup';
 
 const LoginCredentialsSchema = yup.object({
-  email: yup.string().email('E-mail inválido').required('E-mail é obrigatório'),
+  email: yup
+    .string()
+    .trim()
+    .email('E-mail inválido')
+    .required('E-mail é obrigatório'),
   password: yup.string().required('Senha é obrigatória'),
 });
 

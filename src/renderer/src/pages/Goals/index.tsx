@@ -464,7 +464,11 @@ export function GoalsPage() {
             <Controller
               name="name"
               control={goalControl}
-              rules={{ required: 'Nome é obrigatório' }}
+              rules={{
+                required: 'Nome é obrigatório',
+                validate: (value) =>
+                  Boolean(value.trim()) || 'Nome é obrigatório',
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -493,12 +497,21 @@ export function GoalsPage() {
             <Controller
               name="deadline"
               control={goalControl}
-              render={({ field }) => (
+              rules={{
+                validate: (value) =>
+                  !value ||
+                  Boolean(parseDateSafe(value)) ||
+                  'Informe uma data limite válida',
+              }}
+              render={({ field, fieldState: { error } }) => (
                 <DateStringField
                   {...field}
                   label="Data limite (opcional)"
                   fullWidth
-                  helperText="Defina um prazo para alcançar sua meta"
+                  error={Boolean(error)}
+                  helperText={
+                    error?.message ?? 'Defina um prazo para alcançar sua meta'
+                  }
                 />
               )}
             />

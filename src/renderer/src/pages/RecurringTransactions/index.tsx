@@ -1,3 +1,9 @@
+import {
+  MONTHLY_RULES,
+  nextRecurringDate,
+  type MonthlyRule,
+} from '@shared/finance/recurring-schedule';
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { AppAlert } from '@renderer/components/Feedback';
 import { QuickCreate } from '@renderer/components/QuickCreate';
 import {
@@ -50,6 +56,7 @@ import type {
   RecurringTransaction,
   CreateRecurringTransactionInput,
   UpdateRecurringTransactionInput,
+  RecurringFrequency,
 } from '@shared/interfaces/types/recurring.types';
 import type { PaymentMethod } from '@shared/interfaces/types/transaction.types';
 import type { Category } from '@shared/interfaces/types/category.types';
@@ -77,25 +84,28 @@ export function RecurringTransactionsPage() {
   const [quickField, setQuickField] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formLoading, setFormLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     description: '',
     amount: 0,
     type: 'expense' as 'income' | 'expense',
-    frequency: 'monthly',
+    frequency: 'monthly' as RecurringFrequency,
+    monthlyRule: 'calendar_day' as MonthlyRule,
     paymentMethod: 'debit' as PaymentMethod,
     accountId: 0,
     creditCardId: 0,
     categoryId: 0,
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: formatDateToISO(new Date())!,
     autoConfirm: false,
   });
 
   // Separate accounts by type
   const regularAccounts = accounts.filter((a) => a.type !== 'credit_card');
   const creditCards = accounts.filter((a) => a.type === 'credit_card');
-  const isCreditCard = formData.paymentMethod === 'credit';
+  const isCreditCard =
+    formData.type === 'expense' && formData.paymentMethod === 'credit';
 
   const board = useBoardListing('recurring', setRecurrings);
   const queryFirst = board.first;
@@ -120,21 +130,35 @@ export function RecurringTransactionsPage() {
       ? formData.creditCardId
       : formData.accountId;
 
-    if (
-      !formData.description ||
-      !formData.amount ||
-      !effectiveAccountId ||
-      !formData.categoryId
-    )
+    const errors: Record<string, string> = {};
+    if (!formData.description.trim())
+      errors.description = 'Descrição é obrigatória.';
+    try {
+      amountToCents(formData.amount);
+      if (formData.amount <= 0) throw new Error();
+    } catch {
+      errors.amount =
+        'Informe um valor positivo válido, com até duas casas decimais.';
+    }
+    if (!effectiveAccountId)
+      errors.accountId = 'Selecione uma conta ou cartão.';
+    if (!formData.categoryId) errors.categoryId = 'Selecione uma categoria.';
+    if (!parseDateSafe(formData.startDate))
+      errors.startDate = 'Informe uma data inicial válida.';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      setFormError('Revise os campos indicados.');
       return;
+    }
     setFormError('');
     setFormLoading(true);
     try {
       if (editingId) {
         const updateData: UpdateRecurringTransactionInput = {
-          description: formData.description,
+          description: formData.description.trim(),
           amount: formData.amount,
-          frequency: formData.frequency as any,
+          frequency: formData.frequency,
+          monthlyRule: formData.monthlyRule,
           accountId: effectiveAccountId,
           categoryId: formData.categoryId,
           autoConfirm: formData.autoConfirm,
@@ -151,13 +175,14 @@ export function RecurringTransactionsPage() {
           );
       } else {
         const createData: CreateRecurringTransactionInput = {
-          description: formData.description,
+          description: formData.description.trim(),
           amount: formData.amount,
           type: formData.type,
-          frequency: formData.frequency as any,
+          frequency: formData.frequency,
+          monthlyRule: formData.monthlyRule,
           accountId: effectiveAccountId,
           categoryId: formData.categoryId,
-          startDate: parseDateSafe(formData.startDate) ?? new Date(),
+          startDate: parseDateSafe(formData.startDate)!,
           autoConfirm: formData.autoConfirm,
           paymentMethod:
             formData.type === 'expense' ? formData.paymentMethod : undefined,
@@ -191,18 +216,21 @@ export function RecurringTransactionsPage() {
   };
 
   const closeForm = () => {
+    setFieldErrors({});
+    setFormError('');
     setIsFormOpen(false);
     setEditingId(null);
     setFormData({
       description: '',
       amount: 0,
       type: 'expense',
-      frequency: 'monthly',
+      frequency: 'monthly' as RecurringFrequency,
+      monthlyRule: 'calendar_day' as MonthlyRule,
       paymentMethod: 'debit',
       accountId: 0,
       creditCardId: 0,
       categoryId: 0,
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: formatDateToISO(new Date())!,
       autoConfirm: false,
     });
   };
@@ -219,14 +247,16 @@ export function RecurringTransactionsPage() {
       amount: r.amount,
       type: r.type,
       frequency: r.frequency,
+      monthlyRule: r.monthlyRule ?? 'calendar_day',
       paymentMethod: isCredit ? 'credit' : 'debit',
       accountId: isCredit ? 0 : r.accountId,
       creditCardId: isCredit ? r.accountId : 0,
       categoryId: r.categoryId,
-      startDate:
-        formatDateToISO(r.startDate) ?? new Date().toISOString().split('T')[0],
+      startDate: formatDateToISO(r.startDate) ?? formatDateToISO(new Date())!,
       autoConfirm: r.autoConfirm,
     });
+    setFieldErrors({});
+    setFormError('');
     setIsFormOpen(true);
   };
 
@@ -301,7 +331,13 @@ export function RecurringTransactionsPage() {
                           {r.description}
                         </Typography>
                         <FrequencyBadge>
-                          {FREQUENCY_LABELS[r.frequency]}
+                          {r.frequency === 'monthly' &&
+                          r.monthlyRule &&
+                          r.monthlyRule !== 'calendar_day'
+                            ? MONTHLY_RULES.find(
+                                (rule) => rule.value === r.monthlyRule,
+                              )?.label
+                            : FREQUENCY_LABELS[r.frequency]}
                         </FrequencyBadge>
                         {isCredit && (
                           <Chip
@@ -367,6 +403,9 @@ export function RecurringTransactionsPage() {
             <Stack spacing={2} mt={1}>
               <TextField
                 label="Descrição"
+                required
+                error={Boolean(fieldErrors.description)}
+                helperText={fieldErrors.description}
                 fullWidth
                 value={formData.description}
                 onChange={(e) =>
@@ -378,6 +417,9 @@ export function RecurringTransactionsPage() {
               />
               <CurrencyInput
                 label="Valor"
+                required
+                error={Boolean(fieldErrors.amount)}
+                helperText={fieldErrors.amount}
                 fullWidth
                 value={formData.amount}
                 onChange={(value) =>
@@ -387,6 +429,7 @@ export function RecurringTransactionsPage() {
               {!editingId && (
                 <SelectInput
                   label="Tipo"
+                  required
                   value={formData.type}
                   items={[
                     { value: 'expense', label: 'Despesa' },
@@ -395,7 +438,7 @@ export function RecurringTransactionsPage() {
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      type: e.target.value as any,
+                      type: e.target.value as 'income' | 'expense',
                       categoryId: 0,
                     }))
                   }
@@ -404,6 +447,7 @@ export function RecurringTransactionsPage() {
               )}
               <SelectInput
                 label="Frequência"
+                required
                 value={formData.frequency}
                 items={Object.entries(FREQUENCY_LABELS).map(([v, l]) => ({
                   value: v,
@@ -412,11 +456,49 @@ export function RecurringTransactionsPage() {
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    frequency: e.target.value as string,
+                    frequency: e.target.value as RecurringFrequency,
+                    monthlyRule:
+                      e.target.value === 'monthly'
+                        ? prev.monthlyRule
+                        : 'calendar_day',
                   }))
                 }
                 fullWidth
               />
+              {formData.frequency === 'monthly' && (
+                <SelectInput
+                  label="Regra mensal"
+                  required
+                  value={formData.monthlyRule}
+                  items={[...MONTHLY_RULES]}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      monthlyRule: e.target.value as MonthlyRule,
+                    }))
+                  }
+                  fullWidth
+                />
+              )}
+              <Typography variant="caption" color="text.secondary">
+                {formData.frequency === 'monthly' &&
+                formData.monthlyRule !== 'calendar_day'
+                  ? 'Dias úteis: segunda a sexta, excluindo feriados nacionais. Não inclui feriados locais ou pontos facultativos. '
+                  : ''}
+                {parseDateSafe(formData.startDate)
+                  ? 'Primeira data a partir do início: ' +
+                    formatDateToShow(
+                      nextRecurringDate(
+                        formData.startDate,
+                        formData.frequency,
+                        undefined,
+                        undefined,
+                        false,
+                        formData.monthlyRule,
+                      ),
+                    )
+                  : 'Informe a data inicial para visualizar a primeira ocorrência.'}
+              </Typography>
               {formData.type === 'expense' && (
                 <SelectInput
                   label="Forma de Pagamento"
@@ -438,6 +520,9 @@ export function RecurringTransactionsPage() {
               {isCreditCard && formData.type === 'expense' ? (
                 <SelectInput
                   label="Cartão de Crédito"
+                  required
+                  error={Boolean(fieldErrors.accountId)}
+                  helperText={fieldErrors.accountId}
                   onCreate={() => {
                     setQuick('account');
                     setQuickField('creditCardId');
@@ -458,6 +543,9 @@ export function RecurringTransactionsPage() {
               ) : (
                 <SelectInput
                   label="Conta"
+                  required
+                  error={Boolean(fieldErrors.accountId)}
+                  helperText={fieldErrors.accountId}
                   onCreate={() => {
                     setQuick('account');
                     setQuickField('accountId');
@@ -478,6 +566,9 @@ export function RecurringTransactionsPage() {
               )}
               <SelectInput
                 label="Categoria"
+                required
+                error={Boolean(fieldErrors.categoryId)}
+                helperText={fieldErrors.categoryId}
                 onCreate={() => {
                   setQuick('category');
                   setQuickField('categoryId');
@@ -498,6 +589,9 @@ export function RecurringTransactionsPage() {
               {!editingId && (
                 <DateStringField
                   label="Data de Início"
+                  required
+                  error={Boolean(fieldErrors.startDate)}
+                  helperText={fieldErrors.startDate}
                   fullWidth
                   value={formData.startDate}
                   onChange={(value) =>

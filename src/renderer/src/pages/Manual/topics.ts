@@ -1,5 +1,19 @@
 export const manualTopics = [
   {
+    title: 'Recorrências e dias úteis',
+    route: '/panel/recurring',
+    description:
+      'Programe receitas e despesas, com regras mensais por dia do mês ou dia útil.',
+    steps: [
+      'Informe descrição, valor positivo, frequência, conta ou cartão, categoria e data inicial. Campos obrigatórios têm asterisco e mensagens de validação.',
+      'Na frequência Mensal, escolha Mesmo dia do mês, Primeiro dia útil do mês ou Último dia útil do mês. A prévia mostra a primeira data a partir do início informado; se ela já passou naquele mês, a regra começa no mês seguinte.',
+      'O calendário considera segunda a sexta e exclui feriados nacionais brasileiros, incluindo Sexta-feira da Paixão. Não exclui feriados estaduais, municipais, Carnaval, Corpus Christi ou pontos facultativos.',
+      'No modo Mesmo dia do mês, meses curtos usam o último dia disponível e o mês seguinte volta ao dia original. Uma regra do dia 31 usa 28 ou 29 em fevereiro e volta a 31 em março.',
+      'Gerar Pendentes processa uma ocorrência vencida por regra em cada execução, sem duplicar o mesmo dia. Por padrão o lançamento fica pendente; confirmar automaticamente afeta o saldo e deve ser escolhido conscientemente.',
+      'Nos filtros múltiplos, as opções ficam em uma linha. Use a rolagem lateral ou navegue pelos itens para consultar as seleções restantes.',
+    ],
+  },
+  {
     title: 'Primeiros passos e cadastros rápidos',
     route: '/panel/dashboard',
     description:

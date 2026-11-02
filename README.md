@@ -17,7 +17,7 @@ npm run dev
 
 No primeiro acesso, crie um usuário local. O guia de primeiros passos orienta o cadastro da conta; as categorias comuns já vêm com ícones. Use Transações para registrar receitas e despesas. O painel permite selecionar o mês de referência. Os dados são locais, sem integração bancária.
 
-Consulte as [novidades da versão 2.2.0](docs/RELEASE-2.2.0.md): dados externos do Banco Central (dólar, euro, Selic, CDI e IPCA), conversor de referência e tour guiado com destaque dos controles, formulários e retomada. As funcionalidades da [2.1.0](docs/RELEASE-2.1.0.md) permanecem disponíveis. Esta atualização não altera o esquema do banco.
+Consulte as [novidades da versão 2.3.0](docs/RELEASE-2.3.0.md): seleções múltiplas em uma linha, validações revisadas e recorrências no primeiro/último dia útil com feriados nacionais. A migração 012 preserva os registros do esquema 3, sem limpar o banco. Dados externos, conversor e tour guiado continuam disponíveis. Veja a [revisão dos formulários](docs/REVISAO-FORMULARIOS-2.3.0.md).
 
 ## Funcionalidades disponíveis no código
 

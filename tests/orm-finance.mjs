@@ -259,6 +259,64 @@ try {
   assert.equal(occurrences[0].status, 'pending');
   assert.equal(occurrences[0].amount, 5000);
   assert.equal(await cash(), before);
+  const recurringInput = {
+    description: 'Regra de dia útil',
+    amount: 10,
+    type: 'expense',
+    paymentMethod: 'debit',
+    frequency: 'monthly',
+    accountId: account.id,
+    categoryId: 100,
+    startDate: new Date(2026, 4, 1),
+    endDate: new Date(2026, 4, 10),
+    monthlyRule: 'first_business_day',
+  };
+  for (const invalid of [
+    { description: '   ' },
+    { amount: NaN },
+    { amount: 0.001 },
+    { frequency: 'weekly' },
+    { monthlyRule: 'unknown' },
+    { startDate: '2026-02-30' },
+    { accountId: -1 },
+  ])
+    await assert.rejects(() =>
+      recurring.create(1, { ...recurringInput, ...invalid }),
+    );
+  const businessRule = await recurring.create(1, recurringInput);
+  assert.equal(businessRule.nextOccurrence.getMonth(), 4);
+  assert.equal(businessRule.nextOccurrence.getDate(), 4);
+  assert.equal(businessRule.monthlyRule, 'first_business_day');
+  const unchanged = await recurring.update(1, businessRule.id, {
+    description: 'Descrição revisada',
+    frequency: 'monthly',
+    monthlyRule: 'first_business_day',
+    userId: 999,
+    nextOccurrence: new Date(2030, 0, 1),
+  });
+  assert.equal(unchanged.userId, 1);
+  assert.equal(
+    unchanged.nextOccurrence.getTime(),
+    businessRule.nextOccurrence.getTime(),
+    'editar descrição não reagenda ocorrência',
+  );
+  await recurring.generatePendingTransactions(1);
+  const generatedBusiness = await source.query(
+    'SELECT transaction_date FROM transactions WHERE recurring_rule_id=?',
+    [businessRule.id],
+  );
+  assert.equal(generatedBusiness.length, 1);
+  assert.equal(generatedBusiness[0].transaction_date, '2026-05-04');
+  await recurring.generatePendingTransactions(1);
+  assert.equal(
+    (
+      await source.query(
+        'SELECT id FROM transactions WHERE recurring_rule_id=?',
+        [businessRule.id],
+      )
+    ).length,
+    1,
+  );
   const moved = await entries.create(1, { ...input, status: 'pending' });
   await entries.update(1, moved.id, {
     accountId: other.id,

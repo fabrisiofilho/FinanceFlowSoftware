@@ -1,3 +1,4 @@
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { QuickCreate } from '@renderer/components/QuickCreate';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { ContentLoading } from '@renderer/components/ContentLoading';
@@ -100,7 +101,18 @@ export function BudgetPage() {
   }, [loadSummary]);
 
   const handleSave = async () => {
-    if (!formData.categoryId || !formData.plannedAmount) return;
+    if (!formData.categoryId) {
+      setFormError('Selecione uma categoria.');
+      return;
+    }
+    try {
+      amountToCents(formData.plannedAmount);
+    } catch {
+      setFormError(
+        'Informe um valor planejado positivo, com até duas casas decimais.',
+      );
+      return;
+    }
     setFormError('');
     setFormLoading(true);
     try {
@@ -383,6 +395,7 @@ export function BudgetPage() {
               {!editingBudget && (
                 <SelectInput
                   label="Categoria"
+                  required
                   onCreate={() => setQuick('category')}
                   value={formData.categoryId}
                   items={availableCategories.map((c) => ({
@@ -400,6 +413,7 @@ export function BudgetPage() {
               )}
               <CurrencyInput
                 label="Valor Planejado"
+                required
                 fullWidth
                 value={formData.plannedAmount}
                 onChange={(value) =>
