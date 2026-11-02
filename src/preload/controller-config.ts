@@ -226,7 +226,7 @@ export const CONTROLLER_CONFIG = {
   advancedReport: {
     prefix: 'advancedReport',
     methods: [
-      'queryV2',
+      'reserveSources','configureReserve','queryV2',
       'yearComparison',
       'trendAnalysis',
       'spendingPatterns',

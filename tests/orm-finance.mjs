@@ -1,3 +1,4 @@
+import { verifyRoadmap } from './roadmap-orm.mjs';
 import Module, { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -940,6 +941,7 @@ try {
   console.log(
     'Regressões: autorização, ajuste persistente, metas concorrentes, categorias idempotentes, multisseleção e paginação: OK',
   );
+  await verifyRoadmap(source,require);
   await database.closeDatabase();
   const NativeDatabase = require('better-sqlite3');
   const previous = new NativeDatabase(file);

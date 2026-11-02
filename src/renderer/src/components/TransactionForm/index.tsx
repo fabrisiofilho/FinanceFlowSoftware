@@ -7,6 +7,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   ToggleButton,
   FormControlLabel,
   Switch,
@@ -177,6 +180,7 @@ export function TransactionForm({
   loading = false,
   initialType = 'expense',
 }: Readonly<TransactionFormProps>) {
+  const [moreOptions, setMoreOptions] = useState(false);
   const [quick, setQuick] = useState<'account' | 'category' | null>(null);
   const [createdAccounts, setCreatedAccounts] = useState<Account[]>([]);
   const [createdCategories, setCreatedCategories] = useState<Category[]>([]);
@@ -481,6 +485,7 @@ export function TransactionForm({
             </FormGrid>
           </FormSection>
           {}
+          <Accordion expanded={moreOptions} onChange={(_,expanded) => setMoreOptions(expanded)}><AccordionSummary>Mais opções</AccordionSummary><AccordionDetails>
           {transactionType === 'expense' && (
             <>
               <FormDivider />
@@ -597,6 +602,7 @@ export function TransactionForm({
               </FormSection>
             </>
           )}
+          </AccordionDetails></Accordion>
         </FormContainer>
       </Modal>
       {quick && (

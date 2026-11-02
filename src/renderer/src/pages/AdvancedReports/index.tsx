@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Stack, Tab, Tabs, Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
+import { Checkbox, FormControlLabel, Button, Stack, Tab, Tabs, Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
@@ -34,6 +34,8 @@ export function AdvancedReportsPage() {
   const [query, setQuery] = useState(initialQuery), [data, setData] = useState<AdvancedReportResult | null>(null);
   const [loading, setLoading] = useState(true), [error, setError] = useState('');
   const [accounts, setAccounts] = useState<{ value: number; label: string }[]>([]), [categories, setCategories] = useState<{ value: number; label: string }[]>([]);
+  const [sources,setSources] = useState<number[]>([]);
+  const [reserveOpen,setReserveOpen] = useState(false);
   const sequence = useRef(0);
   useEffect(() => {
     let active = true;
@@ -88,7 +90,10 @@ export function AdvancedReportsPage() {
           <Typography>Poupança: {data.health.savingsRate === null ? 'sem receita para calcular' : data.health.savingsRate.toFixed(1) + '%'}</Typography>
           <Typography>Despesas/receitas: {data.health.expenseToIncomeRatio === null ? 'sem receita para calcular' : data.health.expenseToIncomeRatio.toFixed(1) + '%'}</Typography>
           <Typography>Orçamento: {data.health.budgetAdherence === null ? 'não configurado / não comparável' : data.health.budgetAdherence.toFixed(1) + '% de aderência'} · Excesso: {money(data.health.budgetExcessCents)}</Typography>
-          <Typography>Reserva de emergência: fontes não configuradas</Typography>
+          <Typography>Reserva de emergência: {data.health.emergencyFundMonths === null ? 'fontes não configuradas / dados não comparáveis' : data.health.emergencyFundMonths.toFixed(1)+' meses'}</Typography>
+          <Button onClick={() => {setReserveOpen(!reserveOpen);void window.electronAPI.advancedReport.reserveSources().then((r)=>{if(r.success)setSources(r.data??[]);else setError(r.error??'Falha ao consultar fontes');});}}>Selecionar contas da reserva</Button>
+          {reserveOpen && <Stack gap={1}><Typography>Somente valores dedicados à reserva em contas líquidas. Não selecione dinheiro já contado em investimento. Contas de cartão serão rejeitadas.</Typography>{accounts.map((a)=><FormControlLabel key={a.value} label={a.label} control={<Checkbox checked={sources.includes(a.value)} onChange={(_,checked)=>setSources((old)=>checked?[...old,a.value]:old.filter(id=>id!==a.value))} />}/>)}
+          <Button onClick={()=>void window.electronAPI.advancedReport.configureReserve(sources).then((r)=>{if(!r.success)throw new Error(r.error);setReserveOpen(false);return load();}).catch(e=>setError(String(e)))}>Salvar fontes</Button></Stack>}
           {(data.health.recommendations.length ? data.health.recommendations : ['Sem recomendações automáticas.']).map((r) => <AppAlert key={r} severity="info">{r}</AppAlert>)}
         </Stack></ContentSurface>}
         {!data.rows.length ? <AppAlert severity="info">Nenhuma movimentação para os filtros selecionados.</AppAlert> : <ContentSurface sx={{ overflow: 'auto' }}><Table size="small"><TableHead><TableRow><TableCell>Referência</TableCell>{headers.map((h) => <TableCell key={h}>{h}</TableCell>)}</TableRow></TableHead><TableBody>{data.rows.map((r,i) => <TableRow key={i}><TableCell>{r.label}</TableCell>{cells(r,panel).map((v,j) => <TableCell key={j}>{v}</TableCell>)}</TableRow>)}</TableBody></Table></ContentSurface>}

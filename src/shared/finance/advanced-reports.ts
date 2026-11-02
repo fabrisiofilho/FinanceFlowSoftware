@@ -7,6 +7,7 @@ export interface AdvancedReportQuery {
   categoryIds?: number[];
 }
 export interface ReportRow {
+  categoryId?: number;
   label: string;
   incomeCents?: number;
   expenseCents?: number;

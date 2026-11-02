@@ -28,7 +28,7 @@ test('projeção rejeita valores e prazos inválidos', () => {
     [-1, 1, 12],
     [100, NaN, 12],
     [100, -100, 12],
-    [100, 1, 0],
+    [100, 1, -1],
     [100, 1, 361],
     [1.1, 1, 12],
   ])
@@ -66,4 +66,18 @@ test('rendimentos pertencem ao usuário e corrigir mês substitui registro', asy
   await assert.rejects(service.record(42, 1, '2019-12', 1));
   await assert.rejects(service.record(42, 1, '2099-12', 1));
   await assert.rejects(service.record(42, 1, '2020-03', -99999999));
+});
+
+test('projeção separa rendimento acumulado de aportes e admite horizonte vazio', () => {
+  assert.equal(rules.projectInvestment(1000000, 1, 0).length,0);
+  const result = rules.projectInvestment(1000000,1,3);
+  assert.equal(result[2].accumulatedYieldCents,30301);
+  assert.equal(result[2].balanceCents,1030301);
+  const start = rules.projectInvestment(10000,1,1,10000,'start')[0];
+  const end = rules.projectInvestment(10000,1,1,10000,'end')[0];
+  assert.equal(start.yieldCents,200); assert.equal(end.yieldCents,100);
+  assert.equal(end.accumulatedContributionCents,10000);
+  const long = rules.projectInvestment(10000,-1,360,100,'end');
+  assert.equal(long[359].accumulatedYieldCents,long.reduce((sum,r) => sum+r.yieldCents,0));
+  assert.equal(long[359].balanceCents,10000+long[359].accumulatedContributionCents+long[359].accumulatedYieldCents);
 });

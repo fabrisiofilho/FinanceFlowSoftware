@@ -242,7 +242,6 @@ export function AlertsPage() {
         title="Alertas"
         description={
           <>Configure limites de gastos por categoria e monitore seus gastos</>
-      <AlertOccurrences />
         }
         actions={
           <>
@@ -265,6 +264,7 @@ export function AlertsPage() {
           </>
         }
       />
+      <AlertOccurrences />
       <ContentLoading loading={loading} initial="cards">
         {error && (
           <AppAlert severity="error" sx={{ mb: 3 }}>

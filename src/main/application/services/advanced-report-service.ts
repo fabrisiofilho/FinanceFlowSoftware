@@ -22,11 +22,11 @@ export class AdvancedReportService {
   async getYearComparison(userId: number, year: number) {
     if (!Number.isInteger(year) || year < 1900 || year > 9998) throw new Error('Ano inválido');
     const result = await this.service.query(userId,'comparison',{ startDate: year + '-01-01', endDateExclusive: (year+1) + '-01-01', basis: 'settlement' });
-    return result.rows.map((r,i) => ({ category: r.label, categoryId: i, currentYear: r.totalCents! / 100, previousYear: r.previousCents! / 100, variation: r.differenceCents! / 100, variationPercent: r.variationPercent ?? null }));
+    return result.rows.map((r) => ({ category: r.label, categoryId: r.categoryId!, currentYear: r.totalCents! / 100, previousYear: r.previousCents! / 100, variation: r.differenceCents! / 100, variationPercent: r.variationPercent ?? null }));
   }
   async getTrendAnalysis(userId: number, months = 12) {
     const result = await this.service.query(userId,'trends',this.period(months));
-    return result.rows.map((r,i) => ({ categoryId: i, categoryName: r.label, months: r.points!.map((p) => ({ year: +p.month.slice(0,4), month: +p.month.slice(5), amount: p.amountCents / 100 })), trend: 'stable' as const, averageMonthly: r.averageCents! / 100, projectedNextMonth: r.predictedCents === null ? null : r.predictedCents! / 100 }));
+    return result.rows.map((r) => ({ categoryId: r.categoryId!, categoryName: r.label, months: r.points!.map((p) => ({ year: +p.month.slice(0,4), month: +p.month.slice(5), amount: p.amountCents / 100 })), trend: (r.predictedCents === null || Math.abs(r.predictedCents! - r.averageCents!) < r.averageCents!*.05 ? 'stable' : r.predictedCents! > r.averageCents! ? 'increasing' : 'decreasing') as 'stable' | 'increasing' | 'decreasing', averageMonthly: r.averageCents! / 100, projectedNextMonth: r.predictedCents === null ? null : r.predictedCents! / 100 }));
   }
   async getSpendingPatterns(userId: number, filters?: AdvancedReportFilters) {
     const result = await this.service.query(userId,'habits',this.filters(filters));
@@ -34,7 +34,7 @@ export class AdvancedReportService {
   }
   async getCategoryBreakdown(userId: number, filters: AdvancedReportFilters) {
     const result = await this.service.query(userId,'categories',this.filters(filters));
-    return result.rows.map((r,i) => ({ categoryId: i, categoryName: r.label, total: r.totalCents! / 100, percentage: r.percentage!, transactionCount: r.count!, averageTransaction: r.averageCents! / 100 }));
+    return result.rows.map((r) => ({ categoryId: r.categoryId!, categoryName: r.label, total: r.totalCents! / 100, percentage: r.percentage!, transactionCount: r.count!, averageTransaction: r.averageCents! / 100 }));
   }
   async getFinancialHealth(userId: number) {
     const result = await this.service.query(userId,'health',this.period(3));

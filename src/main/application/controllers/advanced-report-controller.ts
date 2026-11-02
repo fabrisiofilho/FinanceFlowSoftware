@@ -20,6 +20,12 @@ export class AdvancedReportController extends BaseHandler {
   async queryV2(panel: ReportPanel, query: AdvancedReportQuery) {
     return wrap(() => new AdvancedReportV2Service().query(this.getUserId(), panel, query))();
   }
+  @IpcMethod('advancedReport:reserveSources') reserveSources() {
+    return wrap(() => new AdvancedReportV2Service().reserveSources(this.getUserId()))();
+  }
+  @IpcMethod('advancedReport:configureReserve') configureReserve(ids: number[]) {
+    return wrap(() => new AdvancedReportV2Service().configureReserve(this.getUserId(),ids))();
+  }
   private _reportService: AdvancedReportService | null = null;
   private financeAuthService = FinanceAuthService.getInstance();
 
