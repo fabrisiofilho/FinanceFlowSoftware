@@ -223,6 +223,7 @@ export const CONTROLLER_CONFIG = {
   advancedReport: {
     prefix: 'advancedReport',
     methods: [
+      'queryV2',
       'yearComparison',
       'trendAnalysis',
       'spendingPatterns',
@@ -259,3 +260,4 @@ export const CONTROLLER_CONFIG = {
 } as const;
 
 export type ControllerConfigType = typeof CONTROLLER_CONFIG;
+

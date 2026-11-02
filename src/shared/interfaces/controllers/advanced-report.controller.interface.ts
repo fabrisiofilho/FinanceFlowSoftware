@@ -1,3 +1,4 @@
+import type { AdvancedReportQuery, AdvancedReportResult, ReportPanel } from '../../finance/advanced-reports';
 import type { ApiResponse } from '../types/common.types';
 
 export interface YearComparison {
@@ -6,7 +7,7 @@ export interface YearComparison {
   currentYear: number;
   previousYear: number;
   variation: number;
-  variationPercent: number;
+  variationPercent: number | null;
 }
 
 export interface TrendAnalysis {
@@ -15,7 +16,7 @@ export interface TrendAnalysis {
   months: { year: number; month: number; amount: number }[];
   trend: 'increasing' | 'decreasing' | 'stable';
   averageMonthly: number;
-  projectedNextMonth: number;
+  projectedNextMonth: number | null;
 }
 
 export interface SpendingPattern {
@@ -36,11 +37,12 @@ export interface CategoryBreakdown {
 }
 
 export interface FinancialHealth {
-  score: number;
-  savingsRate: number;
-  expenseToIncomeRatio: number;
-  budgetAdherence: number;
-  emergencyFundMonths: number;
+  hasData?: boolean;
+  score: number | null;
+  savingsRate: number | null;
+  expenseToIncomeRatio: number | null;
+  budgetAdherence: number | null;
+  emergencyFundMonths: number | null;
   recommendations: string[];
 }
 
@@ -52,6 +54,7 @@ export interface AdvancedReportFilters {
 }
 
 export interface IAdvancedReportController {
+  queryV2(panel: ReportPanel, query: AdvancedReportQuery): Promise<ApiResponse<AdvancedReportResult>>;
   yearComparison(year: number): Promise<ApiResponse<YearComparison[]>>;
   trendAnalysis(months?: number): Promise<ApiResponse<TrendAnalysis[]>>;
   spendingPatterns(
@@ -73,3 +76,5 @@ export interface IAdvancedReportController {
     >
   >;
 }
+
+
