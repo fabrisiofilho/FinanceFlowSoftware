@@ -1,5 +1,40 @@
 export const manualTopics = [
   {
+    title: 'Lançamento em qualquer tela',
+    route: '/panel/transactions',
+    description: 'Registre uma receita ou despesa preservando a tela atual.',
+    steps: [
+      'Use + Novo na barra principal, ou Ctrl+Shift+R para receita e Ctrl+Shift+D para despesa.',
+      'Preencha os dados essenciais; Mais opções contém recorrência, parcelamento e detalhes. Ao fechar um formulário alterado, confirme o descarte.',
+      'Falhas preservam os campos. O lançamento só é confirmado após persistência e as consultas afetadas são atualizadas.',
+    ],
+  },
+  {
+    title: 'Financiamentos e parcelas',
+    route: '/panel/financing',
+    description:
+      'Controle previsões e pagamentos sem confundir principal com consumo.',
+    steps: [
+      'Cadastre contrato manual ou projeção SAC/Price com taxa efetiva mensal, saldo de corte e parcelas remanescentes. O cadastro não movimenta contas.',
+      'Informe o valor pago e a parcela efetiva de principal no comprovante. O total sai da conta; juros/encargos são despesa e o principal reduz o passivo.',
+      'Pagamento parcial mantém o saldo restante em aberto. Ajustes exigem justificativa e somente parcelas sem pagamento podem ser reprojetadas.',
+      'Estorne na área Financiamentos para devolver o valor à conta. Os lançamentos vinculados não podem ser editados isoladamente.',
+      'Indexadores, renegociação e amortização extraordinária com redução automática de prazo/prestação ainda não estão disponíveis.',
+    ],
+  },
+  {
+    title: 'Relatórios avançados e diagnóstico',
+    route: '/panel/advanced-reports',
+    description: 'Analise períodos comparáveis e consulte métricas locais.',
+    steps: [
+      'Selecione início e fim exclusivo, base realizado por liquidação ou competência, conta e categoria. As abas e o CSV usam a mesma resposta.',
+      'Meses sem movimento são zero. Percentual sem base anterior é indisponível. Score exige três meses completos com movimentos e renda; ele é heurístico.',
+      'Selecione somente contas líquidas dedicadas à reserva; cartões são rejeitados. Não conte novamente valores investidos. Sem fontes ou despesas representativas, a reserva fica indisponível.',
+      'Configurações → Diagnóstico mede processos, SQLite e arquivos a cada cinco segundos enquanto aberta. Copiar relatório remove o caminho pessoal.',
+    ],
+  },
+
+  {
     title: 'Recorrências e dias úteis',
     route: '/panel/recurring',
     description:

@@ -1,4 +1,8 @@
-import type { AdvancedReportQuery, AdvancedReportResult, ReportPanel } from '../../finance/advanced-reports';
+import type {
+  AdvancedReportQuery,
+  AdvancedReportResult,
+  ReportPanel,
+} from '../../finance/advanced-reports';
 import type { ApiResponse } from '../types/common.types';
 
 export interface YearComparison {
@@ -56,7 +60,10 @@ export interface AdvancedReportFilters {
 export interface IAdvancedReportController {
   reserveSources(): Promise<ApiResponse<number[]>>;
   configureReserve(ids: number[]): Promise<ApiResponse<void>>;
-  queryV2(panel: ReportPanel, query: AdvancedReportQuery): Promise<ApiResponse<AdvancedReportResult>>;
+  queryV2(
+    panel: ReportPanel,
+    query: AdvancedReportQuery,
+  ): Promise<ApiResponse<AdvancedReportResult>>;
   yearComparison(year: number): Promise<ApiResponse<YearComparison[]>>;
   trendAnalysis(months?: number): Promise<ApiResponse<TrendAnalysis[]>>;
   spendingPatterns(
@@ -78,5 +85,3 @@ export interface IAdvancedReportController {
     >
   >;
 }
-
-

@@ -17,7 +17,11 @@ export function HeaderDesktop() {
 
       <Stack direction="row" alignItems="center" gap="1rem">
         <Button
-          onClick={() => window.dispatchEvent(new CustomEvent('quick-transaction', {detail: 'income'}))}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('quick-transaction', { detail: 'income' }),
+            )
+          }
           data-tour="income-create"
           color="success"
           size="small"
@@ -25,7 +29,11 @@ export function HeaderDesktop() {
           Nova receita
         </Button>
         <Button
-          onClick={() => window.dispatchEvent(new CustomEvent('quick-transaction', {detail: 'expense'}))}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('quick-transaction', { detail: 'expense' }),
+            )
+          }
           data-tour="expense-create"
           color="error"
           size="small"

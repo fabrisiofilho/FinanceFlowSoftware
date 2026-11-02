@@ -549,244 +549,377 @@ export function InvestmentsPage() {
           maxWidth="md"
           scroll="paper"
         >
-          <DialogTitle>{selected?.name} · {money(selected ? balance(selected) : 0)} registrado</DialogTitle>
-          <Tabs value={detailTab} onChange={(_, value) => setDetailTab(value)} variant="scrollable" scrollButtons="auto">
-            <Tab value="summary" label="Resumo" /><Tab value="yields" label="Rendimentos" /><Tab value="simulation" label="Simulação" /><Tab value="events" label="Movimentações" /><Tab value="details" label="Detalhes" />
+          <DialogTitle>
+            {selected?.name} · {money(selected ? balance(selected) : 0)}{' '}
+            registrado
+          </DialogTitle>
+          <Tabs
+            value={detailTab}
+            onChange={(_, value) => setDetailTab(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab value="summary" label="Resumo" />
+            <Tab value="yields" label="Rendimentos" />
+            <Tab value="simulation" label="Simulação" />
+            <Tab value="events" label="Movimentações" />
+            <Tab value="details" label="Detalhes" />
           </Tabs>
           <DialogContent dividers>
             <Stack spacing={3}>
               {error && <AppAlert severity="error">{error}</AppAlert>}
-              {detailTab === 'summary' && <Stack gap={2}><Typography>Principal inicial: {money(selected?.principalCents ?? 0)}</Typography><Typography>Saldo registrado: {money(selected ? balance(selected) : 0)}</Typography><AppAlert severity="info">Posição calculada apenas com registros reais. Simulações não movimentam contas.</AppAlert><Button onClick={() => setDetailTab('yields')}>Registrar rendimento</Button><Button onClick={() => setDetailTab('events')}>Aportar ou resgatar</Button></Stack>}
-              {detailTab === 'details' && <Stack gap={1}><Typography>Tipo: {selected?.kind}</Typography><Typography>Competência inicial: {selected?.startMonth}</Typography><Typography>Taxa hipotética cadastrada: {selected?.monthlyRate}% ao mês</Typography><Typography>Instituição, vencimento e liquidez: não informados neste cadastro.</Typography></Stack>}
-              {detailTab === 'events' && <Stack spacing={3}>
-              <Typography variant="h6">Movimentar investimento</Typography>
-              <SelectInput
-                label="Operação"
-                required
-                value={eventKind}
-                items={[
-                  { value: 'deposit', label: 'Aporte' },
-                  { value: 'withdrawal', label: 'Resgate' },
-                  { value: 'fee', label: 'Taxa descontada da posição' },
-                  { value: 'tax', label: 'Imposto descontado da posição' },
-                ]}
-                onChange={(event) =>
-                  setEventKind(
-                    event.target.value as InvestmentEventInput['kind'],
-                  )
-                }
-              />
-              <CurrencyInput
-                label="Valor da operação"
-                required
-                value={eventAmount}
-                onChange={setEventAmount}
-              />
-              <DateStringField
-                label="Data da operação"
-                required
-                value={eventDate}
-                onChange={setEventDate}
-              />
-              {(eventKind === 'deposit' || eventKind === 'withdrawal') && (
-                <SelectInput
-                  label="Conta de caixa"
-                  onCreate={() => setQuickAccount('event')}
-                  createLabel="Cadastrar conta"
-                  value={eventAccount}
-                  items={[
-                    { value: '', label: 'Selecione' },
-                    ...accounts.map((item) => ({
-                      value: item.id,
-                      label: item.name,
-                    })),
-                  ]}
-                  onChange={(event) =>
-                    setEventAccount(event.target.value as string | number)
-                  }
-                />
-              )}
-              <Button
-                variant="contained"
-                disabled={busy || eventAmount <= 0}
-                onClick={() =>
-                  selected &&
-                  void run(
-                    () =>
-                      window.electronAPI.investment.event({
-                        investmentId: selected.id,
-                        kind: eventKind,
-                        amountCents: Math.round(eventAmount * 100),
-                        eventDate,
-                        accountId:
-                          eventKind === 'deposit' || eventKind === 'withdrawal'
-                            ? Number(eventAccount)
-                            : undefined,
-                        requestId: crypto.randomUUID(),
-                      }),
-                    () => setEventAmount(0),
-                  )
-                }
-              >
-                Registrar movimentação
-              </Button>
-              <Typography variant="body2" color="text.secondary">
-                Aportes e resgates transferem valores entre caixa e carteira.
-                Taxas e impostos reduzem a posição e são informados manualmente.
-              </Typography>
-              <Typography variant="h6">Histórico de movimentações</Typography>
-              {(portfolio.events ?? [])
-                .filter((item) => item.investmentId === selected?.id)
-                .map((item) => (
-                  <Typography key={item.id} variant="body2">
-                    {item.eventDate} ·{' '}
-                    {
-                      {
-                        initial: 'Aplicação inicial',
-                        deposit: 'Aporte',
-                        withdrawal: 'Resgate',
-                        fee: 'Taxa',
-                        tax: 'Imposto',
-                      }[item.kind]
-                    }{' '}
-                    · {money(item.amountCents)}
+              {detailTab === 'summary' && (
+                <Stack gap={2}>
+                  <Typography>
+                    Principal inicial: {money(selected?.principalCents ?? 0)}
                   </Typography>
-                ))}
-              </Stack>}
-              {detailTab === 'yields' && <Stack spacing={3}>
-              <Typography variant="h6">
-                Registrar rendimento observado
-              </Typography>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                gap={2}
-                sx={{
-                  '& > *': { flex: 1, minWidth: 0, width: { sm: '33.33%' } },
-                }}
-              >
-                <MonthField
-                  label="Competência"
-                  value={month}
-                  onChange={selectMonth}
-                />
-                <CurrencyInput
-                  label="Rendimento do mês"
-                  value={amount}
-                  onChange={setAmount}
-                />
-                <SelectInput
-                  label="Resultado"
-                  fullWidth
-                  value={loss ? 'loss' : 'gain'}
-                  items={[
-                    { value: 'gain', label: 'Ganho' },
-                    { value: 'loss', label: 'Perda' },
-                  ]}
-                  onChange={(event) => setLoss(event.target.value === 'loss')}
-                />
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Salvar substitui o valor já registrado para esta competência.
-                Informe o resultado desejado; não há cálculo automático de
-                impostos.
-              </Typography>
-              <Button
-                disabled={busy}
-                variant="contained"
-                onClick={() =>
-                  selected &&
-                  void run(() =>
-                    window.electronAPI.investment.recordYield(
-                      selected.id,
-                      month,
-                      Math.round(amount * 100) * (loss ? -1 : 1),
-                    ),
-                  )
-                }
-              >
-                Salvar rendimento
-              </Button>
-              <Typography variant="h6">Histórico registrado</Typography>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Competência</TableCell>
-                    <TableCell align="right">Rendimento</TableCell><TableCell align="right">Acumulado registrado</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {portfolio.yields
-                    .filter((item) => item.investmentId === selected?.id)
-                    .sort((a,b) => a.month.localeCompare(b.month))
-                    .map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.month}</TableCell>
-                        <TableCell align="right">
-                          {money(item.amountCents)}
-                        </TableCell><TableCell align="right">{money(portfolio.yields.filter((y) => y.investmentId === selected?.id && y.month <= item.month).reduce((sum,y) => sum+y.amountCents,0))}</TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-              </Stack>}
-              {detailTab === 'simulation' && <Stack spacing={3}>
-              <Typography variant="h6">Projeção hipotética · bruta, sem estimativa tributária</Typography>
-              <CurrencyInput label="Aporte mensal hipotético" value={contribution} onChange={setContribution} />
-              <SelectInput label="Momento do aporte" value={timing} items={[{value:'start',label:'Início do mês'},{value:'end',label:'Fim do mês'}]} onChange={(event) => setTiming(event.target.value as 'start' | 'end')} />
-              <Stack direction="row" gap={2}>
-                <Input
-                  label="Taxa mensal (%)"
-                  type="number"
-                  value={rate}
-                  onChange={(event) => setRate(event.target.value)}
-                />
-                <Input
-                  label="Prazo em meses"
-                  type="number"
-                  value={horizon}
-                  onChange={(event) => { setHorizon(event.target.value); setProjectionPage(0); }}
-                />
-              </Stack>
-              {projectionError ? (
-                <AppAlert severity="warning">{projectionError}</AppAlert>
-              ) : (
-                <>
+                  <Typography>
+                    Saldo registrado: {money(selected ? balance(selected) : 0)}
+                  </Typography>
                   <AppAlert severity="info">
-                    Saldo registrado: {money(selected ? balance(selected) : 0)}.
-                    Saldo estimado em {horizon} meses:{' '}
-                    {money(projection.at(-1)?.balanceCents ?? (selected ? balance(selected) : 0))}. Não é
-                    garantia de rentabilidade.
+                    Posição calculada apenas com registros reais. Simulações não
+                    movimentam contas.
                   </AppAlert>
-                  <Stack direction="row" gap={2}><Button disabled={projectionPage === 0} onClick={() => setProjectionPage((p) => p-1)}>Anterior</Button><Typography>Página {projectionPage+1}</Typography><Button disabled={(projectionPage+1)*24 >= projection.length} onClick={() => setProjectionPage((p) => p+1)}>Próxima</Button></Stack>
-                  <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
-                    <Table stickyHeader size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Mês futuro</TableCell>
-                          <TableCell align="right">
-                            Rendimento estimado
-                          </TableCell>
-                          <TableCell align="right">Rendimento acumulado</TableCell><TableCell align="right">Aportes acumulados</TableCell><TableCell align="right">Saldo estimado</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {projection.slice(projectionPage * 24, (projectionPage + 1) * 24).map((item) => (
-                          <TableRow key={item.month}>
+                  <Button onClick={() => setDetailTab('yields')}>
+                    Registrar rendimento
+                  </Button>
+                  <Button onClick={() => setDetailTab('events')}>
+                    Aportar ou resgatar
+                  </Button>
+                </Stack>
+              )}
+              {detailTab === 'details' && (
+                <Stack gap={1}>
+                  <Typography>Tipo: {selected?.kind}</Typography>
+                  <Typography>
+                    Competência inicial: {selected?.startMonth}
+                  </Typography>
+                  <Typography>
+                    Taxa hipotética cadastrada: {selected?.monthlyRate}% ao mês
+                  </Typography>
+                  <Typography>
+                    Instituição, vencimento e liquidez: não informados neste
+                    cadastro.
+                  </Typography>
+                </Stack>
+              )}
+              {detailTab === 'events' && (
+                <Stack spacing={3}>
+                  <Typography variant="h6">Movimentar investimento</Typography>
+                  <SelectInput
+                    label="Operação"
+                    required
+                    value={eventKind}
+                    items={[
+                      { value: 'deposit', label: 'Aporte' },
+                      { value: 'withdrawal', label: 'Resgate' },
+                      { value: 'fee', label: 'Taxa descontada da posição' },
+                      { value: 'tax', label: 'Imposto descontado da posição' },
+                    ]}
+                    onChange={(event) =>
+                      setEventKind(
+                        event.target.value as InvestmentEventInput['kind'],
+                      )
+                    }
+                  />
+                  <CurrencyInput
+                    label="Valor da operação"
+                    required
+                    value={eventAmount}
+                    onChange={setEventAmount}
+                  />
+                  <DateStringField
+                    label="Data da operação"
+                    required
+                    value={eventDate}
+                    onChange={setEventDate}
+                  />
+                  {(eventKind === 'deposit' || eventKind === 'withdrawal') && (
+                    <SelectInput
+                      label="Conta de caixa"
+                      onCreate={() => setQuickAccount('event')}
+                      createLabel="Cadastrar conta"
+                      value={eventAccount}
+                      items={[
+                        { value: '', label: 'Selecione' },
+                        ...accounts.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
+                      ]}
+                      onChange={(event) =>
+                        setEventAccount(event.target.value as string | number)
+                      }
+                    />
+                  )}
+                  <Button
+                    variant="contained"
+                    disabled={busy || eventAmount <= 0}
+                    onClick={() =>
+                      selected &&
+                      void run(
+                        () =>
+                          window.electronAPI.investment.event({
+                            investmentId: selected.id,
+                            kind: eventKind,
+                            amountCents: Math.round(eventAmount * 100),
+                            eventDate,
+                            accountId:
+                              eventKind === 'deposit' ||
+                              eventKind === 'withdrawal'
+                                ? Number(eventAccount)
+                                : undefined,
+                            requestId: crypto.randomUUID(),
+                          }),
+                        () => setEventAmount(0),
+                      )
+                    }
+                  >
+                    Registrar movimentação
+                  </Button>
+                  <Typography variant="body2" color="text.secondary">
+                    Aportes e resgates transferem valores entre caixa e
+                    carteira. Taxas e impostos reduzem a posição e são
+                    informados manualmente.
+                  </Typography>
+                  <Typography variant="h6">
+                    Histórico de movimentações
+                  </Typography>
+                  {(portfolio.events ?? [])
+                    .filter((item) => item.investmentId === selected?.id)
+                    .map((item) => (
+                      <Typography key={item.id} variant="body2">
+                        {item.eventDate} ·{' '}
+                        {
+                          {
+                            initial: 'Aplicação inicial',
+                            deposit: 'Aporte',
+                            withdrawal: 'Resgate',
+                            fee: 'Taxa',
+                            tax: 'Imposto',
+                          }[item.kind]
+                        }{' '}
+                        · {money(item.amountCents)}
+                      </Typography>
+                    ))}
+                </Stack>
+              )}
+              {detailTab === 'yields' && (
+                <Stack spacing={3}>
+                  <Typography variant="h6">
+                    Registrar rendimento observado
+                  </Typography>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    gap={2}
+                    sx={{
+                      '& > *': {
+                        flex: 1,
+                        minWidth: 0,
+                        width: { sm: '33.33%' },
+                      },
+                    }}
+                  >
+                    <MonthField
+                      label="Competência"
+                      value={month}
+                      onChange={selectMonth}
+                    />
+                    <CurrencyInput
+                      label="Rendimento do mês"
+                      value={amount}
+                      onChange={setAmount}
+                    />
+                    <SelectInput
+                      label="Resultado"
+                      fullWidth
+                      value={loss ? 'loss' : 'gain'}
+                      items={[
+                        { value: 'gain', label: 'Ganho' },
+                        { value: 'loss', label: 'Perda' },
+                      ]}
+                      onChange={(event) =>
+                        setLoss(event.target.value === 'loss')
+                      }
+                    />
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Salvar substitui o valor já registrado para esta
+                    competência. Informe o resultado desejado; não há cálculo
+                    automático de impostos.
+                  </Typography>
+                  <Button
+                    disabled={busy}
+                    variant="contained"
+                    onClick={() =>
+                      selected &&
+                      void run(() =>
+                        window.electronAPI.investment.recordYield(
+                          selected.id,
+                          month,
+                          Math.round(amount * 100) * (loss ? -1 : 1),
+                        ),
+                      )
+                    }
+                  >
+                    Salvar rendimento
+                  </Button>
+                  <Typography variant="h6">Histórico registrado</Typography>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Competência</TableCell>
+                        <TableCell align="right">Rendimento</TableCell>
+                        <TableCell align="right">
+                          Acumulado registrado
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {portfolio.yields
+                        .filter((item) => item.investmentId === selected?.id)
+                        .sort((a, b) => a.month.localeCompare(b.month))
+                        .map((item) => (
+                          <TableRow key={item.id}>
                             <TableCell>{item.month}</TableCell>
                             <TableCell align="right">
-                              {money(item.yieldCents)}
-                            </TableCell><TableCell align="right">{money(item.accumulatedYieldCents)}</TableCell><TableCell align="right">{money(item.accumulatedContributionCents)}</TableCell>
+                              {money(item.amountCents)}
+                            </TableCell>
                             <TableCell align="right">
-                              {money(item.balanceCents)}
+                              {money(
+                                portfolio.yields
+                                  .filter(
+                                    (y) =>
+                                      y.investmentId === selected?.id &&
+                                      y.month <= item.month,
+                                  )
+                                  .reduce((sum, y) => sum + y.amountCents, 0),
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </Box>
-                </>
+                    </TableBody>
+                  </Table>
+                </Stack>
               )}
-              </Stack>}
+              {detailTab === 'simulation' && (
+                <Stack spacing={3}>
+                  <Typography variant="h6">
+                    Projeção hipotética · bruta, sem estimativa tributária
+                  </Typography>
+                  <CurrencyInput
+                    label="Aporte mensal hipotético"
+                    value={contribution}
+                    onChange={setContribution}
+                  />
+                  <SelectInput
+                    label="Momento do aporte"
+                    value={timing}
+                    items={[
+                      { value: 'start', label: 'Início do mês' },
+                      { value: 'end', label: 'Fim do mês' },
+                    ]}
+                    onChange={(event) =>
+                      setTiming(event.target.value as 'start' | 'end')
+                    }
+                  />
+                  <Stack direction="row" gap={2}>
+                    <Input
+                      label="Taxa mensal (%)"
+                      type="number"
+                      value={rate}
+                      onChange={(event) => setRate(event.target.value)}
+                    />
+                    <Input
+                      label="Prazo em meses"
+                      type="number"
+                      value={horizon}
+                      onChange={(event) => {
+                        setHorizon(event.target.value);
+                        setProjectionPage(0);
+                      }}
+                    />
+                  </Stack>
+                  {projectionError ? (
+                    <AppAlert severity="warning">{projectionError}</AppAlert>
+                  ) : (
+                    <>
+                      <AppAlert severity="info">
+                        Saldo registrado:{' '}
+                        {money(selected ? balance(selected) : 0)}. Saldo
+                        estimado em {horizon} meses:{' '}
+                        {money(
+                          projection.at(-1)?.balanceCents ??
+                            (selected ? balance(selected) : 0),
+                        )}
+                        . Não é garantia de rentabilidade.
+                      </AppAlert>
+                      <Stack direction="row" gap={2}>
+                        <Button
+                          disabled={projectionPage === 0}
+                          onClick={() => setProjectionPage((p) => p - 1)}
+                        >
+                          Anterior
+                        </Button>
+                        <Typography>Página {projectionPage + 1}</Typography>
+                        <Button
+                          disabled={
+                            (projectionPage + 1) * 24 >= projection.length
+                          }
+                          onClick={() => setProjectionPage((p) => p + 1)}
+                        >
+                          Próxima
+                        </Button>
+                      </Stack>
+                      <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                        <Table stickyHeader size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Mês futuro</TableCell>
+                              <TableCell align="right">
+                                Rendimento estimado
+                              </TableCell>
+                              <TableCell align="right">
+                                Rendimento acumulado
+                              </TableCell>
+                              <TableCell align="right">
+                                Aportes acumulados
+                              </TableCell>
+                              <TableCell align="right">
+                                Saldo estimado
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {projection
+                              .slice(
+                                projectionPage * 24,
+                                (projectionPage + 1) * 24,
+                              )
+                              .map((item) => (
+                                <TableRow key={item.month}>
+                                  <TableCell>{item.month}</TableCell>
+                                  <TableCell align="right">
+                                    {money(item.yieldCents)}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {money(item.accumulatedYieldCents)}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {money(item.accumulatedContributionCents)}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {money(item.balanceCents)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    </>
+                  )}
+                </Stack>
+              )}
             </Stack>
           </DialogContent>
           <DialogActions>

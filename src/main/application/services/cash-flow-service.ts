@@ -80,14 +80,41 @@ export class CashFlowService {
       ? await this.getPendingBills(userId, startDate, endDate, accountId)
       : [];
 
-    const financingRows: { id: number; name: string; due_date: string; remaining: number; account_id: number; account_name: string }[] = includePendingBills ? await getDataSource().query(
-      "SELECT i.id,f.name,i.due_date,i.total_cents-COALESCE((SELECT SUM(p.amount_cents) FROM financing_payments p WHERE p.installment_id=i.id AND p.reversed=0),0) remaining,f.account_id,a.name account_name FROM financing_installments i JOIN financing_contracts f ON f.id=i.contract_id JOIN accounts a ON a.id=f.account_id WHERE f.user_id=? AND i.due_date<=? AND (? IS NULL OR f.account_id=?)",
-      [userId,formatDateToISO(endDate),accountId ?? null,accountId ?? null]) : [];
-    const financing: CashFlowDetail[] = financingRows.filter((r) => r.remaining > 0).map((r) => ({
-      id: r.id, type: 'expense', source: 'financing', description: '[Financiamento] ' + r.name, amount: r.remaining / 100,
-      date: parseDateSafe(r.due_date)! < startDate ? startDate : parseDateSafe(r.due_date)!,
-      accountId: r.account_id, accountName: r.account_name, isConfirmed: false, isPast: parseDateSafe(r.due_date)! < startDate,
-    }));
+    const financingRows: {
+      id: number;
+      name: string;
+      due_date: string;
+      remaining: number;
+      account_id: number;
+      account_name: string;
+    }[] = includePendingBills
+      ? await getDataSource().query(
+          'SELECT i.id,f.name,i.due_date,i.total_cents-COALESCE((SELECT SUM(p.amount_cents) FROM financing_payments p WHERE p.installment_id=i.id AND p.reversed=0),0) remaining,f.account_id,a.name account_name FROM financing_installments i JOIN financing_contracts f ON f.id=i.contract_id JOIN accounts a ON a.id=f.account_id WHERE f.user_id=? AND i.due_date<=? AND (? IS NULL OR f.account_id=?)',
+          [
+            userId,
+            formatDateToISO(endDate),
+            accountId ?? null,
+            accountId ?? null,
+          ],
+        )
+      : [];
+    const financing: CashFlowDetail[] = financingRows
+      .filter((r) => r.remaining > 0)
+      .map((r) => ({
+        id: r.id,
+        type: 'expense',
+        source: 'financing',
+        description: '[Financiamento] ' + r.name,
+        amount: r.remaining / 100,
+        date:
+          parseDateSafe(r.due_date)! < startDate
+            ? startDate
+            : parseDateSafe(r.due_date)!,
+        accountId: r.account_id,
+        accountName: r.account_name,
+        isConfirmed: false,
+        isPast: parseDateSafe(r.due_date)! < startDate,
+      }));
     // Combine all cash flow items
     const allItems = [
       ...transactions,

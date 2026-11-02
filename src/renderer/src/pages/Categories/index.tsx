@@ -32,7 +32,7 @@ import {
   EditOutlined as EditIcon,
   DeleteOutlined as DeleteIcon,
 } from '@mui/icons-material';
-import * as MuiIcons from '@mui/icons-material';
+import { categoryIcons as MuiIcons } from '@renderer/components/IconPicker/icons';
 import { useForm, Controller } from 'react-hook-form';
 import { Modal } from '@renderer/components/Modal';
 import { IconPicker } from '@renderer/components/IconPicker';

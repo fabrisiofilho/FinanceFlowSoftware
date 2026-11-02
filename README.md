@@ -2,7 +2,7 @@
 
 Aplicativo desktop para gerenciar ganhos e gastos mensais, derivado do FinanceFlowSoftware de fabrisiofilho.
 
-Interface somente dark neutro, com expansão opcional de histórico, consultas paginadas e menu agrupado. Em **Investimentos**, cadastre o valor aplicado, registre ou corrija rendimentos mensais e simule uma taxa mensal definida por você por até 360 meses. A simulação é separada dos registros reais; não calcula automaticamente CDI, impostos, resgates ou novos aportes.
+Interface somente dark neutro, com expansão opcional de histórico, consultas paginadas e menu agrupado. Em **Investimentos**, cadastre o valor aplicado, registre ou corrija rendimentos mensais e simule uma taxa mensal definida por você por até 360 meses. A simulação é separada dos registros reais; permite aportes hipotéticos no início ou fim do mês e não calcula automaticamente CDI ou impostos.
 
 O sininho oferece preferências, avisos por categoria, orçamento, saldo, vencimento, metas, recorrências, fechamento de fatura e lembretes de rendimento pendente. A avaliação ocorre com o aplicativo aberto e evita avisos automáticos duplicados.
 
@@ -17,7 +17,7 @@ npm run dev
 
 No primeiro acesso, crie um usuário local. O guia de primeiros passos orienta o cadastro da conta; as categorias comuns já vêm com ícones. Use Transações para registrar receitas e despesas. O painel permite selecionar o mês de referência. Os dados são locais, sem integração bancária.
 
-Consulte as [novidades da versão 2.3.0](docs/RELEASE-2.3.0.md): seleções múltiplas em uma linha, validações revisadas e recorrências no primeiro/último dia útil com feriados nacionais. A migração 012 preserva os registros do esquema 3, sem limpar o banco. Dados externos, conversor e tour guiado continuam disponíveis. Veja a [revisão dos formulários](docs/REVISAO-FORMULARIOS-2.3.0.md).
+Consulte as [novidades da versão 2.8.1](docs/RELEASE-2.3.0.md): seleções múltiplas em uma linha, validações revisadas e recorrências no primeiro/último dia útil com feriados nacionais. A migração 012 preserva os registros do esquema 3, sem limpar o banco. Dados externos, conversor e tour guiado continuam disponíveis. Veja a [revisão dos formulários](docs/REVISAO-FORMULARIOS-2.3.0.md).
 
 ## Funcionalidades disponíveis no código
 
@@ -64,3 +64,7 @@ Em desenvolvimento: database/finance.db dentro do projeto. No aplicativo instala
 Base: https://github.com/fabrisiofilho/FinanceFlowSoftware
 
 Commit inicial: 40921deead2e3dd6b8a6a337505e9ac1e51006fc. Histórico Git e autoria original preservados. O proprietário renomeou o repositório para [contabily](https://github.com/fabrisiofilho/contabily) em 02/11/2026 e autorizou commits, push e releases neste destino. A base não contém um arquivo de licença identificado; não foi adicionada uma licença nova.
+
+## Evolução de 02/11/2026
+
+As versões 2.4–2.8.1 acrescentam relatórios avançados com filtros e cobertura explícita, lançamento global, investimentos por abas, financiamentos manuais/SAC/Price, diagnóstico local, ocorrências de alertas e PDF verdadeiro. Consulte [execução do roadmap](docs/roadmap/EXECUCAO.md) e [validação integrada](docs/VALIDACAO-2.8.1.md). O mobile fica em projeto separado e entrega apenas APK, sem sincronização implícita.

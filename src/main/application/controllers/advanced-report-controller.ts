@@ -1,5 +1,8 @@
 import { AdvancedReportV2Service } from '../services/advanced-report-v2-service';
-import type { AdvancedReportQuery, ReportPanel } from '@shared/finance/advanced-reports';
+import type {
+  AdvancedReportQuery,
+  ReportPanel,
+} from '@shared/finance/advanced-reports';
 import { AdvancedReportService } from '../services/advanced-report-service';
 import type {
   YearComparison,
@@ -18,13 +21,21 @@ import { wrap } from '@main/infrastructure/utils/try-catch';
 export class AdvancedReportController extends BaseHandler {
   @IpcMethod('advancedReport:queryV2')
   async queryV2(panel: ReportPanel, query: AdvancedReportQuery) {
-    return wrap(() => new AdvancedReportV2Service().query(this.getUserId(), panel, query))();
+    return wrap(() =>
+      new AdvancedReportV2Service().query(this.getUserId(), panel, query),
+    )();
   }
   @IpcMethod('advancedReport:reserveSources') reserveSources() {
-    return wrap(() => new AdvancedReportV2Service().reserveSources(this.getUserId()))();
+    return wrap(() =>
+      new AdvancedReportV2Service().reserveSources(this.getUserId()),
+    )();
   }
-  @IpcMethod('advancedReport:configureReserve') configureReserve(ids: number[]) {
-    return wrap(() => new AdvancedReportV2Service().configureReserve(this.getUserId(),ids))();
+  @IpcMethod('advancedReport:configureReserve') configureReserve(
+    ids: number[],
+  ) {
+    return wrap(() =>
+      new AdvancedReportV2Service().configureReserve(this.getUserId(), ids),
+    )();
   }
   private _reportService: AdvancedReportService | null = null;
   private financeAuthService = FinanceAuthService.getInstance();
@@ -114,4 +125,3 @@ export class AdvancedReportController extends BaseHandler {
     })();
   }
 }
-

@@ -39,7 +39,11 @@ CREATE INDEX idx_financing_owner ON financing_contracts(user_id,id);
 CREATE INDEX idx_financing_due ON financing_installments(contract_id,due_date,id);
 CREATE INDEX idx_financing_payment ON financing_payments(installment_id,reversed);
 CREATE TRIGGER financing_protect_update BEFORE UPDATE ON transactions
-WHEN EXISTS(SELECT 1 FROM financing_payments p WHERE p.reversed=0 AND (p.principal_transaction_id=OLD.id OR p.cost_transaction_id=OLD.id))
+WHEN EXISTS(SELECT 1 FROM financing_payments p WHERE (p.principal_transaction_id=OLD.id OR p.cost_transaction_id=OLD.id)
+ AND (p.reversed=0 OR NOT (OLD.status='settled' AND NEW.status='cancelled'
+ AND NEW.amount=OLD.amount AND NEW.type=OLD.type AND NEW.origin=OLD.origin
+ AND NEW.account_id=OLD.account_id AND NEW.category_id=OLD.category_id
+ AND NEW.transaction_date=OLD.transaction_date AND NEW.settlement_date IS OLD.settlement_date)))
 BEGIN SELECT RAISE(ABORT,'Estorne o pagamento na área Financiamentos.'); END;
 CREATE TRIGGER financing_protect_delete BEFORE DELETE ON transactions
 WHEN EXISTS(SELECT 1 FROM financing_payments p WHERE p.principal_transaction_id=OLD.id OR p.cost_transaction_id=OLD.id)

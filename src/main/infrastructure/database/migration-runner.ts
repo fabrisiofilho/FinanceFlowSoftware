@@ -376,35 +376,39 @@ export class MigrationRunner {
     }
 
     this.db.pragma('foreign_keys = OFF');
+    const apply = this.db.transaction(() => {
+      for (let i = 0; i < regularStatements.length; i++) {
+        const statement = regularStatements[i];
+        const trimmedStatement = statement.trim();
+        if (trimmedStatement) {
+          try {
+            this.db.exec(trimmedStatement);
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
 
-    for (let i = 0; i < regularStatements.length; i++) {
-      const statement = regularStatements[i];
-      const trimmedStatement = statement.trim();
-      if (trimmedStatement) {
-        try {
-          this.db.exec(trimmedStatement);
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-
-          if (!errorMessage.includes('already exists')) {
-            const preview = trimmedStatement
-              .substring(0, 100)
-              .replace(/\s+/g, ' ');
-            logger.error(`Failed at statement ${i + 1}: ${preview}...`);
-            logger.error(`Error: ${errorMessage}`);
-            throw error;
+            if (!errorMessage.includes('already exists')) {
+              const preview = trimmedStatement
+                .substring(0, 100)
+                .replace(/\s+/g, ' ');
+              logger.error(`Failed at statement ${i + 1}: ${preview}...`);
+              logger.error(`Error: ${errorMessage}`);
+              throw error;
+            }
           }
         }
       }
+
+      const stmt = this.db.prepare(
+        "INSERT OR IGNORE INTO migrations (name, applied_at) VALUES (?, datetime('now'))",
+      );
+      stmt.run(migration.name);
+    });
+    try {
+      apply();
+    } finally {
+      this.db.pragma('foreign_keys = ON');
     }
-
-    const stmt = this.db.prepare(
-      "INSERT OR IGNORE INTO migrations (name, applied_at) VALUES (?, datetime('now'))",
-    );
-    stmt.run(migration.name);
-
-    this.db.pragma('foreign_keys = ON');
 
     logger.success(`Migration applied: ${migration.name}`);
   }
@@ -466,6 +470,16 @@ export class MigrationRunner {
 
       if (!inString && char === ';') {
         current += char;
+        // A trigger contains SQL statements separated by semicolons. Keep its
+        // BEGIN/CASE blocks together and let SQLite parse the complete body.
+        if (/^\s*CREATE\s+(?:TEMP(?:ORARY)?\s+)?TRIGGER\b/i.test(current)) {
+          const code = current.replace(/'(?:''|[^'])*'|"(?:""|[^"])*"/g, '');
+          const depth = (code.match(/\b(?:BEGIN|CASE|END)\b/gi) ?? []).reduce(
+            (level, token) => level + (token.toUpperCase() === 'END' ? -1 : 1),
+            0,
+          );
+          if (depth > 0) continue;
+        }
         const trimmed = current.trim();
         if (trimmed && trimmed !== ';') {
           statements.push(trimmed);

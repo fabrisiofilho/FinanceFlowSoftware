@@ -315,13 +315,28 @@ export class ReportService {
       const exportDir = this.getExportDirectory();
       const filename = this.generateFilename('relatorio', 'pdf');
       const filePath = path.join(exportDir, filename);
-      const printer = new BrowserWindow({ show: false, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: false } });
+      const printer = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          sandbox: true,
+          contextIsolation: true,
+          nodeIntegration: false,
+          javascript: false,
+        },
+      });
       try {
         printer.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-        await printer.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent));
-        const pdf = await printer.webContents.printToPDF({ printBackground: true, pageSize: 'A4' });
+        await printer.loadURL(
+          'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent),
+        );
+        const pdf = await printer.webContents.printToPDF({
+          printBackground: true,
+          pageSize: 'A4',
+        });
         fs.writeFileSync(filePath, pdf);
-      } finally { printer.destroy(); }
+      } finally {
+        printer.destroy();
+      }
       const stats = fs.statSync(filePath);
       logger.success('Relatório PDF exportado com sucesso:', filePath);
       return {

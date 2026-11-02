@@ -6,7 +6,21 @@ import {
   UpdateAlertInput,
 } from '../types/alert.types';
 export interface IAlertController {
-  occurrences(state?: string,page?: number): Promise<ApiResponse<{id:number;categoryName:string;severity:string;percentage:number;state:string;period:string}[]>>;
+  occurrences(
+    state?: string,
+    page?: number,
+  ): Promise<
+    ApiResponse<
+      {
+        id: number;
+        categoryName: string;
+        severity: string;
+        percentage: number;
+        state: string;
+        period: string;
+      }[]
+    >
+  >;
   dismissOccurrence(id: number): Promise<ApiResponse<void>>;
 
   create(data: CreateAlertInput): Promise<ApiResponse<Alert>>;

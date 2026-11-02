@@ -17,8 +17,8 @@ export class AppInitializer {
       const isProduction = app.isPackaged;
       configureLogger({
         writeToFile: isProduction,
-        consoleLevel: isProduction ? LogLevel.INFO : LogLevel.DEBUG,
-        fileLevel: LogLevel.INFO,
+        consoleLevel: isProduction ? LogLevel.WARN : LogLevel.DEBUG,
+        fileLevel: isProduction ? LogLevel.WARN : LogLevel.INFO,
       });
 
       logger.info('Starting application...');

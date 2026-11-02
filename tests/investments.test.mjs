@@ -69,15 +69,24 @@ test('rendimentos pertencem ao usuário e corrigir mês substitui registro', asy
 });
 
 test('projeção separa rendimento acumulado de aportes e admite horizonte vazio', () => {
-  assert.equal(rules.projectInvestment(1000000, 1, 0).length,0);
-  const result = rules.projectInvestment(1000000,1,3);
-  assert.equal(result[2].accumulatedYieldCents,30301);
-  assert.equal(result[2].balanceCents,1030301);
-  const start = rules.projectInvestment(10000,1,1,10000,'start')[0];
-  const end = rules.projectInvestment(10000,1,1,10000,'end')[0];
-  assert.equal(start.yieldCents,200); assert.equal(end.yieldCents,100);
-  assert.equal(end.accumulatedContributionCents,10000);
-  const long = rules.projectInvestment(10000,-1,360,100,'end');
-  assert.equal(long[359].accumulatedYieldCents,long.reduce((sum,r) => sum+r.yieldCents,0));
-  assert.equal(long[359].balanceCents,10000+long[359].accumulatedContributionCents+long[359].accumulatedYieldCents);
+  assert.equal(rules.projectInvestment(1000000, 1, 0).length, 0);
+  const result = rules.projectInvestment(1000000, 1, 3);
+  assert.equal(result[2].accumulatedYieldCents, 30301);
+  assert.equal(result[2].balanceCents, 1030301);
+  const start = rules.projectInvestment(10000, 1, 1, 10000, 'start')[0];
+  const end = rules.projectInvestment(10000, 1, 1, 10000, 'end')[0];
+  assert.equal(start.yieldCents, 200);
+  assert.equal(end.yieldCents, 100);
+  assert.equal(end.accumulatedContributionCents, 10000);
+  const long = rules.projectInvestment(10000, -1, 360, 100, 'end');
+  assert.equal(
+    long[359].accumulatedYieldCents,
+    long.reduce((sum, r) => sum + r.yieldCents, 0),
+  );
+  assert.equal(
+    long[359].balanceCents,
+    10000 +
+      long[359].accumulatedContributionCents +
+      long[359].accumulatedYieldCents,
+  );
 });

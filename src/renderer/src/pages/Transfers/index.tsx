@@ -331,13 +331,7 @@ export function TransfersPage() {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={
-                formLoading ||
-                !formData.fromAccountId ||
-                !formData.toAccountId ||
-                !formData.amount ||
-                formData.fromAccountId === formData.toAccountId
-              }
+              disabled={formLoading}
             >
               {formLoading ? <CircularProgress size={20} /> : 'Transferir'}
             </Button>

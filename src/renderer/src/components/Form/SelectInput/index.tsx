@@ -159,8 +159,13 @@ export const SelectInput = forwardRef(function SelectInput(
             )?.label ?? 'Selecione',
           ...rest?.slotProps?.select,
           MenuProps: {
-            style: {
-              maxHeight: SELECT_MENU_ITEMS_MAX_HEIGHT,
+            slotProps: {
+              paper: {
+                sx: {
+                  maxHeight: SELECT_MENU_ITEMS_MAX_HEIGHT,
+                  overflowY: 'auto',
+                },
+              },
             },
           },
         },

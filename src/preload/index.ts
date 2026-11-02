@@ -113,8 +113,14 @@ const api: CustomElectronAPI = {
     CONTROLLER_CONFIG.investment.prefix,
     CONTROLLER_CONFIG.investment.methods,
   ),
-  financing: createControllerFromConfig<FinancingAPI>(CONTROLLER_CONFIG.financing.prefix, CONTROLLER_CONFIG.financing.methods),
-  diagnostics: createControllerFromConfig<DiagnosticsAPI>(CONTROLLER_CONFIG.diagnostics.prefix, CONTROLLER_CONFIG.diagnostics.methods),
+  financing: createControllerFromConfig<FinancingAPI>(
+    CONTROLLER_CONFIG.financing.prefix,
+    CONTROLLER_CONFIG.financing.methods,
+  ),
+  diagnostics: createControllerFromConfig<DiagnosticsAPI>(
+    CONTROLLER_CONFIG.diagnostics.prefix,
+    CONTROLLER_CONFIG.diagnostics.methods,
+  ),
   financeAuth: createControllerFromConfig<IFinanceAuthController>(
     CONTROLLER_CONFIG.financeAuth.prefix,
     CONTROLLER_CONFIG.financeAuth.methods,

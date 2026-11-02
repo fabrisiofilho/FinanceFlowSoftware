@@ -8,7 +8,7 @@ import {
   Typography,
   Tooltip,
 } from '@mui/material';
-import * as MuiIcons from '@mui/icons-material';
+import { categoryIcons as MuiIcons } from './icons';
 import { IconPickerContainer, IconGrid, IconItem } from './styles';
 
 // Lista de ícones mais comuns para categorias financeiras
@@ -114,7 +114,7 @@ const CATEGORY_ICONS = [
   'Sailing',
   // Pets
   'Pets',
-  'Cruelty Free',
+  'CrueltyFree',
   // Outros
   'Category',
   'Star',

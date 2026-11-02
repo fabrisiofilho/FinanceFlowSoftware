@@ -33,6 +33,13 @@ test('avalia fontes habilitadas e usa chave estável para não duplicar avisos',
     },
   };
   const dependencies = {
+    './alert-occurrence-service': {
+      AlertOccurrenceService: class {
+        async evaluate() {
+          return undefined;
+        }
+      },
+    },
     '@main/infrastructure/database/data-source': {
       getDataSource: () => database,
     },

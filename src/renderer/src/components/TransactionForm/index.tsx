@@ -364,7 +364,14 @@ export function TransactionForm({
         variant="form"
         open={open}
         title={modalTitle}
-        handleClose={() => { if (!loading && !isSubmitting && (!isDirty || window.confirm('Descartar as alterações não salvas?'))) onClose(); }}
+        handleClose={() => {
+          if (
+            !loading &&
+            !isSubmitting &&
+            (!isDirty || window.confirm('Descartar as alterações não salvas?'))
+          )
+            onClose();
+        }}
         handleConfirm={handleSubmit(onSubmit)}
         confirmLabel="Salvar"
         cancelLabel="Cancelar"
@@ -485,124 +492,130 @@ export function TransactionForm({
             </FormGrid>
           </FormSection>
           {}
-          <Accordion expanded={moreOptions} onChange={(_,expanded) => setMoreOptions(expanded)}><AccordionSummary>Mais opções</AccordionSummary><AccordionDetails>
-          {transactionType === 'expense' && (
-            <>
+          <Accordion
+            expanded={moreOptions}
+            onChange={(_, expanded) => setMoreOptions(expanded)}
+          >
+            <AccordionSummary>Mais opções</AccordionSummary>
+            <AccordionDetails>
+              {transactionType === 'expense' && (
+                <>
+                  <FormDivider />
+                  <FormSection>
+                    <SectionTitle>Detalhes da Despesa</SectionTitle>
+                    <FormGrid>
+                      {}
+                      <FormSelectField
+                        control={control}
+                        name="paymentMethod"
+                        label="Forma de Pagamento"
+                        items={paymentMethodOptions}
+                        required
+                        fullWidth
+                      />
+                      {}
+                      <FormSelectField
+                        control={control}
+                        name="expenseType"
+                        label="Tipo de Despesa"
+                        items={expenseTypeOptions}
+                        required
+                        fullWidth
+                      />
+                    </FormGrid>
+                  </FormSection>
+                </>
+              )}
               <FormDivider />
+              {}
               <FormSection>
-                <SectionTitle>Detalhes da Despesa</SectionTitle>
+                <SectionTitle>Recorrência</SectionTitle>
                 <FormGrid>
-                  {}
                   <FormSelectField
                     control={control}
-                    name="paymentMethod"
-                    label="Forma de Pagamento"
-                    items={paymentMethodOptions}
-                    required
-                    fullWidth
-                  />
-                  {}
-                  <FormSelectField
-                    control={control}
-                    name="expenseType"
-                    label="Tipo de Despesa"
-                    items={expenseTypeOptions}
+                    name="recurrence"
+                    label="Frequência"
+                    items={recurrenceOptions}
                     required
                     fullWidth
                   />
                 </FormGrid>
+                {watchRecurrence !== 'once' && (
+                  <Alert severity="info" sx={{ mt: 1 }}>
+                    {watchRecurrence === 'monthly'
+                      ? 'Esta transação será repetida mensalmente nos próximos 12 meses.'
+                      : 'Esta transação será repetida semanalmente nas próximas 12 semanas.'}
+                  </Alert>
+                )}
               </FormSection>
-            </>
-          )}
-          <FormDivider />
-          {}
-          <FormSection>
-            <SectionTitle>Recorrência</SectionTitle>
-            <FormGrid>
-              <FormSelectField
-                control={control}
-                name="recurrence"
-                label="Frequência"
-                items={recurrenceOptions}
-                required
-                fullWidth
-              />
-            </FormGrid>
-            {watchRecurrence !== 'once' && (
-              <Alert severity="info" sx={{ mt: 1 }}>
-                {watchRecurrence === 'monthly'
-                  ? 'Esta transação será repetida mensalmente nos próximos 12 meses.'
-                  : 'Esta transação será repetida semanalmente nas próximas 12 semanas.'}
-              </Alert>
-            )}
-          </FormSection>
-          {}
-          {transactionType === 'expense' && (
-            <>
-              <FormDivider />
-              <FormSection>
-                <SectionTitle>Parcelamento</SectionTitle>
-                <AdditionalOptionsContainer>
-                  <Controller
-                    control={control}
-                    name="hasInstallments"
-                    render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            {...field}
-                            checked={field.value}
-                            disabled={!canHaveInstallments}
-                          />
-                        }
-                        label="Parcelar"
-                      />
-                    )}
-                  />
-                  {watchHasInstallments && canHaveInstallments && (
-                    <InstallmentsContainer>
-                      <InstallmentText>em</InstallmentText>
+              {}
+              {transactionType === 'expense' && (
+                <>
+                  <FormDivider />
+                  <FormSection>
+                    <SectionTitle>Parcelamento</SectionTitle>
+                    <AdditionalOptionsContainer>
                       <Controller
                         control={control}
-                        name="totalInstallments"
-                        render={({ field, fieldState: { error } }) => (
-                          <TextField
-                            {...field}
-                            type="number"
-                            size="small"
-                            sx={{ width: 80 }}
-                            inputProps={{ min: 2, max: 48 }}
-                            error={!!error}
-                            helperText={error?.message}
+                        name="hasInstallments"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                {...field}
+                                checked={field.value}
+                                disabled={!canHaveInstallments}
+                              />
+                            }
+                            label="Parcelar"
                           />
                         )}
                       />
-                      <InstallmentText>vezes</InstallmentText>
-                      {installments.length > 0 && (
-                        <InstallmentPreview>
-                          {formatCurrency(installments[0])} / parcela
-                          {installments.at(-1) !== installments[0] &&
-                            ' · última: ' +
-                              formatCurrency(installments.at(-1)!)}
-                        </InstallmentPreview>
+                      {watchHasInstallments && canHaveInstallments && (
+                        <InstallmentsContainer>
+                          <InstallmentText>em</InstallmentText>
+                          <Controller
+                            control={control}
+                            name="totalInstallments"
+                            render={({ field, fieldState: { error } }) => (
+                              <TextField
+                                {...field}
+                                type="number"
+                                size="small"
+                                sx={{ width: 80 }}
+                                inputProps={{ min: 2, max: 48 }}
+                                error={!!error}
+                                helperText={error?.message}
+                              />
+                            )}
+                          />
+                          <InstallmentText>vezes</InstallmentText>
+                          {installments.length > 0 && (
+                            <InstallmentPreview>
+                              {formatCurrency(installments[0])} / parcela
+                              {installments.at(-1) !== installments[0] &&
+                                ' · última: ' +
+                                  formatCurrency(installments.at(-1)!)}
+                            </InstallmentPreview>
+                          )}
+                        </InstallmentsContainer>
                       )}
-                    </InstallmentsContainer>
-                  )}
-                </AdditionalOptionsContainer>
-                {!canHaveInstallments && transactionType === 'expense' && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
-                  >
-                    Parcelamento disponível apenas para despesas únicas no
-                    cartão de crédito.
-                  </Typography>
-                )}
-              </FormSection>
-            </>
-          )}
-          </AccordionDetails></Accordion>
+                    </AdditionalOptionsContainer>
+                    {!canHaveInstallments && transactionType === 'expense' && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        Parcelamento disponível apenas para despesas únicas no
+                        cartão de crédito.
+                      </Typography>
+                    )}
+                  </FormSection>
+                </>
+              )}
+            </AccordionDetails>
+          </Accordion>
         </FormContainer>
       </Modal>
       {quick && (

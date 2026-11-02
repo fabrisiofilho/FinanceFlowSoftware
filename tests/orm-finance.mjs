@@ -941,7 +941,7 @@ try {
   console.log(
     'Regressões: autorização, ajuste persistente, metas concorrentes, categorias idempotentes, multisseleção e paginação: OK',
   );
-  await verifyRoadmap(source,require);
+  await verifyRoadmap(source, require);
   await database.closeDatabase();
   const NativeDatabase = require('better-sqlite3');
   const previous = new NativeDatabase(file);

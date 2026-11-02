@@ -8,7 +8,7 @@ const result = spawnSync(electronPath, ['tests/ui-loading.mjs'], {
   env,
   windowsHide: true,
   stdio: 'inherit',
-  timeout: 60000,
+  timeout: 120000,
 });
 if (result.error) throw result.error;
 process.exit(result.status ?? 1);

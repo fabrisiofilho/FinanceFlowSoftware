@@ -42,6 +42,52 @@ for (const { prefix, methods } of Object.values(
   for (const method of methods)
     ipcMain.handle(`${prefix}:${method}`, async (_, ...args) => {
       requests.push({ prefix, method, input: args[0] });
+      if (prefix === 'advancedReport' && method === 'queryV2')
+        return {
+          success: true,
+          data: {
+            panel: args[0],
+            query: args[1],
+            methodology: 'Consulta de teste isolada',
+            rows: [],
+            health:
+              args[0] === 'health'
+                ? {
+                    score: null,
+                    savingsRate: null,
+                    expenseToIncomeRatio: null,
+                    budgetAdherence: null,
+                    emergencyFundMonths: null,
+                    sampleSize: 0,
+                    completeMonths: 0,
+                    budgetExcessCents: 0,
+                    recommendations: [],
+                  }
+                : undefined,
+          },
+        };
+      if (prefix === 'financing' && method === 'list')
+        return { success: true, data: { contracts: [], total: 0 } };
+      if (prefix === 'diagnostics')
+        return {
+          success: true,
+          data: {
+            version: '2.8.0',
+            electron: '38',
+            chromium: '140',
+            uptimeSeconds: 1,
+            initializationMs: 100,
+            mainHeapBytes: 100,
+            processes: [],
+            sqliteBytes: 100,
+            walBytes: 0,
+            shmBytes: 0,
+            attachmentBytes: 0,
+            cacheBytes: 0,
+            dataDirectory: '[teste]',
+            queryMs: 1,
+          },
+        };
       if (prefix === 'externalData')
         return {
           success: true,
@@ -77,7 +123,7 @@ for (const { prefix, methods } of Object.values(
             ),
           },
         };
-      if (prefix === 'category' && ['findAll','findByType'].includes(method))
+      if (prefix === 'category' && ['findAll', 'findByType'].includes(method))
         return {
           success: true,
           data: [
@@ -101,6 +147,8 @@ for (const { prefix, methods } of Object.values(
           success: true,
           data: { id: 600, ...args[0], isDefault: false },
         };
+      if (prefix === 'account' && method === 'findAll')
+        return { success: true, data: accountRows };
       if (prefix === 'account' && method === 'create')
         return {
           success: true,
@@ -376,6 +424,9 @@ app
         throw error;
       }
     };
+    await run(
+      'window.qaConfirmCount=0;window.confirm=()=>{window.qaConfirmCount++;return true;};true',
+    );
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const assert = (value, message) => {
       if (!value) throw new Error(message);
@@ -446,7 +497,7 @@ app
         );
         await sleep(100);
         await run(
-          "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Salvar').click()",
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>['Salvar','Transferir'].includes(b.textContent)).click()",
         );
         await sleep(100);
         assert(
@@ -468,7 +519,7 @@ app
             'recorrência exige descrição e identifica o campo',
           );
           await run(
-            "Array.from(document.querySelectorAll('[role=dialog] label')).find(l=>l.textContent.includes('Regra mensal')).parentElement.querySelector('[role=combobox]').click()",
+            "Array.from(document.querySelectorAll('[role=dialog] label')).find(l=>l.textContent.includes('Regra mensal')).parentElement.querySelector('[role=combobox]').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))",
           );
           await sleep(100);
           assert(
@@ -679,6 +730,13 @@ app
           ),
           'guia exige cadastro antes de avançar',
         );
+        for (let attempt = 0; attempt < 50; attempt++) {
+          if (
+            await run("document.querySelector('[data-tour-spotlight]')!==null")
+          )
+            break;
+          await sleep(100);
+        }
         assert(
           await run("document.querySelector('[data-tour-spotlight]')!==null"),
           'tour destaca o controle da tela',
@@ -792,6 +850,10 @@ app
           "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Rendimentos e simulação')?.click()",
         );
         await sleep(250);
+        await run(
+          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent==='Movimentações')?.click()",
+        );
+        await sleep(100);
         assert(
           await run(
             "document.body.innerText.includes('Registrar movimentação')",
@@ -936,7 +998,7 @@ app
     );
     await sleep(100);
     await run(
-      "Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='Nova receita').click()",
+      "Array.from(document.querySelectorAll('button,a')).find(a=>a.textContent==='Nova receita').click()",
     );
     await sleep(500);
     assert(
@@ -949,7 +1011,7 @@ app
       "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Cancelar').click()",
     );
     await run(
-      "Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='Nova despesa').click()",
+      "Array.from(document.querySelectorAll('button,a')).find(a=>a.textContent==='Nova despesa').click()",
     );
     await sleep(350);
     assert(

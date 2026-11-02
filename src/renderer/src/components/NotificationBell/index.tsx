@@ -80,9 +80,11 @@ export function NotificationBell() {
       void loadSummary();
     };
     window.addEventListener('focus', refresh);
+    window.addEventListener('finance-data-changed', refresh);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener('focus', refresh);
+      window.removeEventListener('finance-data-changed', refresh);
     };
   }, [loadSummary]);
   useEffect(() => {
