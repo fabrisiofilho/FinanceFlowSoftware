@@ -10,9 +10,10 @@ import type { IImportController } from '@shared/interfaces/controllers/import.co
 import type { IAutoUpdaterController } from '@shared/interfaces/types/auto-updater.types';
 
 export const CONTROLLER_CONFIG = {
+  backup: { prefix: 'backup', methods: ['export', 'restore'] as const },
   investment: {
     prefix: 'investment',
-    methods: ['list', 'create', 'recordYield', 'remove'] as const,
+    methods: ['list', 'create', 'recordYield', 'remove', 'event'] as const,
   },
   financeAuth: {
     prefix: 'financeAuth',
@@ -67,6 +68,7 @@ export const CONTROLLER_CONFIG = {
       'findByPeriod',
       'findByCategory',
       'getMonthSummary',
+      'findUpcomingBills',
     ] as const satisfies readonly (keyof ITransactionController)[],
   },
 

@@ -26,6 +26,7 @@ export interface ITransactionController {
     endDate: Date,
   ): Promise<ApiResponse<Transaction[]>>;
   findByCategory(categoryId: number): Promise<ApiResponse<Transaction[]>>;
+  findUpcomingBills(daysAhead?: number): Promise<ApiResponse<Transaction[]>>;
   getMonthSummary(
     year: number,
     month: number,

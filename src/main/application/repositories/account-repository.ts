@@ -48,13 +48,19 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
   async deleteAccount(id: number, userId: number): Promise<void> {
     await this.delete({ id, userId });
   }
+  async externalBalanceImpact(userId: number, id: number): Promise<number> {
+    const [row] = await this.repository.manager.query(
+      "SELECT COALESCE((SELECT SUM(CASE WHEN kind IN ('initial','deposit') THEN -amount_cents WHEN kind='withdrawal' THEN amount_cents ELSE 0 END) FROM investment_events WHERE account_id=? AND user_id=?),0)-COALESCE((SELECT SUM(total_amount) FROM credit_card_invoices WHERE payment_account_id=? AND status='paid'),0) AS cents",
+      [id, userId, id],
+    );
+    return Number(row.cents) / 100;
+  }
   async getTotalBalance(userId: number): Promise<number> {
     try {
       const accounts = await this.findAllByUserId(userId);
-      return accounts.reduce(
-        (total, account) => total + Number(account.balance),
-        0,
-      );
+      return accounts
+        .filter((account) => account.type !== 'credit_card')
+        .reduce((total, account) => total + Number(account.balance), 0);
     } catch (error) {
       const err = error as Error;
       console.error('Erro em getTotalBalance:', err.message);

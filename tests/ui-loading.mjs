@@ -7,6 +7,7 @@ const path = require('path'),
   ts = require('typescript'),
   vm = require('vm');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const appRoot = process.env.CONTABILY_QA_APP_ROOT || root;
 const __dirname = path.join(root, '.qa');
 fs.mkdirSync(__dirname, { recursive: true });
 app.setPath('userData', path.join(__dirname, 'ui-loading-user-data'));
@@ -178,7 +179,7 @@ app
       height: 960,
       frame: false,
       webPreferences: {
-        preload: path.join(root, 'out/preload/index.js'),
+        preload: path.join(appRoot, 'out/preload/index.js'),
         contextIsolation: true,
         sandbox: false,
         backgroundThrottling: false,
@@ -196,7 +197,7 @@ app
       errors.push(detail.reason),
     );
 
-    await window.loadFile(path.join(root, 'out/renderer/index.html'));
+    await window.loadFile(path.join(appRoot, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 900));
     fs.writeFileSync(
       path.join(__dirname, 'neutral-opening.png'),
@@ -225,7 +226,9 @@ app
       'recurring',
       'advanced-reports',
       'cash-flow',
+      'income-tax',
       'bank-import',
+      'settings',
       'manual',
     ]) {
       await run("location.hash='/panel/" + route + "'");
@@ -236,7 +239,96 @@ app
       console.log(route, state);
       assert(!!state.title, 'cabeçalho ' + route);
       assert(!state.emptyErrors, 'sem alerta vazio ' + route);
+      if (route === 'income-tax') {
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Calcular simulação').click()",
+        );
+        assert(
+          await run("document.body.innerText.includes('Saldo zero')"),
+          'simulação vazia não inventa imposto',
+        );
+        fs.writeFileSync(
+          path.join(__dirname, 'v2-income-tax.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+      }
+      if (route === 'settings')
+        fs.writeFileSync(
+          path.join(__dirname, 'v2-settings.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+      if (route === 'dashboard')
+        fs.writeFileSync(
+          path.join(__dirname, 'v2-dashboard.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+      if (route === 'investments') {
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Rendimentos e simulação')?.click()",
+        );
+        await sleep(250);
+        assert(
+          await run(
+            "document.body.innerText.includes('Registrar movimentação')",
+          ),
+          'formulário de aportes e resgates disponível',
+        );
+        fs.writeFileSync(
+          path.join(__dirname, 'v2-investment-details.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+        await run(
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(button=>button.textContent==='Fechar')?.click()",
+        );
+        await sleep(150);
+      }
+      if (route === 'transactions') {
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Nova Transação')?.click()",
+        );
+        await sleep(250);
+        assert(
+          await run(
+            "document.body.innerText.includes('Data de competência')&&document.body.innerText.includes('Pago / recebido em')",
+          ),
+          'formulário separa competência e liquidação',
+        );
+        fs.writeFileSync(
+          path.join(__dirname, 'v2-transaction-form.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+        await run(
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(button=>button.textContent==='Cancelar')?.click()",
+        );
+        await sleep(150);
+      }
     }
+    await run(
+      "Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='Nova receita').click()",
+    );
+    await sleep(500);
+    assert(
+      await run(
+        "document.querySelector('[role=dialog]')?.textContent.includes('Receita')",
+      ),
+      'atalho Nova receita abre formulário',
+    );
+    await run(
+      "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Cancelar').click()",
+    );
+    await run(
+      "Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='Nova despesa').click()",
+    );
+    await sleep(350);
+    assert(
+      await run(
+        "document.querySelector('[role=dialog]')?.textContent.includes('Despesa')",
+      ),
+      'atalho Nova despesa abre formulário',
+    );
+    await run(
+      "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Cancelar').click()",
+    );
     await run("location.hash='/panel/reports'");
     await sleep(600);
     await run(

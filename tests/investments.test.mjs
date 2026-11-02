@@ -42,6 +42,7 @@ test('rendimentos pertencem ao usuário e corrigir mês substitui registro', asy
         ? [{ id: 1, startMonth: '2020-01', principalCents: 3000000 }]
         : [],
     yields: async () => entries,
+    events: async () => [],
     record: async (id, month, amount) => {
       const index = entries.findIndex((item) => item.month === month);
       const entry = { investmentId: id, month, amountCents: amount };

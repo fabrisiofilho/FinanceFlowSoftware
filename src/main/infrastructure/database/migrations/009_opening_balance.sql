@@ -1,0 +1,3 @@
+ALTER TABLE accounts ADD COLUMN initial_balance INTEGER NOT NULL DEFAULT 0;
+UPDATE accounts SET initial_balance=ROUND(balance-COALESCE((SELECT SUM(CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END) FROM transactions t WHERE t.account_id=accounts.id AND t.status='settled'),0)+COALESCE((SELECT SUM(i.total_amount) FROM credit_card_invoices i WHERE i.payment_account_id=accounts.id AND i.status='paid'),0)-COALESCE((SELECT SUM(CASE WHEN e.kind IN ('initial','deposit') THEN -e.amount_cents WHEN e.kind='withdrawal' THEN e.amount_cents ELSE 0 END) FROM investment_events e WHERE e.account_id=accounts.id),0),2);
+PRAGMA user_version=3;

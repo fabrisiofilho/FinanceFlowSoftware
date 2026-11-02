@@ -97,6 +97,7 @@ export function DashboardPage() {
         monthSummaryResponse,
         expensesByCategoryResponse,
         incomeVsExpensesResponse,
+        upcomingResponse,
       ] = await Promise.all([
         window.electronAPI.account.getTotalBalance(),
         window.electronAPI.transaction.getMonthSummary(
@@ -108,6 +109,7 @@ export function DashboardPage() {
           currentMonth,
         ),
         window.electronAPI.report.getIncomeVsExpenses(6),
+        window.electronAPI.transaction.findUpcomingBills(7),
       ]);
       const transactionsResponse = await window.electronAPI.transaction.findAll(
         {
@@ -122,7 +124,8 @@ export function DashboardPage() {
         !monthSummaryResponse.success ||
         !expensesByCategoryResponse.success ||
         !incomeVsExpensesResponse.success ||
-        !transactionsResponse.success
+        !transactionsResponse.success ||
+        !upcomingResponse.success
       ) {
         throw new Error(
           'Não foi possível carregar todos os dados financeiros.',
@@ -160,9 +163,10 @@ export function DashboardPage() {
         const sevenDaysFromNow = new Date(
           now.getTime() + 7 * 24 * 60 * 60 * 1000,
         );
-        const bills = transactionsResponse.data.content
+        const bills = (upcomingResponse.data ?? [])
           .filter((t) => {
-            if (t.type !== 'expense' || !t.dueDate) return false;
+            if (t.type !== 'expense' || t.status !== 'pending' || !t.dueDate)
+              return false;
             const dueDate = parseDateSafe(t.dueDate);
             return dueDate && dueDate >= now && dueDate <= sevenDaysFromNow;
           })
@@ -237,6 +241,14 @@ export function DashboardPage() {
           </AppAlert>
         )}
 
+        <AppAlert severity="info" sx={{ mb: 3 }}>
+          Por competência: receitas{' '}
+          {formatCurrency(monthSummary?.totalIncome ?? 0)} · despesas{' '}
+          {formatCurrency(monthSummary?.totalExpenses ?? 0)} · resultado{' '}
+          {formatCurrency(projectedBalance)}. Pendentes: receitas{' '}
+          {formatCurrency(monthSummary?.pendingIncome ?? 0)} · despesas{' '}
+          {formatCurrency(monthSummary?.pendingExpenses ?? 0)}.
+        </AppAlert>
         <Grid container spacing={3} mb={4}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <SummaryCard $variant="primary">
@@ -258,11 +270,16 @@ export function DashboardPage() {
                 <CalendarIcon />
               </SummaryCardIcon>
               <SummaryCardContent>
-                <SummaryCardLabel>
-                  Resultado do mês selecionado
-                </SummaryCardLabel>
-                <SummaryCardValue $negative={projectedBalance < 0}>
-                  {formatCurrency(projectedBalance)}
+                <SummaryCardLabel>Resultado realizado</SummaryCardLabel>
+                <SummaryCardValue
+                  $negative={
+                    (monthSummary?.received ?? 0) - (monthSummary?.paid ?? 0) <
+                    0
+                  }
+                >
+                  {formatCurrency(
+                    (monthSummary?.received ?? 0) - (monthSummary?.paid ?? 0),
+                  )}
                 </SummaryCardValue>
               </SummaryCardContent>
             </SummaryCard>
@@ -274,9 +291,9 @@ export function DashboardPage() {
                 <TrendingUpIcon />
               </SummaryCardIcon>
               <SummaryCardContent>
-                <SummaryCardLabel>Ganhos do mês selecionado</SummaryCardLabel>
+                <SummaryCardLabel>Recebido no mês</SummaryCardLabel>
                 <SummaryCardValue>
-                  {formatCurrency(monthSummary?.totalIncome ?? 0)}
+                  {formatCurrency(monthSummary?.received ?? 0)}
                 </SummaryCardValue>
               </SummaryCardContent>
             </SummaryCard>
@@ -288,9 +305,9 @@ export function DashboardPage() {
                 <TrendingDownIcon />
               </SummaryCardIcon>
               <SummaryCardContent>
-                <SummaryCardLabel>Gastos do mês selecionado</SummaryCardLabel>
+                <SummaryCardLabel>Pago no mês</SummaryCardLabel>
                 <SummaryCardValue>
-                  {formatCurrency(monthSummary?.totalExpenses ?? 0)}
+                  {formatCurrency(monthSummary?.paid ?? 0)}
                 </SummaryCardValue>
               </SummaryCardContent>
             </SummaryCard>

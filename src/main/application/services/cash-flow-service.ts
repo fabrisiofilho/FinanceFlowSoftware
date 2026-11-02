@@ -4,6 +4,8 @@ import { getDataSource } from '@main/infrastructure/database/data-source';
 import { TransactionEntity } from '../entities/transaction.entity';
 import { RecurringTransactionEntity } from '../entities/recurring-transaction.entity';
 import { AccountEntity } from '../entities/account.entity';
+import { CreditCardInvoiceEntity } from '../entities/credit-card-invoice.entity';
+import { occurrenceDate } from '@shared/finance/entry-schedule';
 import {
   CashFlowSummary,
   CashFlowProjection,
@@ -43,6 +45,14 @@ export class CashFlowService {
       includeRecurring = true,
       includePendingBills = true,
     } = filters;
+
+    if (
+      !Number.isFinite(startDate.getTime()) ||
+      !Number.isFinite(endDate.getTime()) ||
+      startDate > endDate ||
+      endDate.getTime() - startDate.getTime() > 366 * 86400000
+    )
+      throw new Error('Informe um período válido de até um ano.');
 
     // Get current balance
     const currentBalance = await this.getCurrentBalance(userId, accountId);
@@ -115,6 +125,8 @@ export class CashFlowService {
     userId: number,
     months: number = 6,
   ): Promise<MonthlyProjection[]> {
+    if (!Number.isInteger(months) || months < 1 || months > 24)
+      throw new Error('Informe entre 1 e 24 meses.');
     const projections: MonthlyProjection[] = [];
     const today = new Date();
     let runningBalance = await this.getCurrentBalance(userId);
@@ -124,7 +136,10 @@ export class CashFlowService {
         today.getFullYear() + Math.floor((today.getMonth() + i) / 12);
       const month = ((today.getMonth() + i) % 12) + 1;
 
-      const startDate = new Date(year, month - 1, 1);
+      const startDate =
+        i === 0
+          ? new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          : new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0);
 
       const summary = await this.getProjection(userId, {
@@ -156,8 +171,9 @@ export class CashFlowService {
   ): Promise<number> {
     const query = this.accountRepository
       .createQueryBuilder('a')
-      .select('COALESCE(SUM(a.balance), 0)', 'total')
-      .where('a.user_id = :userId', { userId });
+      .select('COALESCE((SUM(a.balance)/100.0), 0)', 'total')
+      .where('a.user_id = :userId', { userId })
+      .andWhere("a.type<>'credit_card'");
 
     if (accountId) {
       query.andWhere('a.id = :accountId', { accountId });
@@ -178,13 +194,21 @@ export class CashFlowService {
       .leftJoinAndSelect('t.account', 'a')
       .leftJoinAndSelect('t.category', 'c')
       .where('a.user_id = :userId', { userId })
-      .andWhere('t.transaction_date >= :startDate', { startDate })
-      .andWhere('t.transaction_date <= :endDate', { endDate });
+      .andWhere(
+        "t.status='pending' AND t.origin='entry' AND a.type<>'credit_card'",
+      )
+      .andWhere('COALESCE(t.due_date,t.transaction_date) >= :startDate', {
+        startDate: formatDateToISO(startDate),
+      })
+      .andWhere('COALESCE(t.due_date,t.transaction_date) <= :endDate', {
+        endDate: formatDateToISO(endDate),
+      });
 
     if (accountId) {
       query.andWhere('t.account_id = :accountId', { accountId });
     }
 
+    query.andWhere("(t.due_date IS NULL OR t.type='income')");
     const transactions = await query.getMany();
 
     return transactions.map((t) => ({
@@ -193,12 +217,12 @@ export class CashFlowService {
       source: 'transaction' as const,
       description: t.description,
       amount: Number(t.amount),
-      date: parseDateSafe(t.transactionDate) ?? new Date(),
+      date: parseDateSafe(t.dueDate ?? t.transactionDate) ?? new Date(),
       accountId: t.accountId,
       accountName: (t.account as AccountEntity)?.name ?? '',
       categoryId: t.categoryId,
       categoryName: (t.category as CategoryEntity)?.name,
-      isConfirmed: true,
+      isConfirmed: false,
       isPast: (parseDateSafe(t.transactionDate) ?? new Date()) < new Date(),
     }));
   }
@@ -215,9 +239,12 @@ export class CashFlowService {
       .leftJoinAndSelect('r.category', 'c')
       .where('r.user_id = :userId', { userId })
       .andWhere('r.is_active = 1')
-      .andWhere('r.next_occurrence <= :endDate', { endDate })
+      .andWhere("a.type<>'credit_card'")
+      .andWhere('r.next_occurrence <= :endDate', {
+        endDate: formatDateToISO(endDate),
+      })
       .andWhere('(r.end_date IS NULL OR r.end_date >= :startDate)', {
-        startDate,
+        startDate: formatDateToISO(startDate),
       });
 
     if (accountId) {
@@ -228,9 +255,13 @@ export class CashFlowService {
     const projections: CashFlowDetail[] = [];
 
     for (const recurring of recurrings) {
-      let nextDate = parseDateSafe(recurring.nextOccurrence) ?? new Date();
+      const anchor = parseDateSafe(recurring.nextOccurrence);
+      if (!anchor) throw new Error('Data de recorrência inválida.');
+      const stop = parseDateSafe(recurring.endDate) ?? endDate;
+      let nextDate = anchor;
+      let index = 0;
 
-      while (nextDate <= endDate) {
+      while (nextDate <= endDate && nextDate <= stop) {
         if (nextDate >= startDate) {
           projections.push({
             id: recurring.id,
@@ -253,7 +284,15 @@ export class CashFlowService {
         }
 
         // Calculate next occurrence
-        nextDate = this.addFrequency(nextDate, recurring.frequency);
+        index++;
+        if (index > 36600)
+          throw new Error('Recorrência excede o período permitido.');
+        nextDate = this.addFrequency(
+          anchor,
+          recurring.frequency,
+          index,
+          recurring.dayOfMonth,
+        );
       }
     }
 
@@ -271,10 +310,17 @@ export class CashFlowService {
       .leftJoinAndSelect('t.account', 'a')
       .leftJoinAndSelect('t.category', 'c')
       .where('a.user_id = :userId', { userId })
+      .andWhere(
+        "t.status='pending' AND t.origin='entry' AND a.type<>'credit_card'",
+      )
       .andWhere('t.type = :type', { type: 'expense' })
       .andWhere('t.due_date IS NOT NULL')
-      .andWhere('t.due_date >= :startDate', { startDate })
-      .andWhere('t.due_date <= :endDate', { endDate });
+      .andWhere('t.due_date >= :startDate', {
+        startDate: formatDateToISO(startDate),
+      })
+      .andWhere('t.due_date <= :endDate', {
+        endDate: formatDateToISO(endDate),
+      });
 
     if (accountId) {
       query.andWhere('t.account_id = :accountId', { accountId });
@@ -282,7 +328,7 @@ export class CashFlowService {
 
     const bills = await query.getMany();
 
-    return bills.map((t) => ({
+    const details: CashFlowDetail[] = bills.map((t) => ({
       id: t.id,
       type: 'expense' as const,
       source: 'bill' as const,
@@ -296,6 +342,33 @@ export class CashFlowService {
       isConfirmed: false,
       isPast: (parseDateSafe(t.dueDate) ?? new Date()) < new Date(),
     }));
+    const invoices = await getDataSource()
+      .getRepository(CreditCardInvoiceEntity)
+      .createQueryBuilder('i')
+      .innerJoinAndSelect('i.account', 'a')
+      .where('a.user_id=:userId', { userId })
+      .andWhere("i.status<>'paid'")
+      .andWhere('i.due_date BETWEEN :start AND :end', {
+        start: formatDateToISO(startDate),
+        end: formatDateToISO(endDate),
+      })
+      .getMany();
+    // A fatura sem conta pagadora definida participa apenas da visão consolidada.
+    if (!accountId)
+      for (const invoice of invoices)
+        details.push({
+          id: invoice.id,
+          type: 'expense',
+          source: 'bill',
+          description: `[Fatura] ${invoice.account.name}`,
+          amount: invoice.totalAmount,
+          date: parseDateSafe(invoice.dueDate)!,
+          accountId: invoice.accountId,
+          accountName: invoice.account.name ?? '',
+          isConfirmed: false,
+          isPast: false,
+        });
+    return details;
   }
 
   private groupByDate(
@@ -406,24 +479,42 @@ export class CashFlowService {
     return alerts;
   }
 
-  private addFrequency(date: Date, frequency: string): Date {
+  private addFrequency(
+    date: Date,
+    frequency: string,
+    index: number,
+    dayOfMonth?: number,
+  ): Date {
     const result = new Date(date);
     switch (frequency) {
       case 'daily':
-        result.setDate(result.getDate() + 1);
+        result.setDate(result.getDate() + index);
         break;
       case 'weekly':
-        result.setDate(result.getDate() + 7);
+        result.setDate(result.getDate() + 7 * index);
         break;
       case 'biweekly':
-        result.setDate(result.getDate() + 14);
+        result.setDate(result.getDate() + 14 * index);
         break;
-      case 'monthly':
-        result.setMonth(result.getMonth() + 1);
-        break;
+      case 'monthly': {
+        const target = occurrenceDate(date, index);
+        if (dayOfMonth)
+          target.setDate(
+            Math.min(
+              dayOfMonth,
+              new Date(
+                target.getFullYear(),
+                target.getMonth() + 1,
+                0,
+              ).getDate(),
+            ),
+          );
+        return target;
+      }
       case 'yearly':
-        result.setFullYear(result.getFullYear() + 1);
-        break;
+        return occurrenceDate(date, index * 12);
+      default:
+        throw new Error('Frequência de recorrência inválida.');
     }
     return result;
   }

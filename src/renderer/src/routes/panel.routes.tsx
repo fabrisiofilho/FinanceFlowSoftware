@@ -1,3 +1,6 @@
+import { SettingsPage } from '@renderer/pages/Settings/Overview';
+import { IncomeTaxPage } from '@renderer/pages/IncomeTax';
+import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import { buildNavigation } from './navigation';
 import { InvestmentsPage } from '@renderer/pages/Investments';
 import ShowChartRounded from '@mui/icons-material/ShowChartRounded';
@@ -42,6 +45,22 @@ type WithRouteProps<T> = T & {
 };
 
 const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
+  {
+    label: 'Simulação de IR',
+    path: '/panel/income-tax',
+    icon: <CalculateOutlinedIcon />,
+    canAccess: true,
+    routeElement: <IncomeTaxPage />,
+    routePath: '/income-tax',
+  },
+  {
+    label: 'Preferências e backup',
+    path: '/panel/settings',
+    icon: <SettingsOutlined />,
+    canAccess: true,
+    routeElement: <SettingsPage />,
+    routePath: '/settings',
+  },
   {
     label: 'Investimentos',
     path: '/panel/investments',

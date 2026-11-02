@@ -24,7 +24,9 @@ No primeiro acesso, crie um usuário local. Depois, cadastre uma conta financeir
 - Painel com ganhos, gastos e resultado do mês selecionado, além do saldo atual das contas.
 - Módulos herdados para relatórios, contas, cartões, metas, orçamentos e recorrências. Sua presença não significa que todos os fluxos tenham sido homologados.
 
-O resultado mensal usa a data da transação e equivale a receitas menos despesas. Não representa previsão nem distingue pagamentos pendentes e realizados. O saldo das contas e as transações recentes são informações atuais; o gráfico de evolução continua mostrando os últimos seis meses.
+O resultado realizado usa a data de liquidação; a previsão por competência considera pendências separadamente. Dinheiro é armazenado em centavos inteiros. Transferências internas não são renda nem consumo. O saldo das contas e as transações recentes são informações atuais; o gráfico de evolução mostra os últimos seis meses.
+
+Na versão 2.0.0 há backup/restauração integral criptografada em Configurações, movimentos de investimentos e simulação do IR ordinário do ano-calendário 2026 (declaração de 2027), com comparação de deduções e estimativa de imposto/restituição. A simulação não envia declaração nem substitui a classificação fiscal. Consulte a [avaliação de produto e pesquisa de mercado](docs/AVALIACAO-PRODUTO.md).
 
 ## Desenvolvimento
 
@@ -36,24 +38,25 @@ Electron + React + TypeScript, electron-vite, Material UI, Redux Toolkit, TypeOR
 npm run typecheck
 npm test
 npm run test:sqlite
+npm run test:orm
 npm run lint
 npm run build
 npm run test:ui
 npm run build:win
 ```
 
-O último comando gera o instalador em dist. Dependências nativas podem exigir ferramentas de compilação C++ para Windows quando não houver binário compatível. Não existe canal de publicação ou atualização configurado para o Contabily.
+O último comando gera o instalador em dist. Dependências nativas podem exigir ferramentas de compilação C++ para Windows quando não houver binário compatível. O canal próprio é [fabrisiofilho/contabily/releases](https://github.com/fabrisiofilho/contabily/releases). O updater consulta esse destino, solicita o download e permite instalar após concluir. Releases incluem instalador, blockmap e latest.yml. Versões que tinham o updater desativado precisam da primeira instalação manual.
 
-Após o build, `npm run test:ui` verifica os cabeçalhos dos 16 módulos, carregamento ao trocar filtros, respostas fora de ordem e animação do login em Electron oculto. Usa IPC fictício e dados isolados em `.qa`, sem acessar o banco pessoal.
+Após o build, `npm run test:ui` verifica as 18 telas, simulação de IR, carregamento ao trocar filtros, respostas fora de ordem e animação do login em Electron oculto. Usa IPC fictício e dados isolados em `.qa`, sem acessar o banco pessoal. `test:orm` verifica colunas e consultas contra SQLite real, saldos, pagamentos, recorrência e isolamento.
 
 O menu **Ajuda → Manual do sistema** explica as funções e permite buscar assuntos. A barra superior integrada controla a janela. Após mudanças no processo main ou preload, encerre e reinicie o aplicativo para carregar os novos controles.
 
 ## Dados locais
 
-Em desenvolvimento: database/finance.db dentro do projeto. No aplicativo instalado: database/finance.db no diretório userData do Electron correspondente ao Contabily. Bancos anteriores do FinanceFlow não são importados automaticamente. Não apague o banco para atualizar o esquema; use migrações. Para copiar o banco manualmente, encerre o aplicativo antes e mantenha juntos eventuais arquivos auxiliares do SQLite.
+Em desenvolvimento: database/finance.db dentro do projeto. No aplicativo instalado: database/finance.db no diretório userData do Electron correspondente ao Contabily. **A versão 2 usa esquema 3 em centavos e exige banco novo para instalações anteriores**, conforme autorização do proprietário de 01/11/2026. Não há conversão automática dos valores antigos. O aplicativo bloqueia bancos incompatíveis e não os apaga. O proprietário deve fechar o aplicativo, guardar cópia integral do banco e auxiliares e mover a base antiga para um local seguro antes de criar a nova. Backups antigos não convertem o esquema. Atualizações posteriores compatíveis usam migrações. Nunca remova dados para contornar erro sem cópia recuperável.
 
 ## Origem
 
 Base: https://github.com/fabrisiofilho/FinanceFlowSoftware
 
-Commit inicial: 40921deead2e3dd6b8a6a337505e9ac1e51006fc. Histórico Git e autoria original preservados. O remoto origin ainda aponta para a base; esta entrega não publica alterações nem cria repositório remoto. A base não contém um arquivo de licença identificado; não foi adicionada uma licença nova.
+Commit inicial: 40921deead2e3dd6b8a6a337505e9ac1e51006fc. Histórico Git e autoria original preservados. O proprietário renomeou o repositório para [contabily](https://github.com/fabrisiofilho/contabily) em 02/11/2026 e autorizou commits, push e releases neste destino. A base não contém um arquivo de licença identificado; não foi adicionada uma licença nova.

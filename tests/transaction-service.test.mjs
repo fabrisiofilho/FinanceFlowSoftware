@@ -31,6 +31,19 @@ function fixture(failAt = 0) {
       return state.rows.at(-1);
     }
   }
+  Transactions.prototype.findById = async function (id) {
+    return state.rows.find((row) => row.id === id);
+  };
+  Transactions.prototype.updateTransaction = async function (id, user, data) {
+    const row = state.rows.find((row) => row.id === id);
+    const updated = { ...row, ...data };
+    state.rows = state.rows.map((item) => (item.id === id ? updated : item));
+    return updated;
+  };
+  Transactions.prototype.deleteTransaction = async function (id) {
+    state.rows = state.rows.filter((row) => row.id !== id);
+    return true;
+  };
   class Accounts {
     async findById() {
       return { id: 1 };
@@ -46,6 +59,25 @@ function fixture(failAt = 0) {
       state.balance += type === 'expense' ? -amount : amount;
     }
   }
+  Balances.prototype.updateBalanceAfterUpdate = async function (
+    user,
+    account,
+    oldType,
+    oldAmount,
+    newType,
+    newAmount,
+  ) {
+    state.balance -= oldType === 'expense' ? -oldAmount : oldAmount;
+    state.balance += newType === 'expense' ? -newAmount : newAmount;
+  };
+  Balances.prototype.updateBalanceAfterDelete = async function (
+    user,
+    account,
+    type,
+    amount,
+  ) {
+    state.balance -= type === 'expense' ? -amount : amount;
+  };
   const source = {
     transaction: async (callback) => {
       const snapshot = structuredClone(state);
@@ -60,6 +92,9 @@ function fixture(failAt = 0) {
   const { TransactionService } = load(
     'src/main/application/services/transaction-service.ts',
     {
+      '@shared/finance/entry-state': load('src/shared/finance/entry-state.ts', {
+        './calendar-date': load('src/shared/finance/calendar-date.ts'),
+      }),
       '@shared/finance/entry-schedule': load(
         'src/shared/finance/entry-schedule.ts',
       ),
@@ -75,6 +110,7 @@ function fixture(failAt = 0) {
       '../repositories/account-repository': { AccountRepository: Accounts },
       '../repositories/category-repository': { CategoryRepository: Categories },
       './balance-calculator-service': { BalanceCalculatorService: Balances },
+      './credit-card-service': { CreditCardService: class {} },
       '@main/infrastructure/log/logger': {
         logger: new Proxy({}, { get: () => () => {} }),
       },
@@ -108,7 +144,7 @@ test('parcelamento completo confirma grupo e saldo juntos', async () => {
   const f = fixture();
   await f.service.create(1, { ...input, totalInstallments: 3 });
   assert.equal(f.state().rows.length, 3);
-  assert.equal(Math.round(f.state().balance * 100), -10000);
+  assert.equal(Math.round(f.state().balance * 100), -3333);
   assert.equal(f.state().rows[1].transactionDate.getDate(), 28);
 });
 test('serviço gera datas semanais reais e rejeita valores inválidos antes de gravar', async () => {
@@ -118,4 +154,19 @@ test('serviço gera datas semanais reais e rejeita valores inválidos antes de g
   await f.service.create(1, { ...input, recurrence: 'weekly' });
   assert.equal(f.state().rows[1].transactionDate.getMonth(), 1);
   assert.equal(f.state().rows[1].transactionDate.getDate(), 7);
+});
+
+test('pendência não afeta saldo; liquidar, cancelar e excluir revertem somente realizado', async () => {
+  const f = fixture();
+  const result = await f.service.create(1, { ...input, status: 'pending' });
+  assert.equal(f.state().balance, 0);
+  await f.service.update(1, result.id, {
+    status: 'settled',
+    settlementDate: new Date(2026, 1, 2),
+  });
+  assert.equal(f.state().balance, -100);
+  await f.service.update(1, result.id, { status: 'cancelled' });
+  assert.equal(f.state().balance, 0);
+  await f.service.delete(1, result.id);
+  assert.equal(f.state().balance, 0);
 });

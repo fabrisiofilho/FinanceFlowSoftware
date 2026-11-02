@@ -5,6 +5,7 @@ export interface InvestmentInput {
   principalCents: number;
   startMonth: string;
   monthlyRate: number;
+  accountId?: number;
 }
 export interface Investment extends InvestmentInput {
   id: number;
@@ -19,8 +20,27 @@ export interface InvestmentYield {
 export interface InvestmentPortfolio {
   investments: Investment[];
   yields: InvestmentYield[];
+  events?: InvestmentEvent[];
+}
+export interface InvestmentEvent {
+  id: number;
+  investmentId: number;
+  accountId: number | null;
+  kind: 'initial' | 'deposit' | 'withdrawal' | 'fee' | 'tax';
+  amountCents: number;
+  eventDate: string;
+  requestId: string;
+}
+export interface InvestmentEventInput {
+  investmentId: number;
+  accountId?: number;
+  kind: 'deposit' | 'withdrawal' | 'fee' | 'tax';
+  amountCents: number;
+  eventDate: string;
+  requestId: string;
 }
 export interface InvestmentAPI {
+  event(input: InvestmentEventInput): Promise<ApiResponse<void>>;
   list(): Promise<ApiResponse<InvestmentPortfolio>>;
   create(input: InvestmentInput): Promise<ApiResponse<void>>;
   recordYield(

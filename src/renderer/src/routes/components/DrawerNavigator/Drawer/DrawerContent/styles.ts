@@ -43,6 +43,8 @@ export const LogoContainer = styled('div')`
   position: relative;
 
   height: 3.5rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid ${({ theme }) => theme.COLORS.border};
   padding-left: 1rem;
 
   background-color: ${({ theme }) => theme.COLORS.surface};

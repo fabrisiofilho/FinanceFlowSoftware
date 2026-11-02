@@ -1,5 +1,6 @@
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
+import { AppAlert } from '@renderer/components/Feedback';
 
 import { useEffect, useState, useCallback } from 'react';
 import {
@@ -51,6 +52,7 @@ export function CashFlowPage() {
     MonthlyProjection[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { isDarkMode } = useTheme();
 
   const getChipStyles = (isHighConfidence: boolean) => {
@@ -82,6 +84,7 @@ export function CashFlowPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const today = new Date();
       const endDate = new Date(today);
@@ -97,9 +100,19 @@ export function CashFlowPage() {
         window.electronAPI.cashFlow.getMonthlyProjections(6),
       ]);
 
+      if (!summaryRes.success || !projectionsRes.success)
+        throw new Error(
+          'Não foi possível carregar o fluxo de caixa. Tente atualizar.',
+        );
       if (summaryRes.success && summaryRes.data) setSummary(summaryRes.data);
       if (projectionsRes.success && projectionsRes.data)
         setMonthlyProjections(projectionsRes.data);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Falha ao consultar o fluxo de caixa.',
+      );
     } finally {
       setLoading(false);
     }
@@ -129,6 +142,7 @@ export function CashFlowPage() {
           </>
         }
       />
+      {error && <AppAlert severity="error">{error}</AppAlert>}
       <ContentLoading loading={loading} initial="cards">
         {summary && (
           <>

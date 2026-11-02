@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -32,13 +33,18 @@ export class AccountEntity extends AuditableEntity {
   name!: string;
   @Column({ type: 'text' })
   type!: AccountType;
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  balance!: number;
+  @Column({ type: 'integer', transformer: moneyColumn })
+  balance: number = 0;
+  @Column({
+    name: 'initial_balance',
+    type: 'integer',
+    transformer: moneyColumn,
+  })
+  initialBalance: number = 0;
   @Column({
     name: 'credit_limit',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
+    type: 'integer',
+    transformer: moneyColumn,
     nullable: true,
   })
   creditLimit?: number;

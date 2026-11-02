@@ -9,25 +9,15 @@ import type {
 } from '@shared/interfaces/types/import.types';
 import { TransactionType } from '../entities/transaction.entity';
 import { repositoryCache } from '../repositories/repository-cache';
-import { BalanceCalculatorService } from './balance-calculator-service';
+import { TransactionService } from './transaction-service';
 
 export class ImportService {
-  private balanceCalculatorService: BalanceCalculatorService;
-
-  constructor() {
-    this.balanceCalculatorService = new BalanceCalculatorService();
-  }
-
   private get accountRepository() {
     return repositoryCache.accountRepository;
   }
 
   private get categoryRepository() {
     return repositoryCache.categoryRepository;
-  }
-
-  private get transactionRepository() {
-    return repositoryCache.transactionRepository;
   }
 
   /**
@@ -509,24 +499,18 @@ export class ImportService {
         }
 
         // Create transaction
-        await this.transactionRepository.createTransaction({
+        await new TransactionService().create(userId, {
           description: tx.description,
           amount: tx.amount,
           type: tx.type as TransactionType,
           transactionDate: tx.date,
+          status: 'settled',
+          settlementDate: tx.date,
           accountId,
           categoryId,
           paymentMethod: tx.type === 'expense' ? 'debit' : undefined,
           recurrence: 'once',
         });
-
-        // Update account balance
-        await this.balanceCalculatorService.updateBalanceAfterCreate(
-          userId,
-          accountId,
-          tx.type as TransactionType,
-          tx.amount,
-        );
 
         transactionsCreated++;
       } catch (error) {
@@ -605,24 +589,18 @@ export class ImportService {
         }
 
         // Create transaction
-        await this.transactionRepository.createTransaction({
+        await new TransactionService().create(userId, {
           description: tx.description,
           amount: tx.amount,
           type: tx.type as TransactionType,
           transactionDate: new Date(tx.date),
+          status: 'settled',
+          settlementDate: new Date(tx.date),
           accountId,
           categoryId,
           paymentMethod: tx.type === 'expense' ? 'debit' : undefined,
           recurrence: 'once',
         });
-
-        // Update account balance
-        await this.balanceCalculatorService.updateBalanceAfterCreate(
-          userId,
-          accountId,
-          tx.type as TransactionType,
-          tx.amount,
-        );
 
         transactionsCreated++;
       } catch (error) {

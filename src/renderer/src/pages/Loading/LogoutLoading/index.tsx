@@ -1,13 +1,10 @@
 import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Container, MessageContainer } from './styles';
-import financeLogo from '@renderer/assets/finance.png';
+import financeLogo from '@renderer/assets/contabily.png';
 const LOGOUT_MESSAGES = [
   'Finalizando sessão...',
-  'Desconectando das controladoras...',
-  'Salvando dados pendentes...',
-  'Limpando cache local...',
-  'Encerrando processos...',
+  'Encerrando acesso ao perfil...',
   'Quase lá...',
 ];
 const MESSAGE_INTERVAL = 2000;
@@ -23,7 +20,7 @@ export function LogoutLoading() {
   return (
     <Container>
       <Stack alignItems="center" gap={4}>
-        <img src={financeLogo} alt="Finance Logo" style={{ height: '3rem' }} />
+        <img src={financeLogo} alt="Contabily" style={{ height: '3rem' }} />
         <Box position="relative" display="inline-flex">
           <CircularProgress size={60} thickness={4} />
         </Box>

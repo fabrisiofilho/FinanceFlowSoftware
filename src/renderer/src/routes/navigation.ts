@@ -12,9 +12,12 @@ export const navigationAreas = [
     routes: ['accounts', 'credit-cards', 'bank-import'],
   },
   { label: 'Investimentos', routes: ['investments'] },
-  { label: 'Planejamento', routes: ['budget', 'cash-flow', 'goals'] },
+  {
+    label: 'Planejamento',
+    routes: ['budget', 'cash-flow', 'goals', 'income-tax'],
+  },
   { label: 'Análises', routes: ['reports', 'advanced-reports'] },
-  { label: 'Configurações', routes: ['categories', 'alerts'] },
+  { label: 'Configurações', routes: ['settings', 'categories', 'alerts'] },
   { label: 'Manual do sistema', routes: ['manual'] },
 ] as const;
 

@@ -1,3 +1,4 @@
+export type EntryStatus = 'pending' | 'settled' | 'cancelled';
 export type TransactionType = 'income' | 'expense';
 export type PaymentMethod = 'credit' | 'debit' | 'pix' | 'cash';
 export type ExpenseType = 'fixed' | 'variable';
@@ -11,6 +12,8 @@ export interface Transaction {
   expenseType?: ExpenseType;
   transactionDate: Date;
   dueDate?: Date;
+  status?: EntryStatus;
+  settlementDate?: Date | null;
   installmentNumber?: number;
   totalInstallments?: number;
   installmentGroupId?: string;
@@ -29,18 +32,24 @@ export interface CreateTransactionInput {
   expenseType?: ExpenseType;
   transactionDate: Date;
   dueDate?: Date;
+  status?: EntryStatus;
+  settlementDate?: Date | null;
   totalInstallments?: number;
   recurrence?: Recurrence;
   accountId: number;
   categoryId: number;
 }
 export interface UpdateTransactionInput {
+  type?: TransactionType;
+  accountId?: number;
   description?: string;
   amount?: number;
   paymentMethod?: PaymentMethod;
   expenseType?: ExpenseType;
   transactionDate?: Date;
   dueDate?: Date;
+  status?: EntryStatus;
+  settlementDate?: Date | null;
   categoryId?: number;
 }
 export type SortDirection = 'ASC' | 'DESC';
@@ -55,6 +64,7 @@ export interface SortConfig {
   direction: SortDirection;
 }
 export interface TransactionFilters {
+  status?: EntryStatus;
   startDate?: Date;
   endDate?: Date;
   startMonth?: number;
@@ -80,4 +90,8 @@ export interface MonthSummary {
   totalExpenses: number;
   balance: number;
   expensesByCategory: CategoryExpense[];
+  received?: number;
+  paid?: number;
+  pendingIncome?: number;
+  pendingExpenses?: number;
 }

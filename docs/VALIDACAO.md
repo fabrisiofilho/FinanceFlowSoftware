@@ -1,5 +1,23 @@
 # Validação do incremento inicial
 
+## Revisão 2.0.0 — 2026-11-02
+
+26 testes unitários aprovados, incluindo IR anual e estados do updater; typecheck aprovado; lint com zero erros e 17 avisos existentes. Build aprovado para main, preload e renderer, com as dez migrações. Inventário atualizado: 18 rotas, 21 entidades e 133 canais IPC.
+
+Teste adicional de valores fracionados detectou e corrigiu a dupla hidratação de defaults monetários no retorno de INSERT do TypeORM/SQLite. Defaults foram movidos para inicializadores das entidades, preservando os defaults físicos das migrações. Regressão confere retorno e persistência de saldo inicial R$ 123,45, fatura R$ 77,23, preferência R$ 123,45 e meta R$ 987,65.
+
+Importação manual de linhas e confirmação de extrato passaram pelo TransactionService: gravam liquidação na data do extrato, validam conta/categoria e não atualizam saldo fora da operação financeira. A confirmação de cada linha bancária grava também seu estado na mesma transação e ignora linha já processada. Teste real importa R$ 12,34 e R$ 56,78, repete a confirmação e reconcilia saldo de R$ 69,12. A importação manual ainda permite sucesso parcial por linha, explicitado no resultado; não representa restauração integral de backup.
+
+`npm run test:sqlite` passou: migrações, centavos, persistência, idempotência, isolamento, investimentos, liquidação e backup criptografado (senha incorreta, adulteração e restauração em arquivo temporário).
+
+`npm run test:orm` passou com SQLite/TypeORM reais em base temporária: confere cada coluna mapeada contra PRAGMA table_info e consulta todas as entidades. Exercita pendência/liquidação/cancelamento, transferência, ajuste de conta/tipo/valor, saldo inicial, investimento, pagamento integral e único de fatura, geração concorrente de recorrências, dashboard, orçamento e relatórios. Fluxo de caixa cobre receita/despesa por vencimento, filtro de contas, isolamento, fim de recorrência e janeiro/fevereiro no dia 31. Banco anterior é recusado e permanece intacto.
+
+`npm run test:ui` passou em Electron oculto com perfil e IPC isolados nas 18 telas, incluindo IR (simulação sem renda), formulário de liquidação, novos atalhos, loading, respostas fora de ordem e animação. Capturas `.qa/v2-dashboard.png` e `.qa/v2-income-tax.png` inspecionadas: barras consistentes, pontilhado ampliado, formulário e navegação legíveis. O teste não usa banco pessoal.
+
+A versão 2 exige banco novo em instalações antigas: esquema 3, sem conversão silenciosa nem exclusão automática. Manual, README e notas de release comunicam essa exigência.
+
+Limites: ensaios de UI usam dados fictícios; não equivalem à homologação integral de todos os formulários com banco real. Instalação, desinstalação, assinatura comercial e ciclo completo de atualização em uma instalação antiga não foram homologados. Simulação fiscal cobre o ajuste ordinário de 2026, não todos os regimes; avaliação de usabilidade é heurística, sem entrevistas. Pesquisa e prioridades em AVALIACAO-PRODUTO.md.
+
 ## Base de lançamentos — 2026-11-01
 
 18 testes passaram, incluindo conservação de centavos em milhares de divisões, datas bissextas, âncora mensal, recorrência semanal e datas inválidas. Serviço testado com falha simulada na segunda parcela e reversão do grupo/saldo em driver fictício. Typecheck e build passaram; lint com zero erros e 17 avisos existentes. Integração SQLite existente e teste Electron das 16 telas com IPC fictício passaram. Nenhuma alteração no esquema ou no banco pessoal. Pendências de liquidação, armazenamento monetário e integração real ORM continuam no plano V2.

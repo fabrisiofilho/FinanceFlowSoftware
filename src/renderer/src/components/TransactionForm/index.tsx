@@ -54,6 +54,8 @@ interface TransactionFormData {
   accountId: number;
   transactionDate: Date;
   dueDate?: Date | null;
+  status: 'pending' | 'settled' | 'cancelled';
+  settlementDate?: Date | null;
   paymentMethod?: PaymentMethod;
   expenseType?: ExpenseType;
   recurrence: Recurrence;
@@ -68,6 +70,7 @@ interface TransactionFormProps {
   categories: Category[];
   accounts: Account[];
   loading?: boolean;
+  initialType?: TransactionType;
 }
 const createValidationSchema = (type: TransactionType) =>
   yup.object().shape({
@@ -99,6 +102,11 @@ const createValidationSchema = (type: TransactionType) =>
       .date()
       .required('Data é obrigatória')
       .typeError('Data inválida'),
+    status: yup.string().oneOf(['pending', 'settled', 'cancelled']).required(),
+    settlementDate: yup
+      .date()
+      .nullable()
+      .typeError('Data de liquidação inválida'),
     dueDate: yup.date().nullable().typeError('Data de vencimento inválida'),
     paymentMethod:
       type === 'expense'
@@ -160,20 +168,25 @@ export function TransactionForm({
   categories,
   accounts,
   loading = false,
+  initialType = 'expense',
 }: Readonly<TransactionFormProps>) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [transactionType, setTransactionType] = useState<TransactionType>(
-    transaction?.type ?? 'expense',
+    transaction?.type ?? initialType,
   );
   const defaultValues: TransactionFormData = useMemo(
     () => ({
-      type: transaction?.type ?? 'expense',
+      type: transaction?.type ?? initialType,
       description: transaction?.description ?? '',
       amount: transaction?.amount ?? 0,
       categoryId: transaction?.categoryId ?? 0,
       accountId: transaction?.accountId ?? 0,
       transactionDate: transaction?.transactionDate
         ? (parseDateSafe(transaction.transactionDate) ?? new Date())
+        : new Date(),
+      status: transaction?.status ?? 'settled',
+      settlementDate: transaction?.settlementDate
+        ? parseDateSafe(transaction.settlementDate)
         : new Date(),
       dueDate: transaction?.dueDate ? parseDateSafe(transaction.dueDate) : null,
       paymentMethod: transaction?.paymentMethod ?? 'debit',
@@ -182,7 +195,7 @@ export function TransactionForm({
       hasInstallments: (transaction?.totalInstallments ?? 0) > 1,
       totalInstallments: transaction?.totalInstallments ?? 2,
     }),
-    [transaction],
+    [transaction, initialType],
   );
   const {
     control,
@@ -196,6 +209,7 @@ export function TransactionForm({
     resolver: yupResolver(createValidationSchema(transactionType)) as any,
     mode: 'onChange',
   });
+  const watchStatus = watch('status');
   const watchType = watch('type');
   const watchAmount = watch('amount');
   const watchHasInstallments = watch('hasInstallments');
@@ -289,6 +303,8 @@ export function TransactionForm({
         accountId: data.accountId,
         transactionDate: data.transactionDate,
         dueDate: data.dueDate ?? undefined,
+        status: data.status,
+        settlementDate: data.status === 'settled' ? data.settlementDate : null,
         recurrence: data.recurrence,
       };
       if (data.type === 'expense') {
@@ -436,11 +452,31 @@ export function TransactionForm({
             <FormDatePickerField
               control={control}
               name="transactionDate"
-              label="Data da Transação"
+              label="Data de competência"
               required
               fullWidth
             />
             {}
+            <FormSelectField
+              control={control}
+              name="status"
+              label="Situação"
+              items={[
+                { value: 'pending', label: 'Pendente' },
+                { value: 'settled', label: 'Liquidado' },
+                { value: 'cancelled', label: 'Cancelado' },
+              ]}
+              fullWidth
+            />
+            {watchStatus === 'settled' && (
+              <FormDatePickerField
+                control={control}
+                name="settlementDate"
+                label="Pago / recebido em"
+                required
+                fullWidth
+              />
+            )}
             {transactionType === 'expense' && (
               <FormDatePickerField
                 control={control}

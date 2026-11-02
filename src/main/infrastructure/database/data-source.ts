@@ -184,6 +184,21 @@ export const initializeDatabase = async (): Promise<void> => {
     logger.success('Migrations completed');
 
     await dataSourceInstance.initialize();
+    for (const metadata of dataSourceInstance.entityMetadatas) {
+      const columns: { name: string }[] = await dataSourceInstance.query(
+        `PRAGMA table_info("${metadata.tableName}")`,
+      );
+      const names = new Set(columns.map((column) => column.name));
+      const missing = metadata.columns.filter(
+        (column) => !names.has(column.databaseName),
+      );
+      if (missing.length) {
+        await dataSourceInstance.destroy();
+        throw new Error(
+          `Banco incompleto: faltam colunas em ${metadata.tableName}. Reinstale a versão atual. Nenhum dado foi apagado.`,
+        );
+      }
+    }
 
     logger.success('Database initialized successfully');
     logger.info('Database location:', logger.colors.cyan(currentDbPath));

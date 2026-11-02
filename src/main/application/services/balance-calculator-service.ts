@@ -59,7 +59,9 @@ export class BalanceCalculatorService {
     }
     const currentBalance = Number(account.balance);
     const balanceImpact = this.calculateBalanceImpact(transactionType, amount);
-    const newBalance = currentBalance + balanceImpact;
+    const newBalance =
+      (Math.round(currentBalance * 100) + Math.round(balanceImpact * 100)) /
+      100;
     await this.accountRepository.updateBalance(accountId, userId, newBalance);
     logger.success(
       `Saldo atualizado: ${currentBalance} -> ${newBalance} (impacto: ${balanceImpact})`,
@@ -85,7 +87,11 @@ export class BalanceCalculatorService {
     const oldImpact = this.calculateBalanceImpact(oldType, oldAmount);
     const newImpact = this.calculateBalanceImpact(newType, newAmount);
     const currentBalance = Number(account.balance);
-    const newBalance = currentBalance - oldImpact + newImpact;
+    const newBalance =
+      (Math.round(currentBalance * 100) -
+        Math.round(oldImpact * 100) +
+        Math.round(newImpact * 100)) /
+      100;
     await this.accountRepository.updateBalance(accountId, userId, newBalance);
     logger.success(
       `Saldo atualizado: ${currentBalance} -> ${newBalance} (reversão: ${-oldImpact}, novo: ${newImpact})`,
@@ -106,7 +112,9 @@ export class BalanceCalculatorService {
     }
     const originalImpact = this.calculateBalanceImpact(transactionType, amount);
     const currentBalance = Number(account.balance);
-    const newBalance = currentBalance - originalImpact;
+    const newBalance =
+      (Math.round(currentBalance * 100) - Math.round(originalImpact * 100)) /
+      100;
     await this.accountRepository.updateBalance(accountId, userId, newBalance);
     logger.success(
       `Saldo atualizado após exclusão: ${currentBalance} -> ${newBalance} (reversão: ${-originalImpact})`,
@@ -149,13 +157,21 @@ export class BalanceCalculatorService {
       userId,
       accountId,
     );
-    let calculatedBalance = 0;
+    let calculatedBalance =
+      Number(account.initialBalance ?? 0) +
+      (await this.accountRepository.externalBalanceImpact(userId, accountId));
     for (const transaction of transactions) {
+      if (
+        transaction.status === 'pending' ||
+        transaction.status === 'cancelled'
+      )
+        continue;
       const impact = this.calculateBalanceImpact(
         transaction.type as TransactionType,
         Number(transaction.amount),
       );
-      calculatedBalance += impact;
+      calculatedBalance =
+        (Math.round(calculatedBalance * 100) + Math.round(impact * 100)) / 100;
     }
     const oldBalance = Number(account.balance);
     await this.accountRepository.updateBalance(
@@ -203,13 +219,16 @@ export class BalanceCalculatorService {
       userId,
       accountId,
     );
-    let calculatedBalance = 0;
+    let calculatedBalance =
+      Number(account.initialBalance ?? 0) +
+      (await this.accountRepository.externalBalanceImpact(userId, accountId));
     for (const transaction of transactions) {
       const impact = this.calculateBalanceImpact(
         transaction.type as TransactionType,
         Number(transaction.amount),
       );
-      calculatedBalance += impact;
+      calculatedBalance =
+        (Math.round(calculatedBalance * 100) + Math.round(impact * 100)) / 100;
     }
     const difference = Math.abs(currentBalance - calculatedBalance);
     const isConsistent = difference < 0.01;

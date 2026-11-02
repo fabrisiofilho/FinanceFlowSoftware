@@ -51,4 +51,4 @@ Usar repositórios para isolar persistência dos casos de uso. Preferir SQLite s
 
 ## Situação atual
 
-Base clonada e inspecionada. Incremento inicial: identidade Contabily, diretrizes, canal de atualização herdado desativado e seleção de mês no painel. Cadastro de ganhos e gastos reaproveita os módulos existentes. Backup completo, centavos inteiros e distinção entre competência e liquidação permanecem no planejamento. Consulte README.md e docs/VALIDACAO.md para a situação das verificações.
+Em 02/11/2026, a versão 2.0.0 implementa centavos inteiros (esquema 3), competência e liquidação, backup integral criptografado, investimentos e simulação de IR de 2026. Bancos anteriores exigem recriação manual autorizada; não há limpeza automática. O proprietário renomeou o repositório para fabrisiofilho/contabily e autorizou publicação e atualização nesse canal próprio. Consulte README.md, docs/VALIDACAO.md e docs/AVALIACAO-PRODUTO.md para resultados, pesquisa de mercado e prioridades individuais/familiares. As seções iniciais deste plano registram a proposta original, não o inventário atual.

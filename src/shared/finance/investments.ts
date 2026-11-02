@@ -32,3 +32,30 @@ export function projectInvestment(
     return { month: index + 1, balanceCents: balance, yieldCents: income };
   });
 }
+import type {
+  Investment,
+  InvestmentPortfolio,
+} from '../interfaces/types/investment.types';
+export function investmentBalance(
+  investment: Investment,
+  portfolio: InvestmentPortfolio,
+): number {
+  const yields = portfolio.yields
+    .filter((item) => item.investmentId === investment.id)
+    .reduce((sum, item) => sum + item.amountCents, 0);
+  const movements = (portfolio.events ?? [])
+    .filter((item) => item.investmentId === investment.id)
+    .reduce(
+      (sum, item) =>
+        sum +
+        (item.kind === 'initial'
+          ? 0
+          : item.kind === 'deposit'
+            ? item.amountCents
+            : -item.amountCents),
+      0,
+    );
+  const result = investment.principalCents + yields + movements;
+  assertCents(result);
+  return result;
+}

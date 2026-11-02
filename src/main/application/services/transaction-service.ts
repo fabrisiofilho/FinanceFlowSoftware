@@ -1,3 +1,5 @@
+import { CreditCardService } from './credit-card-service';
+import { entryState, settledAmount } from '@shared/finance/entry-state';
 import {
   amountToCents,
   installmentAmounts,
@@ -106,6 +108,10 @@ export class TransactionService {
       paymentMethod: entity.paymentMethod as Transaction['paymentMethod'],
       expenseType: entity.expenseType as Transaction['expenseType'],
       transactionDate: parseDateSafe(entity.transactionDate) ?? new Date(),
+      status: entity.status,
+      settlementDate: entity.settlementDate
+        ? parseDateSafe(entity.settlementDate)
+        : null,
       dueDate: entity.dueDate
         ? (parseDateSafe(entity.dueDate) ?? undefined)
         : undefined,
@@ -242,11 +248,36 @@ export class TransactionService {
     logger.success('Transação criada com sucesso:', createdTransaction.id);
     return createdTransaction;
   }
+  private async linkCard(
+    userId: number,
+    entity: TransactionEntity,
+  ): Promise<void> {
+    const account = await this.accountRepository.findById(
+      entity.accountId,
+      userId,
+    );
+    if (
+      account?.type === 'credit_card' &&
+      entity.type === 'expense' &&
+      entity.status !== 'cancelled'
+    )
+      await new CreditCardService().autoLinkTransactionToInvoice(
+        userId,
+        entity.id,
+        entity.accountId,
+        parseDateSafe(entity.transactionDate)!,
+      );
+  }
   private async createSingleTransaction(
     userId: number,
     data: CreateTransactionInput,
   ): Promise<Transaction> {
     const transactionData: Partial<TransactionEntity> = {
+      ...entryState(
+        data.status,
+        data.settlementDate,
+        parseDateSafe(data.transactionDate)!,
+      ),
       description: data.description.trim(),
       amount: data.amount,
       type: data.type as TransactionType,
@@ -266,8 +297,9 @@ export class TransactionService {
       userId,
       data.accountId,
       data.type as TransactionType,
-      data.amount,
+      settledAmount(entity),
     );
+    await this.linkCard(userId, entity);
     return this.mapEntityToTransaction(entity);
   }
   private async createInstallmentTransactions(
@@ -292,6 +324,11 @@ export class TransactionService {
 
       const transactionData: Partial<TransactionEntity> = {
         description: `${data.description.trim()} (${i}/${totalInstallments})`,
+        ...entryState(
+          i === 1 ? data.status : 'pending',
+          data.settlementDate,
+          installmentDate,
+        ),
         amount: installmentAmount,
         type: data.type as TransactionType,
         paymentMethod: data.paymentMethod,
@@ -307,6 +344,7 @@ export class TransactionService {
       };
       const entity =
         await this.transactionRepository.createTransaction(transactionData);
+      await this.linkCard(userId, entity);
       if (i === 1) {
         firstTransaction = entity;
       }
@@ -314,7 +352,7 @@ export class TransactionService {
         userId,
         data.accountId,
         data.type as TransactionType,
-        installmentAmount,
+        settledAmount(entity),
       );
     }
     return this.mapEntityToTransaction(firstTransaction!);
@@ -342,6 +380,11 @@ export class TransactionService {
         : undefined;
       const transactionData: Partial<TransactionEntity> = {
         description: data.description.trim(),
+        ...entryState(
+          i === 0 ? data.status : 'pending',
+          data.settlementDate,
+          transactionDate,
+        ),
         amount: data.amount,
         type: data.type as TransactionType,
         paymentMethod: data.paymentMethod,
@@ -357,6 +400,7 @@ export class TransactionService {
       };
       const entity =
         await this.transactionRepository.createTransaction(transactionData);
+      await this.linkCard(userId, entity);
       if (i === 0) {
         firstTransaction = entity;
       }
@@ -364,7 +408,7 @@ export class TransactionService {
         userId,
         data.accountId,
         data.type as TransactionType,
-        data.amount,
+        settledAmount(entity),
       );
     }
     return this.mapEntityToTransaction(firstTransaction!);
@@ -385,17 +429,47 @@ export class TransactionService {
       throw new Error('Transação não encontrada');
     }
     this.validateUpdateInput(data);
-    if (data.categoryId) {
-      // Usar o tipo existente da transação para validar compatibilidade da categoria
-      await this.validateCategory(
-        userId,
-        data.categoryId,
-        existingEntity.type as Transaction['type'],
-      );
+    const newType = data.type ?? existingEntity.type;
+    const newAccount = data.accountId ?? existingEntity.accountId;
+    if (!['income', 'expense'].includes(newType))
+      throw new Error('Tipo inválido.');
+    await this.validateAccount(userId, newAccount);
+    await this.validateCategory(
+      userId,
+      data.categoryId ?? existingEntity.categoryId,
+      newType,
+    );
+    if (existingEntity.creditCardInvoiceId) {
+      const invoice =
+        await repositoryCache.creditCardInvoiceRepository.findById(
+          existingEntity.creditCardInvoiceId,
+          userId,
+        );
+      if (!invoice || invoice.status !== 'open')
+        throw new Error('A fatura vinculada já está fechada ou paga.');
+      if (
+        newAccount !== existingEntity.accountId ||
+        newType !== existingEntity.type ||
+        (data.transactionDate &&
+          parseDateSafe(data.transactionDate)?.getTime() !==
+            parseDateSafe(existingEntity.transactionDate)?.getTime())
+      )
+        throw new Error(
+          'Para mudar conta, tipo ou competência de compra vinculada, exclua e cadastre novamente enquanto a fatura estiver aberta.',
+        );
     }
-    const oldAmount = Number(existingEntity.amount);
     const oldType = existingEntity.type as TransactionType;
-    const updateData: Partial<TransactionEntity> = {};
+    if (existingEntity.origin === 'transfer')
+      throw new Error('Edite a transferência na área Transferências.');
+    const updateData: Partial<TransactionEntity> = entryState(
+      data.status ?? existingEntity.status,
+      data.settlementDate === undefined
+        ? existingEntity.settlementDate
+        : data.settlementDate,
+      parseDateSafe(existingEntity.transactionDate)!,
+    );
+    updateData.type = newType;
+    updateData.accountId = newAccount;
     if (data.description !== undefined) {
       updateData.description = data.description.trim();
     }
@@ -426,16 +500,37 @@ export class TransactionService {
     if (!updatedEntity) {
       throw new Error('Erro ao atualizar transação');
     }
-    if (data.amount !== undefined && data.amount !== oldAmount) {
-      await this.balanceCalculatorService.updateBalanceAfterUpdate(
+    if (existingEntity.accountId !== newAccount) {
+      await this.balanceCalculatorService.updateBalanceAfterDelete(
         userId,
         existingEntity.accountId,
         oldType,
-        oldAmount,
+        settledAmount(existingEntity),
+      );
+      await this.balanceCalculatorService.updateBalanceAfterCreate(
+        userId,
+        newAccount,
+        newType,
+        settledAmount(updatedEntity),
+      );
+    } else if (
+      settledAmount(updatedEntity) !== settledAmount(existingEntity) ||
+      oldType !== newType
+    ) {
+      await this.balanceCalculatorService.updateBalanceAfterUpdate(
+        userId,
+        newAccount,
         oldType,
-        data.amount,
+        settledAmount(existingEntity),
+        newType,
+        settledAmount(updatedEntity),
       );
     }
+    if (existingEntity.creditCardInvoiceId)
+      await repositoryCache.creditCardInvoiceRepository.recalculateTotalFromTransactions(
+        existingEntity.creditCardInvoiceId,
+      );
+    else await this.linkCard(userId, updatedEntity);
     logger.success('Transação atualizada com sucesso:', id);
     return this.mapEntityToTransaction(updatedEntity);
   }
@@ -461,6 +556,8 @@ export class TransactionService {
     if (!existingEntity) {
       throw new Error('Transação não encontrada');
     }
+    if (existingEntity.origin === 'transfer')
+      throw new Error('Exclua a transferência na área Transferências.');
     const hasInstallmentGroup =
       existingEntity.installmentGroupId &&
       existingEntity.totalInstallments &&
@@ -483,9 +580,24 @@ export class TransactionService {
       userId,
       entity.accountId,
       entity.type as TransactionType,
-      Number(entity.amount),
+      settledAmount(entity),
     );
+    if (entity.creditCardInvoiceId) {
+      const invoice =
+        await repositoryCache.creditCardInvoiceRepository.findById(
+          entity.creditCardInvoiceId,
+          userId,
+        );
+      if (!invoice || invoice.status !== 'open')
+        throw new Error(
+          'Não é possível excluir compra de fatura fechada ou paga.',
+        );
+    }
     await this.transactionRepository.deleteTransaction(entity.id, userId);
+    if (entity.creditCardInvoiceId)
+      await repositoryCache.creditCardInvoiceRepository.recalculateTotalFromTransactions(
+        entity.creditCardInvoiceId,
+      );
   }
   private async deleteInstallmentGroup(
     userId: number,
@@ -494,19 +606,14 @@ export class TransactionService {
     const transactions =
       await this.transactionRepository.findByInstallmentGroup(
         installmentGroupId,
-      );
-    for (const transaction of transactions) {
-      await this.balanceCalculatorService.updateBalanceAfterDelete(
         userId,
-        transaction.accountId,
-        transaction.type as TransactionType,
-        Number(transaction.amount),
       );
-    }
-    await this.transactionRepository.deleteInstallmentGroup(
-      installmentGroupId,
-      userId,
-    );
+    if (transactions.some((transaction) => transaction.origin === 'transfer'))
+      throw new Error(
+        'Use a área Transferências para excluir esses movimentos.',
+      );
+    for (const transaction of transactions)
+      await this.deleteSingleTransaction(userId, transaction);
   }
   async deleteMany(userId: number, ids: number[]): Promise<number> {
     if (!this._injectedTransactionRepository)
@@ -519,20 +626,13 @@ export class TransactionService {
       ids,
       userId,
     );
-    for (const transaction of transactions) {
-      await this.balanceCalculatorService.updateBalanceAfterDelete(
-        userId,
-        transaction.accountId,
-        transaction.type as TransactionType,
-        Number(transaction.amount),
+    if (transactions.some((transaction) => transaction.origin === 'transfer'))
+      throw new Error(
+        'Use a área Transferências para excluir esses movimentos.',
       );
-    }
-    const deletedCount = await this.transactionRepository.deleteMany(
-      ids,
-      userId,
-    );
-    logger.success(`${deletedCount} transações excluídas com sucesso`);
-    return deletedCount;
+    for (const transaction of transactions)
+      await this.deleteSingleTransaction(userId, transaction);
+    return transactions.length;
   }
   async findById(userId: number, id: number): Promise<Transaction | null> {
     const entity = await this.transactionRepository.findById(id, userId);
@@ -553,6 +653,7 @@ export class TransactionService {
   }> {
     const repoFilters: RepoFilters = {};
     if (filters) {
+      if (filters.status) repoFilters.status = filters.status;
       if (filters.startDate) {
         repoFilters.startDate = parseDateSafe(filters.startDate) ?? undefined;
       }
@@ -651,6 +752,8 @@ export class TransactionService {
     userId: number,
     daysAhead: number = 7,
   ): Promise<Transaction[]> {
+    if (!Number.isInteger(daysAhead) || daysAhead < 0 || daysAhead > 90)
+      throw new Error('Intervalo de vencimentos inválido.');
     const entities = await this.transactionRepository.findUpcomingBills(
       userId,
       daysAhead,
@@ -688,7 +791,13 @@ export class TransactionService {
           totalExpenses > 0 ? (Number(item.total) / totalExpenses) * 100 : 0,
       }),
     );
+    const cash = await this.transactionRepository.getCashSummary(
+      userId,
+      year,
+      month,
+    );
     return {
+      ...cash,
       totalIncome,
       totalExpenses,
       balance: totalIncome - totalExpenses,

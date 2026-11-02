@@ -10,8 +10,8 @@ const Bar = styled.header`
   align-items: center;
   justify-content: space-between;
   padding-left: 18px;
-  background: ${({ theme }) => theme.COLORS.background};
-  border-bottom: 1px solid transparent;
+  background: ${({ theme }) => theme.COLORS.surface};
+  border-bottom: 1px solid ${({ theme }) => theme.COLORS.border};
   -webkit-app-region: drag;
   user-select: none;
   button {

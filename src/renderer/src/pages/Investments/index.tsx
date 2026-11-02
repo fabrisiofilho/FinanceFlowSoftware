@@ -1,3 +1,6 @@
+import { DateStringField } from '@renderer/components/Form/DatePicker/DateStringField';
+import type { Account } from '@shared/interfaces/types/account.types';
+import type { InvestmentEventInput } from '@shared/interfaces/types/investment.types';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { SelectInput } from '@renderer/components/Form/SelectInput';
@@ -29,7 +32,10 @@ import { Input } from '@renderer/components/Form/Input';
 import { MonthField } from '@renderer/components/Form/MonthField';
 import { CurrencyInput } from '@renderer/components/Form/CurrencyInput';
 import { AppAlert } from '@renderer/components/Feedback';
-import { projectInvestment } from '@shared/finance/investments';
+import {
+  projectInvestment,
+  investmentBalance,
+} from '@shared/finance/investments';
 import type {
   Investment,
   InvestmentPortfolio,
@@ -61,6 +67,22 @@ export function InvestmentsPage() {
     [amount, setAmount] = useState(0),
     [loss, setLoss] = useState(false),
     [horizon, setHorizon] = useState('12');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useState<number | string>('');
+  const [eventKind, setEventKind] =
+    useState<InvestmentEventInput['kind']>('deposit');
+  const [eventAmount, setEventAmount] = useState(0);
+  const [eventDate, setEventDate] = useState(() => {
+    const d = new Date();
+    return today() + '-' + String(d.getDate()).padStart(2, '0');
+  });
+  const [eventAccount, setEventAccount] = useState<number | string>('');
+  useEffect(() => {
+    void window.electronAPI.account.findAll().then((result) => {
+      if (result.success && result.data)
+        setAccounts(result.data.filter((item) => item.type !== 'credit_card'));
+    });
+  }, []);
   const load = useCallback(async () => {
     try {
       const result = await window.electronAPI.investment.list();
@@ -95,9 +117,7 @@ export function InvestmentsPage() {
     }
   };
   const balance = (investment: Investment): number =>
-    portfolio.yields
-      .filter((item) => item.investmentId === investment.id)
-      .reduce((sum, item) => sum + item.amountCents, investment.principalCents);
+    investmentBalance(investment, portfolio);
   const open = (investment: Investment): void => {
     setSelected(investment);
     setRate(String(investment.monthlyRate));
@@ -180,7 +200,15 @@ export function InvestmentsPage() {
               {[
                 ['Valor aplicado', money(totalPrincipal)],
                 ['Rendimento registrado', money(totalYield)],
-                ['Saldo acompanhado', money(totalPrincipal + totalYield)],
+                [
+                  'Saldo acompanhado',
+                  money(
+                    portfolio.investments.reduce(
+                      (sum, item) => sum + balance(item),
+                      0,
+                    ),
+                  ),
+                ],
               ].map(([label, value]) => (
                 <ContentSurface key={label} sx={{ p: 3 }}>
                   <Typography color="text.secondary" variant="body2">
@@ -317,6 +345,23 @@ export function InvestmentsPage() {
                 value={principal}
                 onChange={setPrincipal}
               />
+              <SelectInput
+                label="Conta de origem"
+                value={accountId}
+                items={[
+                  {
+                    value: '',
+                    label: 'Posição já existente (sem debitar conta)',
+                  },
+                  ...accounts.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  })),
+                ]}
+                onChange={(event) =>
+                  setAccountId(event.target.value as string | number)
+                }
+              />
               <MonthField
                 label="Competência inicial"
                 value={start}
@@ -346,6 +391,8 @@ export function InvestmentsPage() {
                       principalCents: Math.round(principal * 100),
                       startMonth: start,
                       monthlyRate: Number(rate),
+                      accountId:
+                        accountId === '' ? undefined : Number(accountId),
                     }),
                   () => setCreating(false),
                 )
@@ -366,8 +413,96 @@ export function InvestmentsPage() {
           <DialogContent dividers>
             <Stack spacing={3}>
               {error && <AppAlert severity="error">{error}</AppAlert>}
+              <Typography variant="h6">Movimentar investimento</Typography>
+              <SelectInput
+                label="Operação"
+                value={eventKind}
+                items={[
+                  { value: 'deposit', label: 'Aporte' },
+                  { value: 'withdrawal', label: 'Resgate' },
+                  { value: 'fee', label: 'Taxa descontada da posição' },
+                  { value: 'tax', label: 'Imposto descontado da posição' },
+                ]}
+                onChange={(event) =>
+                  setEventKind(
+                    event.target.value as InvestmentEventInput['kind'],
+                  )
+                }
+              />
+              <CurrencyInput
+                label="Valor da operação"
+                value={eventAmount}
+                onChange={setEventAmount}
+              />
+              <DateStringField
+                label="Data da operação"
+                value={eventDate}
+                onChange={setEventDate}
+              />
+              {(eventKind === 'deposit' || eventKind === 'withdrawal') && (
+                <SelectInput
+                  label="Conta de caixa"
+                  value={eventAccount}
+                  items={[
+                    { value: '', label: 'Selecione' },
+                    ...accounts.map((item) => ({
+                      value: item.id,
+                      label: item.name,
+                    })),
+                  ]}
+                  onChange={(event) =>
+                    setEventAccount(event.target.value as string | number)
+                  }
+                />
+              )}
+              <Button
+                variant="contained"
+                disabled={busy || eventAmount <= 0}
+                onClick={() =>
+                  selected &&
+                  void run(
+                    () =>
+                      window.electronAPI.investment.event({
+                        investmentId: selected.id,
+                        kind: eventKind,
+                        amountCents: Math.round(eventAmount * 100),
+                        eventDate,
+                        accountId:
+                          eventKind === 'deposit' || eventKind === 'withdrawal'
+                            ? Number(eventAccount)
+                            : undefined,
+                        requestId: crypto.randomUUID(),
+                      }),
+                    () => setEventAmount(0),
+                  )
+                }
+              >
+                Registrar movimentação
+              </Button>
+              <Typography variant="body2" color="text.secondary">
+                Aportes e resgates transferem valores entre caixa e carteira.
+                Taxas e impostos reduzem a posição e são informados manualmente.
+              </Typography>
+              <Typography variant="h6">Histórico de movimentações</Typography>
+              {(portfolio.events ?? [])
+                .filter((item) => item.investmentId === selected?.id)
+                .map((item) => (
+                  <Typography key={item.id} variant="body2">
+                    {item.eventDate} ·{' '}
+                    {
+                      {
+                        initial: 'Aplicação inicial',
+                        deposit: 'Aporte',
+                        withdrawal: 'Resgate',
+                        fee: 'Taxa',
+                        tax: 'Imposto',
+                      }[item.kind]
+                    }{' '}
+                    · {money(item.amountCents)}
+                  </Typography>
+                ))}
               <Typography variant="h6">
-                Registrar rendimento realizado
+                Registrar rendimento observado
               </Typography>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}

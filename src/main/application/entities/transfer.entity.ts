@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -38,7 +39,7 @@ export class TransferEntity extends AuditableEntity {
   @JoinColumn({ name: 'to_account_id' })
   toAccount!: RelationRef<AccountEntity>;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'integer', transformer: moneyColumn })
   amount!: number;
 
   @Column({ name: 'from_currency_id', nullable: true })
@@ -66,9 +67,8 @@ export class TransferEntity extends AuditableEntity {
 
   @Column({
     name: 'converted_amount',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
+    type: 'integer',
+    transformer: moneyColumn,
     nullable: true,
   })
   convertedAmount?: number;

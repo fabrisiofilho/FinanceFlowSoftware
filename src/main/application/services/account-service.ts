@@ -109,6 +109,7 @@ export class AccountService {
       name: data.name.trim(),
       type: data.type,
       balance: data.balance ?? 0,
+      initialBalance: data.balance ?? 0,
     };
     if (data.type === 'credit_card') {
       accountData.creditLimit = data.creditLimit;

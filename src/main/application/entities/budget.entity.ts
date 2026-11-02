@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -35,6 +36,6 @@ export class BudgetEntity extends AuditableEntity {
   @Column({ type: 'integer' })
   month!: number;
 
-  @Column({ name: 'planned_amount', type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'planned_amount', type: 'integer', transformer: moneyColumn })
   plannedAmount!: number;
 }

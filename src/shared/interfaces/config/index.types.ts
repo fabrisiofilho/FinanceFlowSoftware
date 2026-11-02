@@ -1,3 +1,4 @@
+import type { BackupAPI } from '../types/backup.types';
 import type { InvestmentAPI } from '../types/investment.types';
 import { IFinanceAuthController } from '../controllers/finance-auth.controller.interface';
 import { IAccountController } from '../controllers/account.controller.interface';
@@ -30,6 +31,7 @@ export interface IpcResultEvent {
 }
 
 export interface CustomElectronAPI {
+  backup: BackupAPI;
   investment: InvestmentAPI;
   financeAuth: IFinanceAuthController;
   account: IAccountController;

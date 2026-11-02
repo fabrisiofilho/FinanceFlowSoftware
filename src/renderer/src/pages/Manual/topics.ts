@@ -1,5 +1,54 @@
 export const manualTopics = [
   {
+    title: 'Simulação de IR',
+    route: '/panel/income-tax',
+    description:
+      'Estime o ajuste anual de 2026, declarado em 2027, para cada contribuinte.',
+    steps: [
+      'Some a renda bruta tributável recebida e a previsão restante do ano. Não use toda entrada bancária como rendimento tributável.',
+      'Inclua rendimentos dos dependentes e apenas deduções elegíveis. Informe educação separadamente por pessoa; o limite é individual.',
+      'Compare desconto simplificado e deduções legais, imposto anual e saldo após retenções. Ao editar um valor, calcule novamente.',
+      'A estimativa não grava transações nem envia declaração. Não abrange 13º, PLR, bolsa, ganhos de capital, exterior ou altas rendas. Dados da simulação são descartados ao sair da tela.',
+    ],
+  },
+  {
+    title: 'Rotina individual e familiar',
+    route: '/panel/dashboard',
+    description:
+      'Um roteiro para identificar excessos e acompanhar o que está funcionando.',
+    steps: [
+      'Cadastre contas com saldo inicial, depois receitas e despesas. Use recorrentes para salário, aluguel e contas fixas; revise antes de gerar.',
+      'Defina limites por categoria no Orçamento. Toda semana confira pendências, faturas, previsão de caixa e categorias sem orçamento.',
+      'No fim do mês compare recebido, pago, resultado por competência e evolução por categoria. Separe redução real de gastos de contas ainda não pagas.',
+      'Para a família, uma pessoa pode centralizar os registros no mesmo perfil e identificar o responsável na descrição. Perfis separados não consolidam o orçamento; não há compartilhamento entre dispositivos nem permissões familiares.',
+      'Crie backup criptografado regularmente e guarde a senha fora do aplicativo.',
+    ],
+  },
+  {
+    title: 'Situação e liquidação',
+    route: '/panel/transactions',
+    description:
+      'Separe a competência da data em que o dinheiro entrou ou saiu.',
+    steps: [
+      'Escolha Pendente, Liquidado ou Cancelado no lançamento. Pendente não movimenta saldo.',
+      'Ao liquidar, informe a data em que pagou ou recebeu. A competência permanece independente.',
+      'Cancelar reverte o efeito no saldo. Compras de fatura fechada ou paga não podem ser alteradas ou excluídas.',
+      'Use o filtro Situação para conferir pendências; parcelas futuras e recorrências não confirmadas ficam pendentes.',
+    ],
+  },
+  {
+    title: 'Backup e restauração',
+    route: '/panel/settings',
+    description:
+      'Proteja todos os dados locais com um arquivo criptografado por senha.',
+    steps: [
+      'Abra Configurações e informe uma senha de no mínimo 10 caracteres. Guarde-a fora do aplicativo.',
+      'Criar backup abre o diálogo para salvar o arquivo .ctbackup. O arquivo inclui todos os perfis locais.',
+      'Para restaurar, informe a mesma senha, escolha o arquivo e confirme a substituição. Arquivos inválidos são recusados antes de alterar o banco.',
+      'Após restaurar, o aplicativo reinicia. A cópia do banco anterior fica no mesmo diretório e não é criptografada; proteja-a como o próprio banco.',
+    ],
+  },
+  {
     title: 'Investimentos e rendimentos',
     route: '/panel/investments',
     description:
@@ -8,7 +57,7 @@ export const manualTopics = [
       'Cadastre nome, tipo, valor aplicado e competência inicial.',
       'Em Rendimentos e simulação, escolha o mês e informe ganho ou perda. Salvar novamente no mesmo mês corrige o registro existente.',
       'A simulação usa o saldo registrado e juros compostos pela taxa mensal informada, sem impostos, aportes ou resgates. Não é promessa de rentabilidade.',
-      'A carteira não movimenta contas automaticamente. Isso evita duplicar o aporte ou registrar estimativas como receitas realizadas.',
+      'No cadastro, escolha uma conta para debitar o aporte inicial ou registre uma posição preexistente sem movimentar caixa. Nos detalhes, registre aporte, resgate, taxa ou imposto manual. Movimentos não são receitas/despesas; aplicações com histórico não podem ser excluídas.',
     ],
   },
 
@@ -29,7 +78,7 @@ export const manualTopics = [
     description: 'Acompanhe ganhos, gastos e resultado do mês selecionado.',
     steps: [
       'Escolha o mês de referência no painel.',
-      'Resultado mensal é receitas menos despesas pela data da transação.',
+      'Os cards principais mostram recebido, pago e resultado pela data de liquidação. O resumo por competência e as pendências aparecem separadamente.',
       'Saldo das contas, lançamentos recentes e evolução dos últimos seis meses têm períodos próprios e não mudam todos com o seletor.',
     ],
   },
@@ -123,7 +172,7 @@ export const manualTopics = [
       'Escolha contas diferentes para origem e destino e um valor positivo.',
       'Confira data, descrição e taxa de conversão quando aplicável.',
       'A transferência cria lançamentos vinculados. Prefira removê-la por esta tela para manter a consistência.',
-      'Os relatórios herdados podem incluir as duas pontas como entrada e saída; confira esse efeito ao analisar ganhos.',
+      'Transferências internas não representam renda nem consumo e ficam fora dos totais de receitas e despesas dos relatórios.',
     ],
   },
   {
@@ -141,8 +190,9 @@ export const manualTopics = [
     route: '/panel/cash-flow',
     description: 'Observe entradas, saídas e evolução do saldo no período.',
     steps: [
-      'Escolha o período de análise.',
-      'Compare os movimentos apresentados com seus registros.',
+      'A visão mostra o saldo atual mais pendências e recorrências previstas para os próximos três meses; a tabela mensal cobre seis meses a partir de hoje.',
+      'Receitas e despesas usam o vencimento quando informado. Lançamentos já liquidados não são somados novamente ao saldo atual.',
+      'Faturas não pagas entram na previsão consolidada; o valor futuro de compras recorrentes no cartão ainda depende da geração da fatura.',
       'Projeções são estimativas baseadas nos dados cadastrados, não garantias de saldo futuro.',
     ],
   },
@@ -176,7 +226,8 @@ export const manualTopics = [
       'Arraste a barra superior para mover a janela; use os botões para minimizar, maximizar/restaurar e fechar.',
       'O sistema utiliza tema escuro neutro. Recolha o menu pelo botão lateral.',
       'Sair encerra a sessão local. Fechar a janela não apaga dados.',
-      'Não há backup completo integrado nesta versão. Antes de copiar o banco manualmente, feche o aplicativo e consulte a localização dos dados no README.',
+      'Em Configurações, crie e restaure backups criptografados de todos os perfis. A senha é indispensável; restaurar substitui o banco e reinicia a aplicação.',
+      'Atualizações são consultadas nas releases de fabrisiofilho/contabily. A versão 2 usa esquema financeiro 3; bancos antigos são preservados e exigem recriação manual pelo proprietário.',
     ],
   },
 ];

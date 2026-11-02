@@ -133,7 +133,7 @@ export class NotificationService {
       query.andWhere('n.created_at <= :endDate', { endDate: filters.endDate });
     }
 
-    query.orderBy('n.created_at', 'DESC');
+    query.orderBy('n.createdAt', 'DESC');
 
     if (filters?.page !== undefined && filters?.size) {
       query.skip(filters.page * filters.size).take(filters.size);

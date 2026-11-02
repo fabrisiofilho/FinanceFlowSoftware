@@ -1,8 +1,10 @@
 {
-  "revision": "f8707c4da6d8a6bdfcbeffde97f8853afb86a62a",
+  "revision": "29e03af4106581fe52ce87d539680f97cf97b031",
   "branch": "main",
   "scope": "Snapshot estático do checkout; presença não implica homologação funcional. Sem leitura do banco pessoal.",
   "routes": [
+    "/income-tax",
+    "/settings",
     "/investments",
     "/dashboard",
     "/transactions",
@@ -21,27 +23,29 @@
     "/manual"
   ],
   "pages": [
+    "src/renderer/src/pages/Accounts/index.tsx",
     "src/renderer/src/pages/Transfers/index.tsx",
+    "src/renderer/src/pages/IncomeTax/index.tsx",
+    "src/renderer/src/pages/Auth/Register/index.tsx",
+    "src/renderer/src/pages/AdvancedReports/index.tsx",
+    "src/renderer/src/pages/Auth/Login/index.tsx",
     "src/renderer/src/pages/Transactions/index.tsx",
-    "src/renderer/src/pages/Settings/Alerts/index.tsx",
-    "src/renderer/src/pages/Reports/index.tsx",
+    "src/renderer/src/pages/Auth/components/AuthPageTemplate/index.tsx",
     "src/renderer/src/pages/RecurringTransactions/index.tsx",
-    "src/renderer/src/pages/Categories/index.tsx",
+    "src/renderer/src/pages/Investments/index.tsx",
     "src/renderer/src/pages/Manual/index.tsx",
-    "src/renderer/src/pages/CashFlow/index.tsx",
-    "src/renderer/src/pages/Budget/index.tsx",
+    "src/renderer/src/pages/Goals/index.tsx",
     "src/renderer/src/pages/Loading/LogoutLoading/index.tsx",
     "src/renderer/src/pages/Loading/index.tsx",
-    "src/renderer/src/pages/Investments/index.tsx",
+    "src/renderer/src/pages/Settings/Overview/index.tsx",
+    "src/renderer/src/pages/CashFlow/index.tsx",
+    "src/renderer/src/pages/Settings/Alerts/index.tsx",
     "src/renderer/src/pages/BankImport/index.tsx",
-    "src/renderer/src/pages/Goals/index.tsx",
-    "src/renderer/src/pages/Auth/Register/index.tsx",
+    "src/renderer/src/pages/Reports/index.tsx",
     "src/renderer/src/pages/Dashboard/index.tsx",
-    "src/renderer/src/pages/Auth/Login/index.tsx",
-    "src/renderer/src/pages/CreditCards/index.tsx",
-    "src/renderer/src/pages/AdvancedReports/index.tsx",
-    "src/renderer/src/pages/Accounts/index.tsx",
-    "src/renderer/src/pages/Auth/components/AuthPageTemplate/index.tsx"
+    "src/renderer/src/pages/Budget/index.tsx",
+    "src/renderer/src/pages/Categories/index.tsx",
+    "src/renderer/src/pages/CreditCards/index.tsx"
   ],
   "entities": [
     "src/main/application/entities/transfer.entity.ts",
@@ -67,26 +71,27 @@
     "src/main/application/entities/account.entity.ts"
   ],
   "controllers": [
-    "src/main/application/controllers/transfer-controller.ts",
-    "src/main/application/controllers/transaction-controller.ts",
-    "src/main/application/controllers/tag-controller.ts",
-    "src/main/application/controllers/report-controller.ts",
-    "src/main/application/controllers/recurring-transaction-controller.ts",
-    "src/main/application/controllers/notification-controller.ts",
-    "src/main/application/controllers/investment-controller.ts",
-    "src/main/application/controllers/import-controller.ts",
-    "src/main/application/controllers/goal-controller.ts",
-    "src/main/application/controllers/finance-auth-controller.ts",
-    "src/main/application/controllers/currency-controller.ts",
-    "src/main/application/controllers/credit-card-controller.ts",
+    "src/main/application/controllers/cash-flow-controller.ts",
+    "src/main/application/controllers/budget-controller.ts",
+    "src/main/application/controllers/bank-import-controller.ts",
+    "src/main/application/controllers/backup-controller.ts",
     "src/main/application/controllers/auto-updater-controller.ts",
     "src/main/application/controllers/attachment-controller.ts",
     "src/main/application/controllers/alert-controller.ts",
     "src/main/application/controllers/advanced-report-controller.ts",
     "src/main/application/controllers/account-controller.ts",
-    "src/main/application/controllers/budget-controller.ts",
-    "src/main/application/controllers/bank-import-controller.ts",
-    "src/main/application/controllers/cash-flow-controller.ts",
+    "src/main/application/controllers/currency-controller.ts",
+    "src/main/application/controllers/credit-card-controller.ts",
+    "src/main/application/controllers/investment-controller.ts",
+    "src/main/application/controllers/import-controller.ts",
+    "src/main/application/controllers/goal-controller.ts",
+    "src/main/application/controllers/finance-auth-controller.ts",
+    "src/main/application/controllers/recurring-transaction-controller.ts",
+    "src/main/application/controllers/notification-controller.ts",
+    "src/main/application/controllers/report-controller.ts",
+    "src/main/application/controllers/tag-controller.ts",
+    "src/main/application/controllers/transfer-controller.ts",
+    "src/main/application/controllers/transaction-controller.ts",
     "src/main/application/controllers/category-controller.ts"
   ],
   "repositories": [
@@ -103,7 +108,12 @@
     "src/main/application/repositories/account-repository.ts"
   ],
   "services": [
-    "src/main/application/services/account-service.ts",
+    "src/main/application/services/credit-card-service.ts",
+    "src/main/application/services/category-service.ts",
+    "src/main/application/services/cash-flow-service.ts",
+    "src/main/application/services/budget-service.ts",
+    "src/main/application/services/bank-import-service.ts",
+    "src/main/application/services/balance-calculator-service.ts",
     "src/main/application/services/transfer-service.ts",
     "src/main/application/services/transfer-category-service.ts",
     "src/main/application/services/transaction-service.ts",
@@ -118,21 +128,21 @@
     "src/main/application/services/finance-auth-service.ts",
     "src/main/application/services/dashboard-service.ts",
     "src/main/application/services/currency-service.ts",
-    "src/main/application/services/credit-card-service.ts",
-    "src/main/application/services/category-service.ts",
-    "src/main/application/services/cash-flow-service.ts",
-    "src/main/application/services/budget-service.ts",
-    "src/main/application/services/bank-import-service.ts",
-    "src/main/application/services/balance-calculator-service.ts",
-    "src/main/application/services/attachment-service.ts",
+    "src/main/application/services/account-service.ts",
     "src/main/application/services/alert-service.ts",
-    "src/main/application/services/advanced-report-service.ts"
+    "src/main/application/services/advanced-report-service.ts",
+    "src/main/application/services/attachment-service.ts",
+    "src/main/application/services/backup/backup-service.ts",
+    "src/main/application/services/backup/backup-attachments.ts"
   ],
   "ipc": [
+    "backup:export",
+    "backup:restore",
     "investment:list",
     "investment:create",
     "investment:recordYield",
     "investment:remove",
+    "investment:event",
     "financeAuth:register",
     "financeAuth:login",
     "financeAuth:logout",
@@ -165,6 +175,7 @@
     "transaction:findByPeriod",
     "transaction:findByCategory",
     "transaction:getMonthSummary",
+    "transaction:findUpcomingBills",
     "goal:create",
     "goal:update",
     "goal:delete",
@@ -261,21 +272,6 @@
   ],
   "migrations": [
     {
-      "file": "src/main/infrastructure/database/migrations/006_investment_reminders.sql",
-      "tables": []
-    },
-    {
-      "file": "src/main/infrastructure/database/migrations/005_notification_dedup.sql",
-      "tables": []
-    },
-    {
-      "file": "src/main/infrastructure/database/migrations/004_investments.sql",
-      "tables": [
-        "investments",
-        "investment_yields"
-      ]
-    },
-    {
       "file": "src/main/infrastructure/database/migrations/003_credit_card_details.sql",
       "tables": []
     },
@@ -308,6 +304,39 @@
         "goal_contributions",
         "alerts"
       ]
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/005_notification_dedup.sql",
+      "tables": []
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/004_investments.sql",
+      "tables": [
+        "investments",
+        "investment_yields"
+      ]
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/006_investment_reminders.sql",
+      "tables": []
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/007_entry_settlement.sql",
+      "tables": []
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/010_recurring_occurrence.sql",
+      "tables": []
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/009_opening_balance.sql",
+      "tables": []
+    },
+    {
+      "file": "src/main/infrastructure/database/migrations/008_investment_events.sql",
+      "tables": [
+        "investment_events"
+      ]
     }
   ],
   "tests": [
@@ -316,10 +345,13 @@
     "tests/transaction-service.test.mjs",
     "tests/sqlite-investments.mjs",
     "tests/report-filters.test.mjs",
+    "tests/orm-finance.mjs",
+    "tests/notification-evaluation.test.mjs",
+    "tests/month-range.test.mjs",
     "tests/investments.test.mjs",
+    "tests/income-tax.test.mjs",
     "tests/financial-validation.test.mjs",
     "tests/entry-schedule.test.mjs",
-    "tests/month-range.test.mjs",
-    "tests/notification-evaluation.test.mjs"
+    "tests/auto-updater.test.mjs"
   ]
 }

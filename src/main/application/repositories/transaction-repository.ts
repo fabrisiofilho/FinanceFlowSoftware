@@ -16,6 +16,7 @@ export interface SortConfig {
   direction: SortDirection;
 }
 export interface TransactionFilters {
+  status?: 'pending' | 'settled' | 'cancelled';
   startDate?: Date;
   endDate?: Date;
   startMonth?: number;
@@ -79,6 +80,7 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       const where: Record<string, unknown> = {
         account: { userId },
       };
+      if (filters.status) where.status = filters.status;
       if (filters.type) {
         where.type = filters.type;
       }
@@ -186,6 +188,10 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
         accountId: filters.accountId,
       });
     }
+    if (filters.status)
+      queryBuilder.andWhere('transaction.status = :status', {
+        status: filters.status,
+      });
     if (filters.type) {
       queryBuilder.andWhere('transaction.type = :type', { type: filters.type });
     }
@@ -277,6 +283,10 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
         accountId: filters.accountId,
       });
     }
+    if (filters.status)
+      queryBuilder.andWhere('transaction.status = :status', {
+        status: filters.status,
+      });
     if (filters.type) {
       queryBuilder.andWhere('transaction.type = :type', { type: filters.type });
     }
@@ -331,9 +341,10 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
   }
   async findByInstallmentGroup(
     installmentGroupId: string,
+    userId?: number,
   ): Promise<TransactionEntity[]> {
     return await this.find({
-      where: { installmentGroupId },
+      where: { installmentGroupId, ...(userId ? { account: { userId } } : {}) },
       relations: ['account', 'category'],
       order: { installmentNumber: 'ASC' },
     });
@@ -361,6 +372,7 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .innerJoinAndSelect('transaction.account', 'account')
       .leftJoinAndSelect('transaction.category', 'category')
       .where('account.user_id = :userId', { userId })
+      .andWhere("transaction.status='pending' AND transaction.origin='entry'")
       .andWhere('transaction.type = :type', { type: 'expense' })
       .andWhere('date(transaction.due_date) >= date(:today)', {
         today: todayStr,
@@ -381,8 +393,8 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .leftJoinAndSelect('transaction.category', 'category')
       .where('account.user_id = :userId', { userId })
       .orderBy({
-        'transaction.transaction_date': 'DESC',
-        'transaction.created_at': 'DESC',
+        'transaction.transactionDate': 'DESC',
+        'transaction.createdAt': 'DESC',
       })
       .take(limit)
       .getMany();
@@ -425,6 +437,33 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
     }
     await this.delete({ installmentGroupId });
   }
+  async getCashSummary(
+    userId: number,
+    year: number,
+    month: number,
+  ): Promise<{
+    received: number;
+    paid: number;
+    pendingIncome: number;
+    pendingExpenses: number;
+  }> {
+    const period = year + '-' + String(month).padStart(2, '0');
+    const rows = await this.repository.manager.query(
+      "SELECT COALESCE(SUM(CASE WHEN t.status='settled' AND a.type<>'credit_card' AND t.type='income' AND substr(t.settlement_date,1,7)=? THEN t.amount ELSE 0 END),0) AS received, COALESCE(SUM(CASE WHEN t.status='settled' AND a.type<>'credit_card' AND t.type='expense' AND substr(t.settlement_date,1,7)=? THEN t.amount ELSE 0 END),0) AS paid, COALESCE(SUM(CASE WHEN t.status='pending' AND t.type='income' AND substr(t.transaction_date,1,7)=? THEN t.amount ELSE 0 END),0) AS pendingIncome, COALESCE(SUM(CASE WHEN t.status='pending' AND t.type='expense' AND substr(t.transaction_date,1,7)=? THEN t.amount ELSE 0 END),0) AS pendingExpenses FROM transactions t JOIN accounts a ON a.id=t.account_id WHERE a.user_id=? AND t.origin='entry'",
+      [period, period, period, period, userId],
+    );
+    const row = rows[0];
+    const [invoices] = await this.repository.manager.query(
+      "SELECT COALESCE(SUM(i.total_amount),0) AS cents FROM credit_card_invoices i JOIN accounts a ON a.id=i.payment_account_id WHERE a.user_id=? AND i.status='paid' AND substr(i.payment_date,1,7)=?",
+      [userId, period],
+    );
+    return {
+      received: Number(row.received) / 100,
+      paid: (Number(row.paid) + Number(invoices.cents)) / 100,
+      pendingIncome: Number(row.pendingIncome) / 100,
+      pendingExpenses: Number(row.pendingExpenses) / 100,
+    };
+  }
   async getMonthSummary(
     userId: number,
     year: number,
@@ -438,8 +477,11 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
         .createQueryBuilder('transaction')
         .innerJoin('transaction.account', 'account')
         .select('transaction.type', 'type')
-        .addSelect('SUM(transaction.amount)', 'total')
+        .addSelect('(SUM(transaction.amount)/100.0)', 'total')
         .where('account.user_id = :userId', { userId })
+        .andWhere(
+          "transaction.origin = 'entry' AND transaction.status <> 'cancelled'",
+        )
         .andWhere('date(transaction.transaction_date) >= date(:startDate)', {
           startDate,
         })
@@ -481,8 +523,11 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .innerJoin('transaction.category', 'category')
       .select('category.id', 'categoryId')
       .addSelect('category.name', 'categoryName')
-      .addSelect('SUM(transaction.amount)', 'total')
+      .addSelect('(SUM(transaction.amount)/100.0)', 'total')
       .where('account.user_id = :userId', { userId })
+      .andWhere(
+        "transaction.origin = 'entry' AND transaction.status <> 'cancelled'",
+      )
       .andWhere('transaction.type = :type', { type: 'expense' })
       .andWhere('date(transaction.transaction_date) >= date(:startDate)', {
         startDate,

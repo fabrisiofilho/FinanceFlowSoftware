@@ -74,3 +74,16 @@ test('datas inválidas não são corrigidas silenciosamente pelo JavaScript', ()
     '2024-02-29',
   );
 });
+
+test('fronteira monetária grava inteiros e devolve reais sem aceitar centavos fracionários', () => {
+  const { moneyColumn } = load(
+    'src/main/infrastructure/database/money-column.ts',
+  );
+  assert.equal(moneyColumn.to(19.99), 1999);
+  assert.equal(moneyColumn.from(1999), 19.99);
+  assert.equal(moneyColumn.to(-0.01), -1);
+  assert.equal(moneyColumn.to(null), null);
+  for (const value of [NaN, Infinity, 1.001, Number.MAX_VALUE])
+    assert.throws(() => moneyColumn.to(value));
+  assert.throws(() => moneyColumn.from(1.5));
+});

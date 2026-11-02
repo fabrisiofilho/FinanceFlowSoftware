@@ -28,6 +28,10 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 
 extraResources:
+  - from: build
+    to: build
+    filter:
+      - 'icon.*'
   - from: out/main/migrations
     to: migrations
     filter:
@@ -68,4 +72,8 @@ linux:
   synopsis: 'Controle financeiro pessoal'
   description: 'Aplicação desktop para controle financeiro pessoal com gestão de contas, transações, metas e cartões de crédito.'
 # ----------- AUTO UPDATE / PUBLISH -----------
-publish: null
+publish:
+  provider: github
+  owner: fabrisiofilho
+  repo: contabily
+  releaseType: release

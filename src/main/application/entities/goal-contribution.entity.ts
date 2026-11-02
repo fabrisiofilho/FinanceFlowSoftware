@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -17,7 +18,7 @@ export class GoalContributionEntity {
   goal!: RelationRef<GoalEntity>;
   @Column({ name: 'goal_id' })
   goalId!: number;
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'integer', transformer: moneyColumn })
   amount!: number;
   @Column({ name: 'contribution_date', type: 'date' })
   contributionDate!: Date;

@@ -100,6 +100,11 @@ export class ReportService {
     let totalExpenses = 0;
     const monthly = new Map<string, IncomeVsExpense>();
     for (const transaction of transactions) {
+      if (
+        transaction.origin === 'transfer' ||
+        transaction.status === 'cancelled'
+      )
+        continue;
       const amount = Number(transaction.amount);
       const date = parseDateSafe(transaction.transactionDate);
       if (date) {
@@ -157,7 +162,9 @@ export class ReportService {
       totalIncome,
       totalExpenses,
       balance: totalIncome - totalExpenses,
-      transactionCount: transactions.length,
+      transactionCount: transactions.filter(
+        (item) => item.origin !== 'transfer' && item.status !== 'cancelled',
+      ).length,
       expensesByCategory,
     };
     const reportData: ReportData = {
@@ -205,19 +212,23 @@ export class ReportService {
         'Forma de Pagamento',
         'Parcela',
       ];
-      const rows: string[][] = transactions.map((transaction) => [
-        String(transaction.id),
-        this.formatDate(new Date(transaction.transactionDate)),
-        transaction.description,
-        this.translateType(transaction.type),
-        transaction.category?.name ?? 'Sem categoria',
-        transaction.account?.name ?? 'Conta desconhecida',
-        String(Number(transaction.amount).toFixed(2)),
-        this.translatePaymentMethod(transaction.paymentMethod),
-        transaction.totalInstallments
-          ? `${transaction.installmentNumber}/${transaction.totalInstallments}`
-          : '',
-      ]);
+      const rows: string[][] = transactions
+        .filter(
+          (item) => item.origin !== 'transfer' && item.status !== 'cancelled',
+        )
+        .map((transaction) => [
+          String(transaction.id),
+          this.formatDate(new Date(transaction.transactionDate)),
+          transaction.description,
+          this.translateType(transaction.type),
+          transaction.category?.name ?? 'Sem categoria',
+          transaction.account?.name ?? 'Conta desconhecida',
+          String(Number(transaction.amount).toFixed(2)),
+          this.translatePaymentMethod(transaction.paymentMethod),
+          transaction.totalInstallments
+            ? `${transaction.installmentNumber}/${transaction.totalInstallments}`
+            : '',
+        ]);
       const csvLines: string[] = [];
       csvLines.push(headers.map((h) => this.escapeCSVValue(h)).join(';'));
       for (const row of rows) {

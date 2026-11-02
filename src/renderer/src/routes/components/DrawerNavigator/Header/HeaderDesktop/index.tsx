@@ -1,5 +1,6 @@
 import { NotificationBell } from '@renderer/components/NotificationBell';
-import { Stack, Typography } from '@mui/material';
+import { Button, Stack, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
 import {} from '@mui/icons-material';
 
 import { SignOutButton } from '../HeaderActions/SignOutButton';
@@ -15,6 +16,21 @@ export function HeaderDesktop() {
       </Stack>
 
       <Stack direction="row" alignItems="center" gap="1rem">
+        <Button
+          component={Link}
+          to="/panel/transactions?new=income"
+          size="small"
+        >
+          Nova receita
+        </Button>
+        <Button
+          component={Link}
+          to="/panel/transactions?new=expense"
+          size="small"
+          variant="outlined"
+        >
+          Nova despesa
+        </Button>
         <NotificationBell />
         <SignOutButton />
       </Stack>

@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -20,7 +21,7 @@ export class TransactionEntity extends AuditableEntity {
   id!: number;
   @Column({ type: 'text' })
   description!: string;
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'integer', transformer: moneyColumn })
   amount!: number;
   @Column({ type: 'text' })
   type!: TransactionType;
@@ -30,6 +31,14 @@ export class TransactionEntity extends AuditableEntity {
   expenseType?: ExpenseType;
   @Column({ name: 'transaction_date', type: 'date' })
   transactionDate!: Date;
+  @Column({ type: 'text', default: 'settled' })
+  status!: 'pending' | 'settled' | 'cancelled';
+  @Column({ name: 'settlement_date', type: 'date', nullable: true })
+  settlementDate?: Date | null;
+  @Column({ type: 'text', default: 'entry' })
+  origin!: 'entry' | 'transfer';
+  @Column({ name: 'recurring_rule_id', type: 'integer', nullable: true })
+  recurringRuleId?: number;
   @Column({ name: 'due_date', type: 'date', nullable: true })
   dueDate?: Date;
   @Column({ name: 'installment_number', type: 'integer', nullable: true })

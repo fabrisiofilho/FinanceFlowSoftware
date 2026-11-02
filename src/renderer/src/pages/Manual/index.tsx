@@ -36,24 +36,24 @@ import { Link } from 'react-router-dom';
 import { ContentSurface, PageContainer } from '@renderer/components/PageLayout';
 import { Input } from '@renderer/components/Form/Input';
 import { manualTopics } from './topics';
-const icons = [
-  AccountBalanceOutlined,
-  DashboardOutlined,
-  ReceiptLongOutlined,
-  AccountBalanceOutlined,
-  CategoryOutlined,
-  CreditCardOutlined,
-  SavingsOutlined,
-  NotificationsOutlined,
-  AssessmentOutlined,
-  CalculateOutlined,
-  SwapHorizOutlined,
-  RepeatOutlined,
-  TimelineOutlined,
-  AssessmentOutlined,
-  SyncOutlined,
-  SettingsOutlined,
-];
+const icons: Record<string, typeof MenuBookOutlined> = {
+  '/panel/dashboard': DashboardOutlined,
+  '/panel/transactions': ReceiptLongOutlined,
+  '/panel/accounts': AccountBalanceOutlined,
+  '/panel/categories': CategoryOutlined,
+  '/panel/credit-cards': CreditCardOutlined,
+  '/panel/goals': SavingsOutlined,
+  '/panel/alerts': NotificationsOutlined,
+  '/panel/reports': AssessmentOutlined,
+  '/panel/budget': CalculateOutlined,
+  '/panel/income-tax': CalculateOutlined,
+  '/panel/transfers': SwapHorizOutlined,
+  '/panel/recurring': RepeatOutlined,
+  '/panel/cash-flow': TimelineOutlined,
+  '/panel/advanced-reports': AssessmentOutlined,
+  '/panel/bank-import': SyncOutlined,
+  '/panel/settings': SettingsOutlined,
+};
 const normalize = (value: string): string =>
   value
     .normalize('NFD')
@@ -114,8 +114,7 @@ export function ManualPage() {
             sx={{ maxHeight: 640, overflowY: 'auto' }}
           >
             {topics.map((topic) => {
-              const Icon =
-                icons[manualTopics.indexOf(topic)] ?? MenuBookOutlined;
+              const Icon = icons[topic.route] ?? MenuBookOutlined;
               return (
                 <ListItemButton
                   key={topic.title}

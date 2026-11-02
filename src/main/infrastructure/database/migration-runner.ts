@@ -304,31 +304,6 @@ export class MigrationRunner {
     );
   }
 
-  private dropAllTables(): void {
-    const existingTables = this.db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-      )
-      .all() as { name: string }[];
-
-    const tableNames = existingTables.map((t) => t.name);
-
-    if (tableNames.length === 0) {
-      return;
-    }
-
-    this.db.pragma('foreign_keys = OFF');
-
-    try {
-      for (const tableName of tableNames) {
-        logger.info(`Dropping table: ${tableName}`);
-        this.db.exec(`DROP TABLE IF EXISTS "${tableName}"`);
-      }
-    } finally {
-      this.db.pragma('foreign_keys = ON');
-    }
-  }
-
   private createMigrationsTable(): void {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS migrations (
@@ -518,6 +493,18 @@ export class MigrationRunner {
       logger.info('Starting migration runner...');
       logger.info('Migrations path:', this.migrationsPath);
 
+      const existing = this.db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+        )
+        .all();
+      if (
+        existing.length &&
+        this.db.pragma('user_version', { simple: true }) !== 3
+      )
+        throw new Error(
+          'Banco do formato anterior detectado. Feche o Contabily e limpe o banco local para criar a versão V2 em centavos. Nenhum dado foi apagado automaticamente.',
+        );
       const isLegacy = this.isLegacyDatabase();
       const isInconsistent = this.isInconsistentDatabase();
       const needsCleanup = isLegacy || isInconsistent;
@@ -533,14 +520,10 @@ export class MigrationRunner {
         );
       }
 
-      if (needsCleanup) {
-        logger.info('Creating backup before cleanup...');
-        this.createBackup();
-
-        logger.info('Cleaning database...');
-        this.dropAllTables();
-        logger.success('Database cleaned');
-      }
+      if (needsCleanup)
+        throw new Error(
+          'Banco incompatível ou incompleto. Feche a aplicação e limpe o banco local antes de continuar. Nenhuma tabela foi removida automaticamente.',
+        );
 
       this.createMigrationsTable();
 
@@ -550,6 +533,12 @@ export class MigrationRunner {
       const migrationFiles = this.getMigrationFiles();
       logger.info(`Found ${migrationFiles.length} migration files`);
 
+      if (
+        migrationFiles.some(
+          (migration) => !appliedMigrations.has(migration.name),
+        )
+      )
+        this.createBackup();
       for (const migration of migrationFiles) {
         if (appliedMigrations.has(migration.name)) {
           logger.info(`Skipping already applied migration: ${migration.name}`);

@@ -48,6 +48,7 @@ export function UpdateModalProvider({ children }: { children: ReactNode }) {
       // Erros de conexão são tratados silenciosamente - apenas exibe no status do botão
       // Não mostra snackbar para não incomodar o usuário
     });
+    window.electronAPI.autoUpdater.checkForUpdates().catch(() => {});
     return unsubscribe;
   }, [userDeclined, enqueueSnackbar]);
   const canCloseModal = useCallback(() => {

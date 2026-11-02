@@ -19,7 +19,7 @@ const groups = [
       'reports',
     ],
   },
-  { name: 'Preferências', paths: ['categories'] },
+  { name: 'Preferências', paths: ['settings'] },
   { name: 'Ajuda', paths: ['manual'] },
 ];
 export function DrawerCategoryList({

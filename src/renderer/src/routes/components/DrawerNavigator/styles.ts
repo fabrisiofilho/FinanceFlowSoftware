@@ -22,16 +22,12 @@ export const MainContainer = styled.div`
     position: absolute;
     right: 0;
     bottom: 0;
-    width: min(34vw, 420px);
-    height: min(32vh, 280px);
+    width: min(85vw, 1200px);
+    height: 85%;
     background-image: radial-gradient(#9bd9b5 1px, transparent 1px);
     background-size: 24px 24px;
-    opacity: 0.1;
-    mask-image: radial-gradient(
-      ellipse at bottom right,
-      black,
-      transparent 72%
-    );
+    opacity: 0.16;
+    mask-image: radial-gradient(ellipse at 75% 75%, black 15%, transparent 85%);
     pointer-events: none;
     z-index: -1;
   }

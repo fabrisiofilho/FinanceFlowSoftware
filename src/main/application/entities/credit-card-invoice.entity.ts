@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -26,18 +27,18 @@ export class CreditCardInvoiceEntity extends AuditableEntity {
   month!: number;
   @Column({
     name: 'total_amount',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    default: 0,
+    type: 'integer',
+    transformer: moneyColumn,
   })
-  totalAmount!: number;
+  totalAmount: number = 0;
   @Column({ name: 'due_date', type: 'date' })
   dueDate!: Date;
   @Column({ type: 'text', default: 'open' })
   status!: InvoiceStatus;
   @Column({ name: 'paid_at', type: 'datetime', nullable: true })
   paidAt?: Date;
+  @Column({ name: 'payment_date', type: 'date', nullable: true })
+  paymentDate?: Date;
   @ManyToOne('AccountEntity', { nullable: true })
   @JoinColumn({ name: 'payment_account_id' })
   paymentAccount?: RelationRef<AccountEntity>;

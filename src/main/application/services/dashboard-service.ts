@@ -82,6 +82,8 @@ export class DashboardService {
     let futureIncome = 0;
     let futureExpenses = 0;
     for (const transaction of futureTransactions) {
+      if (transaction.status !== 'pending' || transaction.origin === 'transfer')
+        continue;
       const amount = Number(transaction.amount);
       if (transaction.type === 'income') {
         futureIncome += amount;

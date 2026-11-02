@@ -1,1 +1,3 @@
-# Atualizações desativadas até a configuração de um canal próprio do Contabily.
+provider: github
+owner: fabrisiofilho
+repo: contabily

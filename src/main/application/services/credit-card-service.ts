@@ -1,3 +1,5 @@
+import { getDataSource } from '@main/infrastructure/database/data-source';
+import { amountToCents } from '@shared/finance/entry-schedule';
 import {
   CreditCardInvoiceEntity,
   InvoiceStatus as EntityInvoiceStatus,
@@ -205,46 +207,46 @@ export class CreditCardService {
     data: PayInvoiceInput,
   ): Promise<PayInvoiceResult> {
     logger.info(`Pagando fatura ${data.invoiceId}`);
-    const invoice = await this.invoiceRepository.findById(
-      data.invoiceId,
-      userId,
-    );
-    if (!invoice) {
-      throw new Error('Fatura não encontrada');
-    }
-    if (invoice.status === 'paid') {
-      throw new Error('Esta fatura já foi paga');
-    }
-    const paymentAccount = await this.accountRepository.findById(
-      data.paymentAccountId,
-      userId,
-    );
-    if (!paymentAccount) {
-      throw new Error('Conta de pagamento não encontrada');
-    }
-    if (paymentAccount.type === 'credit_card') {
-      throw new Error(
-        'Não é possível pagar uma fatura com outro cartão de crédito',
+    let amountToPay = 0;
+    let newBalance = 0;
+    await getDataSource().transaction(async (manager) => {
+      const [invoice] = await manager.query(
+        'SELECT i.* FROM credit_card_invoices i JOIN accounts a ON a.id=i.account_id WHERE i.id=? AND a.user_id=?',
+        [data.invoiceId, userId],
       );
-    }
-    const amountToPay = data.amount ?? Number(invoice.totalAmount);
-    if (amountToPay <= 0) {
-      throw new Error('Valor de pagamento deve ser maior que zero');
-    }
-    const currentBalance = Number(paymentAccount.balance);
-    if (currentBalance < amountToPay) {
-      throw new Error('Saldo insuficiente na conta de pagamento');
-    }
-    const newBalance = currentBalance - amountToPay;
-    await this.accountRepository.updateBalance(
-      data.paymentAccountId,
-      userId,
-      newBalance,
-    );
-    await this.invoiceRepository.markAsPaid(
-      data.invoiceId,
-      data.paymentAccountId,
-    );
+      if (!invoice) throw new Error('Fatura não encontrada.');
+      if (invoice.status === 'paid')
+        throw new Error('Esta fatura já foi paga.');
+      amountToPay = data.amount ?? Number(invoice.total_amount) / 100;
+      const cents = amountToCents(amountToPay);
+      if (cents !== Number(invoice.total_amount))
+        throw new Error(
+          'Informe o valor integral da fatura. Pagamentos parciais ainda não são suportados.',
+        );
+      const [account] = await manager.query(
+        "SELECT balance FROM accounts WHERE id=? AND user_id=? AND type<>'credit_card'",
+        [data.paymentAccountId, userId],
+      );
+      if (!account) throw new Error('Conta de pagamento inválida.');
+      if (account.balance < cents) throw new Error('Saldo insuficiente.');
+      newBalance = (account.balance - cents) / 100;
+      await manager.query(
+        'UPDATE accounts SET balance=? WHERE id=? AND user_id=?',
+        [Math.round(newBalance * 100), data.paymentAccountId, userId],
+      );
+      await manager.query(
+        "UPDATE credit_card_invoices SET status='paid',paid_at=CURRENT_TIMESTAMP,payment_date=?,payment_account_id=? WHERE id=?",
+        [
+          new Date().getFullYear() +
+            '-' +
+            String(new Date().getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(new Date().getDate()).padStart(2, '0'),
+          data.paymentAccountId,
+          data.invoiceId,
+        ],
+      );
+    });
     const paidInvoice = await this.invoiceRepository.findById(
       data.invoiceId,
       userId,

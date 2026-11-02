@@ -1,3 +1,4 @@
+import type { BackupAPI } from '@shared/interfaces/types/backup.types';
 import type { InvestmentAPI } from '@shared/interfaces/types/investment.types';
 import { contextBridge, ipcRenderer, shell } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
@@ -93,6 +94,10 @@ function createControllerFromConfig<T extends object>(
 }
 
 const api: CustomElectronAPI = {
+  backup: createControllerFromConfig<BackupAPI>(
+    CONTROLLER_CONFIG.backup.prefix,
+    CONTROLLER_CONFIG.backup.methods,
+  ),
   investment: createControllerFromConfig<InvestmentAPI>(
     CONTROLLER_CONFIG.investment.prefix,
     CONTROLLER_CONFIG.investment.methods,

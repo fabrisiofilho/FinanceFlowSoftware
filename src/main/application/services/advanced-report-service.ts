@@ -134,10 +134,11 @@ export class AdvancedReportService {
       .addSelect('c.name', 'categoryName')
       .addSelect("strftime('%Y', t.transaction_date)", 'year')
       .addSelect("strftime('%m', t.transaction_date)", 'month')
-      .addSelect('SUM(t.amount)', 'total')
+      .addSelect('(SUM(t.amount)/100.0)', 'total')
       .innerJoin('t.category', 'c')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.type = :type', { type: 'expense' })
       .andWhere('t.transaction_date >= :startDate', { startDate })
       .andWhere('t.transaction_date <= :endDate', { endDate })
@@ -225,6 +226,7 @@ export class AdvancedReportService {
       .addSelect('COUNT(*)', 'count')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.type = :type', { type: 'expense' });
 
     if (filters?.startDate) {
@@ -259,11 +261,12 @@ export class AdvancedReportService {
       .select('c.id', 'categoryId')
       .addSelect('c.name', 'categoryName')
       .addSelect('c.icon', 'categoryIcon')
-      .addSelect('SUM(t.amount)', 'total')
+      .addSelect('(SUM(t.amount)/100.0)', 'total')
       .addSelect('COUNT(*)', 'count')
       .innerJoin('t.category', 'c')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.type = :type', { type: 'expense' })
       .andWhere('t.transaction_date >= :startDate', {
         startDate: filters.startDate,
@@ -300,9 +303,10 @@ export class AdvancedReportService {
     const summary = await this.transactionRepository
       .createQueryBuilder('t')
       .select('t.type', 'type')
-      .addSelect('SUM(t.amount)', 'total')
+      .addSelect('(SUM(t.amount)/100.0)', 'total')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.transaction_date >= :startDate', {
         startDate: threeMonthsAgo,
       })
@@ -325,7 +329,7 @@ export class AdvancedReportService {
     // Get total balance for emergency fund calculation
     const balanceResult = await this.accountRepository
       .createQueryBuilder('a')
-      .select('SUM(a.balance)', 'total')
+      .select('(SUM(a.balance)/100.0)', 'total')
       .where('a.user_id = :userId', { userId })
       .getRawOne();
 
@@ -407,9 +411,10 @@ export class AdvancedReportService {
       .select("strftime('%Y', t.transaction_date)", 'year')
       .addSelect("strftime('%m', t.transaction_date)", 'month')
       .addSelect('t.type', 'type')
-      .addSelect('SUM(t.amount)', 'total')
+      .addSelect('(SUM(t.amount)/100.0)', 'total')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.transaction_date >= :startDate', { startDate })
       .andWhere('t.transaction_date <= :endDate', { endDate })
       .groupBy("strftime('%Y', t.transaction_date)")
@@ -458,10 +463,11 @@ export class AdvancedReportService {
       .createQueryBuilder('t')
       .select('c.id', 'categoryId')
       .addSelect('c.name', 'categoryName')
-      .addSelect('SUM(t.amount)', 'total')
+      .addSelect('(SUM(t.amount)/100.0)', 'total')
       .innerJoin('t.category', 'c')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.type = :type', { type: 'expense' })
       .andWhere('t.transaction_date >= :startDate', { startDate })
       .andWhere('t.transaction_date <= :endDate', { endDate })
@@ -517,9 +523,10 @@ export class AdvancedReportService {
 
     const result = await this.transactionRepository
       .createQueryBuilder('t')
-      .select('COALESCE(SUM(t.amount), 0)', 'total')
+      .select('COALESCE((SUM(t.amount)/100.0), 0)', 'total')
       .innerJoin('t.account', 'a')
       .where('a.user_id = :userId', { userId })
+      .andWhere("t.origin='entry' AND t.status<>'cancelled'")
       .andWhere('t.category_id = :categoryId', { categoryId })
       .andWhere('t.type = :type', { type: 'expense' })
       .andWhere('t.transaction_date >= :startDate', { startDate })

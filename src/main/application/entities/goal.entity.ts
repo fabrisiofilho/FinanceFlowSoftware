@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -22,16 +23,14 @@ export class GoalEntity extends AuditableEntity {
   userId!: number;
   @Column({ type: 'text' })
   name!: string;
-  @Column({ name: 'target_amount', type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'target_amount', type: 'integer', transformer: moneyColumn })
   targetAmount!: number;
   @Column({
     name: 'current_amount',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    default: 0,
+    type: 'integer',
+    transformer: moneyColumn,
   })
-  currentAmount!: number;
+  currentAmount: number = 0;
   @Column({ type: 'date', nullable: true })
   deadline?: Date;
   @ManyToOne('AccountEntity', { nullable: true })

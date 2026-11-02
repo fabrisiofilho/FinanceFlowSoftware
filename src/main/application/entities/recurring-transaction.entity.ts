@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -36,7 +37,7 @@ export class RecurringTransactionEntity extends AuditableEntity {
   @Column({ type: 'text' })
   description!: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'integer', transformer: moneyColumn })
   amount!: number;
 
   @Column({ type: 'text' })

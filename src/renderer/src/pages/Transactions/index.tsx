@@ -1,4 +1,5 @@
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
+import { useSearchParams } from 'react-router-dom';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { AppAlert } from '@renderer/components/Feedback';
@@ -81,6 +82,8 @@ const MONTH_NAMES = [
   'Dezembro',
 ];
 export function TransactionsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [initialType, setInitialType] = useState<TransactionType>('expense');
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
@@ -102,6 +105,14 @@ export function TransactionsPage() {
     useState<TransactionSortField>('transactionDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('DESC');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  useEffect(() => {
+    const create = searchParams.get('new');
+    if (create === 'income' || create === 'expense') {
+      setInitialType(create);
+      setIsFormOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -474,6 +485,25 @@ export function TransactionsPage() {
           onChange={handleTypeChange}
           fullWidth
         />
+        <SelectInput
+          label="Situação"
+          value={filters.status ?? ''}
+          items={[
+            { value: '', label: 'Todas' },
+            { value: 'pending', label: 'Pendentes' },
+            { value: 'settled', label: 'Liquidados' },
+            { value: 'cancelled', label: 'Cancelados' },
+          ]}
+          onChange={(event) => {
+            setPage(0);
+            setFilters((previous) => ({
+              ...previous,
+              status: (event.target.value ||
+                undefined) as TransactionFilters['status'],
+            }));
+          }}
+          fullWidth
+        />
       </FilterPanel>
       <ContentLoading loading={loading} initial="table">
         <StyledTableContainer>
@@ -591,6 +621,24 @@ export function TransactionsPage() {
                         <Typography variant="body2" fontWeight={500}>
                           {transaction.description}
                         </Typography>
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          color={
+                            transaction.status === 'pending'
+                              ? 'warning'
+                              : transaction.status === 'cancelled'
+                                ? 'default'
+                                : 'success'
+                          }
+                          label={
+                            transaction.status === 'pending'
+                              ? 'Pendente'
+                              : transaction.status === 'cancelled'
+                                ? 'Cancelado'
+                                : 'Liquidado'
+                          }
+                        />
                         {transaction.installmentNumber &&
                           transaction.totalInstallments && (
                             <Typography
@@ -703,6 +751,7 @@ export function TransactionsPage() {
           onClose={handleCloseForm}
           onSave={handleSaveTransaction}
           transaction={selectedTransaction}
+          initialType={initialType}
           categories={categories}
           accounts={accounts}
           loading={formLoading}

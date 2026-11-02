@@ -1,3 +1,4 @@
+import { BackupController } from '../backup-controller';
 import { InvestmentController } from '../investment-controller';
 import { logger } from '@main/infrastructure/log/logger';
 import { AutoUpdaterController } from '../auto-updater-controller';
@@ -23,6 +24,7 @@ import { AttachmentController } from '../attachment-controller';
 
 export function loadIpcControllers() {
   new InvestmentController();
+  new BackupController();
   logger.info('Loading IPC controllers...');
 
   logger.info('Loading AutoUpdaterController...');

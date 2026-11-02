@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -46,12 +47,10 @@ export class NotificationSettingsEntity extends AuditableEntity {
 
   @Column({
     name: 'low_balance_threshold',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    default: 100,
+    type: 'integer',
+    transformer: moneyColumn,
   })
-  lowBalanceThreshold!: number;
+  lowBalanceThreshold: number = 100;
 
   @Column({ name: 'invoice_closing_enabled', type: 'integer', default: 1 })
   invoiceClosingEnabled!: boolean;

@@ -1,3 +1,4 @@
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -23,7 +24,7 @@ export class AlertEntity extends AuditableEntity {
   category!: RelationRef<CategoryEntity>;
   @Column({ name: 'category_id' })
   categoryId!: number;
-  @Column({ name: 'limit_amount', type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'limit_amount', type: 'integer', transformer: moneyColumn })
   limitAmount!: number;
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

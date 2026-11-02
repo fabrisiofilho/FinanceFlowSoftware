@@ -1,3 +1,6 @@
+import { AccountRepository } from '../repositories/account-repository';
+import { TransactionRepository } from '../repositories/transaction-repository';
+import { CreditCardService } from './credit-card-service';
 import { NotificationService } from './notification-service';
 import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
@@ -17,14 +20,13 @@ import { BalanceCalculatorService } from './balance-calculator-service';
 import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 
 export class RecurringTransactionService {
-  private balanceCalculatorService = new BalanceCalculatorService();
+  private static readonly generating = new Map<
+    number,
+    Promise<RecurringGenerationResult>
+  >();
 
   private get recurringRepository() {
     return getDataSource().getRepository(RecurringTransactionEntity);
-  }
-
-  private get transactionRepository() {
-    return getDataSource().getRepository(TransactionEntity);
   }
 
   private mapEntityToRecurring(
@@ -206,7 +208,18 @@ export class RecurringTransactionService {
     return results.map((r) => this.mapEntityToRecurring(r));
   }
 
-  async generatePendingTransactions(
+  generatePendingTransactions(
+    userId: number,
+  ): Promise<RecurringGenerationResult> {
+    const current = RecurringTransactionService.generating.get(userId);
+    if (current) return current;
+    const pending = this.generatePending(userId).finally(() =>
+      RecurringTransactionService.generating.delete(userId),
+    );
+    RecurringTransactionService.generating.set(userId, pending);
+    return pending;
+  }
+  private async generatePending(
     userId: number,
   ): Promise<RecurringGenerationResult> {
     logger.info(
@@ -239,17 +252,6 @@ export class RecurringTransactionService {
           date: parseDateSafe(transaction.transactionDate) ?? new Date(),
           isConfirmed: recurring.autoConfirm,
         });
-
-        // Update next occurrence
-        recurring.lastGenerated = new Date();
-        recurring.nextOccurrence = this.calculateNextOccurrence(
-          parseDateSafe(recurring.nextOccurrence) ?? new Date(),
-          recurring.frequency,
-          recurring.dayOfMonth,
-          recurring.dayOfWeek,
-          true,
-        );
-        await this.recurringRepository.save(recurring);
       } catch (error) {
         errors.push({
           recurringId: recurring.id,
@@ -293,30 +295,66 @@ export class RecurringTransactionService {
     userId: number,
     recurring: RecurringTransactionEntity,
   ): Promise<TransactionEntity> {
-    const transaction = this.transactionRepository.create({
-      description: recurring.description,
-      amount: recurring.amount,
-      type: recurring.type,
-      paymentMethod: recurring.paymentMethod,
-      expenseType: recurring.expenseType,
-      transactionDate: parseDateSafe(recurring.nextOccurrence) ?? new Date(),
-      recurrence: recurring.frequency === 'monthly' ? 'monthly' : 'weekly',
-      accountId: recurring.accountId,
-      categoryId: recurring.categoryId,
-    });
-
-    const saved = await this.transactionRepository.save(transaction);
-
-    if (recurring.autoConfirm) {
-      await this.balanceCalculatorService.updateBalanceAfterCreate(
-        userId,
-        recurring.accountId,
-        recurring.type,
-        Number(recurring.amount),
+    return getDataSource().transaction(async (manager) => {
+      const rules = manager.getRepository(RecurringTransactionEntity);
+      const current = await rules.findOne({
+        where: { id: recurring.id, userId },
+      });
+      if (!current || !current.isActive)
+        throw new Error('Regra recorrente indisponível.');
+      const date = parseDateSafe(current.nextOccurrence)!;
+      const entries = manager.getRepository(TransactionEntity);
+      const existing = await entries.findOne({
+        where: { recurringRuleId: current.id, transactionDate: date },
+      });
+      if (existing) return existing;
+      const entity = await entries.save(
+        entries.create({
+          description: current.description,
+          amount: current.amount,
+          type: current.type,
+          paymentMethod: current.paymentMethod,
+          expenseType: current.expenseType,
+          transactionDate: date,
+          recurringRuleId: current.id,
+          recurrence: current.frequency === 'monthly' ? 'monthly' : 'weekly',
+          accountId: current.accountId,
+          categoryId: current.categoryId,
+          status: current.autoConfirm ? 'settled' : 'pending',
+          settlementDate: current.autoConfirm ? new Date() : null,
+        }),
       );
-    }
-
-    return saved;
+      if (current.autoConfirm)
+        await new BalanceCalculatorService(
+          new AccountRepository(manager),
+          new TransactionRepository(manager),
+        ).updateBalanceAfterCreate(
+          userId,
+          current.accountId,
+          current.type,
+          Number(current.amount),
+        );
+      const account = await manager
+        .getRepository(AccountEntity)
+        .findOne({ where: { id: current.accountId, userId } });
+      if (account?.type === 'credit_card' && current.type === 'expense')
+        await new CreditCardService().autoLinkTransactionToInvoice(
+          userId,
+          entity.id,
+          entity.accountId,
+          date,
+        );
+      current.lastGenerated = new Date();
+      current.nextOccurrence = this.calculateNextOccurrence(
+        date,
+        current.frequency,
+        current.dayOfMonth,
+        current.dayOfWeek,
+        true,
+      );
+      await rules.save(current);
+      return entity;
+    });
   }
 
   private calculateNextOccurrence(
@@ -340,10 +378,24 @@ export class RecurringTransactionService {
           result.setDate(result.getDate() + 14);
           break;
         case 'monthly':
+          result.setDate(1);
           result.setMonth(result.getMonth() + 1);
+          result.setDate(
+            Math.min(
+              dayOfMonth ?? fromDate.getDate(),
+              this.getDaysInMonth(result),
+            ),
+          );
           break;
         case 'yearly':
+          result.setDate(1);
           result.setFullYear(result.getFullYear() + 1);
+          result.setDate(
+            Math.min(
+              dayOfMonth ?? fromDate.getDate(),
+              this.getDaysInMonth(result),
+            ),
+          );
           break;
       }
     }
@@ -358,8 +410,8 @@ export class RecurringTransactionService {
     ) {
       const currentDay = result.getDay();
       const daysUntil = (dayOfWeek - currentDay + 7) % 7;
-      if (daysUntil > 0 || skipCurrent) {
-        result.setDate(result.getDate() + (daysUntil || 7));
+      if (daysUntil > 0) {
+        result.setDate(result.getDate() + daysUntil);
       }
     }
 

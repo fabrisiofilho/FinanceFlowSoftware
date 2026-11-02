@@ -6,9 +6,9 @@ export const Container = styled.header`
   align-items: center;
 
   z-index: 1;
-  height: 4rem;
+  height: 3.5rem;
   padding: 0rem 1.4rem;
 
   border-bottom: ${({ theme }) => theme.BORDERS.b_01};
-  background-color: ${({ theme }) => theme.COLORS.white};
+  background-color: ${({ theme }) => theme.COLORS.surface};
 `;

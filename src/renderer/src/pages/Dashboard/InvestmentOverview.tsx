@@ -1,3 +1,4 @@
+import { investmentBalance } from '@shared/finance/investments';
 import { useEffect, useState } from 'react';
 import { Box, Button, Skeleton, Stack, Typography } from '@mui/material';
 import { ShowChartRounded } from '@mui/icons-material';
@@ -27,8 +28,6 @@ export function InvestmentOverview({ period }: { period: string }) {
   }, []);
   const principal =
     data?.investments.reduce((sum, item) => sum + item.principalCents, 0) || 0;
-  const totalYield =
-    data?.yields.reduce((sum, item) => sum + item.amountCents, 0) || 0;
   const monthYield =
     data?.yields
       .filter((item) => item.month === period)
@@ -51,8 +50,8 @@ export function InvestmentOverview({ period }: { period: string }) {
         </Button>
       </Stack>
       <Typography variant="body2" color="text.secondary" mb={2}>
-        Acompanhamento separado das contas. Projeções não entram nos ganhos
-        realizados.
+        Aportes e resgates podem movimentar contas. Projeções não entram nos
+        ganhos realizados.
       </Typography>
       {error ? (
         <AppAlert severity="warning">
@@ -71,7 +70,13 @@ export function InvestmentOverview({ period }: { period: string }) {
           {[
             ['Valor aplicado', principal],
             ['Rendimento no mês selecionado', monthYield],
-            ['Saldo registrado da carteira', principal + totalYield],
+            [
+              'Saldo registrado da carteira',
+              data.investments.reduce(
+                (sum, item) => sum + investmentBalance(item, data),
+                0,
+              ),
+            ],
           ].map(([label, value]) => (
             <Box key={String(label)}>
               <Typography variant="caption" color="text.secondary">

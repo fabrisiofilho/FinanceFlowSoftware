@@ -148,10 +148,9 @@ export class CreditCardInvoiceRepository extends BaseRepository<CreditCardInvoic
     if (!invoice || !invoice.transactions) {
       return 0;
     }
-    const total = invoice.transactions.reduce(
-      (sum, transaction) => sum + Number(transaction.amount),
-      0,
-    );
+    const total = invoice.transactions
+      .filter((item) => item.status !== 'cancelled')
+      .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
     await this.updateTotalAmount(id, total);
     return total;
   }

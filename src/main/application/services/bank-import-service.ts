@@ -2,10 +2,11 @@ import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { BankImportEntity } from '../entities/bank-import.entity';
 import { BankImportTransactionEntity } from '../entities/bank-import-transaction.entity';
-import {
-  TransactionEntity,
-  TransactionType,
-} from '../entities/transaction.entity';
+import { TransactionEntity } from '../entities/transaction.entity';
+import { TransactionService } from './transaction-service';
+import { AccountRepository } from '../repositories/account-repository';
+import { TransactionRepository } from '../repositories/transaction-repository';
+import { CategoryRepository } from '../repositories/category-repository';
 import {
   BankImport,
   BankImportTransaction,
@@ -19,12 +20,6 @@ import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 import { BalanceCalculatorService } from './balance-calculator-service';
 
 export class BankImportService {
-  private balanceCalculatorService: BalanceCalculatorService;
-
-  constructor() {
-    this.balanceCalculatorService = new BalanceCalculatorService();
-  }
-
   private get importRepository() {
     return getDataSource().getRepository(BankImportEntity);
   }
@@ -205,7 +200,8 @@ export class BankImportService {
           where: { id: action.importTransactionId, importId: data.importId },
         });
 
-        if (!importTx) continue;
+        if (!importTx || !['pending', 'duplicate'].includes(importTx.status))
+          continue;
 
         result.totalProcessed++;
 
@@ -605,23 +601,38 @@ export class BankImportService {
     importTx: BankImportTransactionEntity,
     categoryId?: number,
   ): Promise<void> {
-    const transaction = this.transactionRepository.create({
-      description: importTx.description,
-      amount: importTx.amount,
-      type: importTx.type,
-      transactionDate: importTx.transactionDate,
-      accountId,
-      categoryId: categoryId ?? importTx.suggestedCategoryId ?? 1,
+    await getDataSource().transaction(async (manager) => {
+      const imported = manager.getRepository(BankImportTransactionEntity);
+      const current = await imported.findOneByOrFail({
+        id: importTx.id,
+        importId: importTx.importId,
+      });
+      if (!['pending', 'duplicate'].includes(current.status)) return;
+      const accounts = new AccountRepository(manager),
+        entries = new TransactionRepository(manager);
+      const service = new TransactionService(
+        entries,
+        accounts,
+        new CategoryRepository(manager),
+        new BalanceCalculatorService(accounts, entries),
+      );
+      const category = categoryId ?? current.suggestedCategoryId;
+      if (!category)
+        throw new Error('Escolha uma categoria antes de importar.');
+      const date = parseDateSafe(current.transactionDate);
+      if (!date) throw new Error('Data do extrato inválida.');
+      await service.create(userId, {
+        description: importTx.description,
+        amount: importTx.amount,
+        type: importTx.type,
+        transactionDate: date,
+        status: 'settled',
+        settlementDate: date,
+        accountId,
+        categoryId: category,
+      });
+      current.status = 'imported';
+      await imported.save(current);
     });
-
-    await this.transactionRepository.save(transaction);
-
-    // Update account balance
-    await this.balanceCalculatorService.updateBalanceAfterCreate(
-      userId,
-      accountId,
-      importTx.type as TransactionType,
-      Number(importTx.amount),
-    );
   }
 }

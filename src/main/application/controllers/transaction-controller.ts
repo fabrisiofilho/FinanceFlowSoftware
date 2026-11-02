@@ -120,6 +120,12 @@ export class TransactionController
       return await this.transactionService.findByCategory(userId, categoryId);
     })();
   }
+  @IpcMethod('transaction:findUpcomingBills')
+  async findUpcomingBills(daysAhead = 7): Promise<ApiResponse<Transaction[]>> {
+    return wrap(() =>
+      this.transactionService.findUpcomingBills(this.getUserId(), daysAhead),
+    )();
+  }
   @IpcMethod('transaction:getMonthSummary')
   async getMonthSummary(
     year: number,
