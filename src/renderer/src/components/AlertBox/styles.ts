@@ -1,4 +1,4 @@
-import { Stack, styled, Typography } from '@mui/material';
+import { alpha, type Theme, Stack, styled, Typography } from '@mui/material';
 import { AlertBoxVariantsEnum, type AlertBoxVariants } from '.';
 
 type ElementWithVariant = {
@@ -6,29 +6,19 @@ type ElementWithVariant = {
   $noMargin?: boolean;
 };
 
-const getVariantColors = (theme: any, variant: AlertBoxVariants) => {
-  switch (variant) {
-    case AlertBoxVariantsEnum.success:
-      return {
-        bg: theme.palette.success.light,
-        text: theme.palette.success.dark,
-      };
-    case AlertBoxVariantsEnum.danger:
-      return { bg: theme.palette.error.light, text: theme.palette.error.dark };
-    case AlertBoxVariantsEnum.warn:
-      return {
-        bg: theme.palette.warning.light,
-        text: theme.palette.warning.dark,
-      };
-    case AlertBoxVariantsEnum.primary:
-      return {
-        bg: theme.palette.primary.light,
-        text: theme.palette.primary.dark,
-      };
-    case AlertBoxVariantsEnum.info:
-    default:
-      return { bg: theme.palette.info.light, text: theme.palette.info.dark };
-  }
+const getVariantColors = (theme: Theme, variant: AlertBoxVariants) => {
+  const key =
+    variant === AlertBoxVariantsEnum.success
+      ? 'success'
+      : variant === AlertBoxVariantsEnum.danger
+        ? 'error'
+        : variant === AlertBoxVariantsEnum.warn
+          ? 'warning'
+          : variant === AlertBoxVariantsEnum.primary
+            ? 'primary'
+            : 'info';
+  const color = theme.palette[key].main;
+  return { bg: alpha(color, 0.12), text: color };
 };
 
 export const AlertBoxContainer = styled(Stack, {

@@ -23,7 +23,8 @@ export const AlertCard = styled(ContentSurface)<{
   border-radius: 8px;
   margin-bottom: 0.5rem;
   border-left: 4px solid
-    ${({ $severity }) => ($severity === 'error' ? '#d32f2f' : '#ed6c02')};
-  background: ${({ $severity }) =>
-    $severity === 'error' ? '#d32f2f10' : '#ed6c0210'};
+    ${({ theme, $severity }) =>
+      $severity === 'error' ? theme.COLORS.error : theme.COLORS.warn};
+  background: ${({ theme, $severity }) =>
+    $severity === 'error' ? theme.COLORS.error_100 : theme.COLORS.warn_100};
 `;

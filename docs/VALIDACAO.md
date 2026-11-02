@@ -1,5 +1,13 @@
 # Validação do incremento inicial
 
+## Cores e logo — 2.0.1, 2026-11-02
+
+Corrigido recorte do nome Contabily: a fonte de 32px na abertura herdava linha de 24px com overflow hidden; agora usa linha proporcional e overflow visível. Símbolo recebe crescimento de 900ms e brilho de 1800ms, sem repetição; movimento reduzido continua ignorando a abertura.
+
+Paleta semântica unificada: receitas verdes, despesas/erros em coral, aviso âmbar e informação azul. Seletores deixam de usar tokens inexistentes success.lighter/error.lighter. Estados selecionados têm borda e fundo explícitos; chips e AlertBox preservam texto legível. Botões semânticos preenchidos usam texto escuro, inclusive no hover.
+
+Typecheck e build aprovados; lint com zero erros e 16 avisos existentes. Ensaio visual Electron das 18 telas aprovou logo animada, nome sem recorte e contraste real dos seletores selecionados >= 4,5:1 (despesa 7,42:1; receita 8,88:1). Capturas .qa/neutral-opening.png e .qa/contrast-expense.png inspecionadas. Conferência dos tokens de hover com texto preenchido: receita 7,28:1, despesa 6,42:1, aviso 8,54:1, informação 6,17:1. Não houve alteração de esquema ou regras financeiras nesta revisão; os testes visuais não equivalem à homologação integral das funcionalidades.
+
 ## Revisão 2.0.0 — 2026-11-02
 
 26 testes unitários aprovados, incluindo IR anual e estados do updater; typecheck aprovado; lint com zero erros e 17 avisos existentes. Build aprovado para main, preload e renderer, com as dez migrações. Inventário atualizado: 18 rotas, 21 entidades e 133 canais IPC.

@@ -31,6 +31,8 @@ export function AuthPageTemplate({ children }: Props) {
             sx={{
               color: 'inherit',
               fontSize: 24,
+              lineHeight: 1.3,
+              overflow: 'visible',
               fontWeight: 700,
               letterSpacing: '-.04em',
             }}

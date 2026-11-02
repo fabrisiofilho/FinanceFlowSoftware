@@ -6,6 +6,43 @@ import { FinancialTrace } from '../FinancialTrace';
 
 const reveal = keyframes`from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); }`;
 const dissolve = keyframes`0%, 78% { opacity: 1; } 100% { opacity: 0; }`;
+const bloom = keyframes`
+  0% { opacity: 0; transform: translateY(8px) scale(.65) rotate(-12deg); }
+  65% { opacity: 1; transform: translateY(0) scale(1.06) rotate(2deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+`;
+const glow = keyframes`
+  0%, 100% { opacity: 0; transform: scale(.6); }
+  45% { opacity: .65; transform: scale(1.2); }
+`;
+const LogoMark = styled.div`
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  color: ${({ theme }) => theme.COLORS.primary};
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #9bd9b550, transparent 70%);
+    animation: ${glow} 1800ms ease-out both;
+  }
+  svg {
+    position: relative;
+    font-size: 48px;
+    transform-origin: 50% 85%;
+    animation: ${bloom} 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before,
+    svg {
+      animation: none;
+    }
+  }
+`;
 const Curtain = styled.div`
   position: fixed;
   inset: 40px 0 0;
@@ -63,10 +100,14 @@ export function StartupReveal({ children }: PropsWithChildren) {
             role="status"
             aria-label="Abrindo Contabily"
           >
-            <SpaOutlined sx={{ fontSize: 42, color: '#a9dfbf' }} />
+            <LogoMark data-opening-logo aria-hidden="true">
+              <SpaOutlined />
+            </LogoMark>
             <Typography
               sx={{
                 fontSize: 32,
+                lineHeight: 1.3,
+                overflow: 'visible',
                 fontWeight: 700,
                 letterSpacing: '-.04em',
                 color: 'inherit',

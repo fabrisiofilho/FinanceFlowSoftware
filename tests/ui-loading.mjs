@@ -199,6 +199,25 @@ app
 
     await window.loadFile(path.join(appRoot, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 900));
+    const opening = await window.webContents.executeJavaScript(`(() => {
+      const title = document.querySelector('[aria-label="Abrindo Contabily"] .MuiTypography-root');
+      const logo = document.querySelector('[data-opening-logo] svg');
+      return { title: title?.textContent, height: title?.getBoundingClientRect().height,
+        font: title && parseFloat(getComputedStyle(title).fontSize),
+        overflow: title && getComputedStyle(title).overflow,
+        animation: logo && getComputedStyle(logo).animationName };
+    })()`);
+    if (
+      opening.title !== 'Contabily' ||
+      opening.height < opening.font * 1.2 ||
+      opening.overflow !== 'visible' ||
+      !opening.animation ||
+      opening.animation === 'none'
+    )
+      throw new Error(
+        'Abertura deve preservar o nome completo e animar o símbolo da logo.',
+      );
+    console.log('OK logo animada e nome sem recorte na abertura');
     fs.writeFileSync(
       path.join(__dirname, 'neutral-opening.png'),
       (await window.webContents.capturePage()).toPNG(),
@@ -293,6 +312,33 @@ app
           ),
           'formulário separa competência e liquidação',
         );
+        for (const type of ['expense', 'income']) {
+          const contrast = await run(`(() => {
+            const button = document.querySelector('button[aria-label="${type === 'income' ? 'receita' : 'despesa'}"]');
+            button.click();
+            return true;
+          })()`);
+          assert(contrast, 'seletor de ' + type + ' disponível');
+          await sleep(250);
+          const ratio = await run(`(() => {
+            const button = document.querySelector('button[aria-label="${type === 'income' ? 'receita' : 'despesa'}"]');
+            const style = getComputedStyle(button);
+            const luminance = color => {
+              const channels = color.match(/[\\d.]+/g).slice(0,3).map(Number).map(value => { const channel = value/255; return channel <= .04045 ? channel/12.92 : ((channel+.055)/1.055)**2.4; });
+              return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+            };
+            const foreground = luminance(style.color), background = luminance(style.backgroundColor);
+            return { ratio: (Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05), selected: button.getAttribute('aria-pressed')==='true' };
+          })()`);
+          assert(
+            ratio.selected && ratio.ratio >= 4.5,
+            'contraste de ' + type + ' selecionado >= 4.5:1',
+          );
+          fs.writeFileSync(
+            path.join(__dirname, 'contrast-' + type + '.png'),
+            (await window.webContents.capturePage()).toPNG(),
+          );
+        }
         fs.writeFileSync(
           path.join(__dirname, 'v2-transaction-form.png'),
           (await window.webContents.capturePage()).toPNG(),

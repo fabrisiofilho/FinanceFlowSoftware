@@ -1,5 +1,6 @@
 import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
 import styled from 'styled-components';
+import { rgba } from 'polished';
 import { Box, Stack } from '@mui/material';
 export const TransactionsContainer = PageContainer;
 
@@ -22,7 +23,13 @@ export const TypeBadge = styled(Box)<{ $type: 'income' | 'expense' }>`
   padding: 0.25rem 0.5rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  border: 1px solid
+    ${({ theme, $type }) =>
+      rgba(
+        $type === 'income' ? theme.COLORS.success : theme.COLORS.error,
+        0.45,
+      )};
   background-color: ${({ theme, $type }) =>
     $type === 'income' ? theme.COLORS.success_100 : theme.COLORS.error_100};
   color: ${({ theme, $type }) =>

@@ -1,5 +1,5 @@
 import { feedbackStyle } from '@renderer/components/Feedback';
-import { createTheme, Theme } from '@mui/material';
+import { alpha, createTheme, Theme } from '@mui/material';
 import { rgba } from 'polished';
 import formAlertIcon from '../assets/form-alert.svg';
 import { styledTheme, getStyledTheme, ThemeMode } from './styledTheme';
@@ -35,27 +35,27 @@ function createMuiTheme(colors: typeof styledTheme): Theme {
       },
       info: {
         main: colors.COLORS.info,
-        light: colors.COLORS.info_200,
-        dark: colors.COLORS.info_400,
-        contrastText: '#FFFFFF',
+        light: colors.COLORS.info_400,
+        dark: colors.COLORS.info_200,
+        contrastText: '#10232b',
       },
       success: {
         main: colors.COLORS.success,
-        light: colors.COLORS.success_200,
-        dark: colors.COLORS.success_400,
-        contrastText: '#FFFFFF',
+        light: colors.COLORS.success_400,
+        dark: colors.COLORS.success_200,
+        contrastText: '#102219',
       },
       warning: {
         main: colors.COLORS.warn,
-        light: colors.COLORS.warn_200,
-        dark: colors.COLORS.warn_400,
-        contrastText: colors.COLORS.grey_800,
+        light: colors.COLORS.warn_400,
+        dark: colors.COLORS.warn_200,
+        contrastText: '#2b210b',
       },
       error: {
         main: colors.COLORS.error,
-        light: colors.COLORS.error_200,
-        dark: colors.COLORS.error_400,
-        contrastText: '#FFFFFF',
+        light: colors.COLORS.error_400,
+        dark: colors.COLORS.error_200,
+        contrastText: '#30131b',
       },
       background: {
         default: colors.COLORS.background,
@@ -538,11 +538,26 @@ function createMuiTheme(colors: typeof styledTheme): Theme {
       },
       MuiChip: {
         styleOverrides: {
-          root: {
-            borderRadius: '0.5rem',
-          },
-          outlined: {
-            borderColor: colors.COLORS.border,
+          root: ({ theme, ownerState }) => {
+            const color = ownerState.color;
+            const semantic =
+              color === 'success' ||
+              color === 'error' ||
+              color === 'warning' ||
+              color === 'info';
+            return {
+              borderRadius: '0.5rem',
+              ...(semantic
+                ? {
+                    color: theme.palette[color].main,
+                    backgroundColor: alpha(theme.palette[color].main, 0.13),
+                    border: `1px solid ${alpha(theme.palette[color].main, 0.5)}`,
+                    '& .MuiChip-icon, & .MuiChip-deleteIcon': {
+                      color: 'inherit',
+                    },
+                  }
+                : {}),
+            };
           },
         },
       },

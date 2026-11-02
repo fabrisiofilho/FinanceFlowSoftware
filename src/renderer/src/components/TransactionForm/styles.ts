@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { rgba } from 'polished';
 import { Box, Stack, ToggleButtonGroup } from '@mui/material';
 export const FormContainer = styled(Box)`
   display: flex;
@@ -45,8 +46,33 @@ export const TransactionTypeToggle = styled(ToggleButtonGroup)`
     &:last-of-type {
       border-radius: 0 0.5rem 0.5rem 0;
     }
-    &.Mui-selected {
-      border-color: transparent;
+    color: ${({ theme }) => theme.COLORS.textSecondary};
+    &[value='income'] {
+      --type-color: ${({ theme }) => theme.COLORS.success};
+    }
+    &[value='expense'] {
+      --type-color: ${({ theme }) => theme.COLORS.error};
+    }
+    &.Mui-selected,
+    &.Mui-selected:hover {
+      color: var(--type-color);
+      border-color: var(--type-color);
+    }
+    &[value='income'].Mui-selected {
+      background-color: ${({ theme }) => theme.COLORS.success_100};
+    }
+    &[value='expense'].Mui-selected {
+      background-color: ${({ theme }) => theme.COLORS.error_100};
+    }
+    &[value='income']:hover {
+      background-color: ${({ theme }) => rgba(theme.COLORS.success, 0.12)};
+    }
+    &[value='expense']:hover {
+      background-color: ${({ theme }) => rgba(theme.COLORS.error, 0.12)};
+    }
+    &:focus-visible {
+      outline: 2px solid var(--type-color);
+      outline-offset: 3px;
     }
   }
 `;

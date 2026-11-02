@@ -364,43 +364,11 @@ export function TransactionForm({
             onChange={handleTypeChange}
             aria-label="tipo de transação"
           >
-            <ToggleButton
-              value="income"
-              aria-label="receita"
-              sx={{
-                color:
-                  watchType === 'income' ? 'success.main' : 'text.secondary',
-                backgroundColor:
-                  watchType === 'income' ? 'success.lighter' : 'transparent',
-                '&.Mui-selected': {
-                  color: 'success.dark',
-                  backgroundColor: 'success.lighter',
-                  '&:hover': {
-                    backgroundColor: 'success.light',
-                  },
-                },
-              }}
-            >
+            <ToggleButton value="income" aria-label="receita">
               <TrendingUpIcon sx={{ mr: 0.5 }} />
               Receita
             </ToggleButton>
-            <ToggleButton
-              value="expense"
-              aria-label="despesa"
-              sx={{
-                color:
-                  watchType === 'expense' ? 'error.main' : 'text.secondary',
-                backgroundColor:
-                  watchType === 'expense' ? 'error.lighter' : 'transparent',
-                '&.Mui-selected': {
-                  color: 'error.dark',
-                  backgroundColor: 'error.lighter',
-                  '&:hover': {
-                    backgroundColor: 'error.light',
-                  },
-                },
-              }}
-            >
+            <ToggleButton value="expense" aria-label="despesa">
               <TrendingDownIcon sx={{ mr: 0.5 }} />
               Despesa
             </ToggleButton>

@@ -11,7 +11,8 @@ export const RecurringCard = styled(ContentSurface)<{
   border-radius: 8px;
   margin-bottom: 0.75rem;
   border-left: 4px solid
-    ${({ $type }) => ($type === 'income' ? '#2e7d32' : '#d32f2f')};
+    ${({ theme, $type }) =>
+      $type === 'income' ? theme.COLORS.success : theme.COLORS.error};
 `;
 
 export const FrequencyBadge = styled(Box)`

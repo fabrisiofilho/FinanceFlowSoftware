@@ -2,6 +2,8 @@
 
 ## Identidade
 
+Revisão 2.0.1: receitas usam verde #89E5B1, despesas/erros coral #FF9CAA, avisos âmbar e informação azul. Estados selecionados combinam texto, borda visível e fundo semântico; preservar contraste mínimo de 4,5:1 para texto normal. Não usar tokens inexistentes como error.lighter. Em botões semânticos preenchidos, texto escuro e hover claro preservam leitura. Chips e avisos usam tom translúcido com texto na cor principal do estado.
+
 A aplicação utiliza somente dark neutro: fundo #101216, superfície #191C22, borda #30353F e texto secundário #AEB6C3. Verde menta #9BD9B5 destaca ações, foco e navegação; não aplicar grandes superfícies verdes. Botões primários e secundários preenchidos usam menta com texto #102219; hover #B5E7CA. Estados desabilitados preservam leitura. Cores de erro, atenção e informação mantêm seus significados. Tokens ficam em styledTheme/muiTheme; fonte única Segoe UI local.
 
 ## Estrutura das telas
@@ -24,6 +26,8 @@ Dashboard, Relatórios, Transações e Orçamento usam useRequestSequence para d
 ## Animações e acessibilidade
 
 FinancialTrace calcula ponto e rastro pela mesma posição normalizada sobre um único caminho SVG. O ponto permanece na ponta do rastro; camadas de menor opacidade formam a cauda. Abertura executa uma passagem e login repete lentamente. Respeitar prefers-reduced-motion.
+
+Logo da abertura: crescimento do símbolo em 900ms e brilho radial em 1800ms, sem repetição. Nome de 32px usa line-height 1.3 e overflow visível para preservar descendentes como o y. Movimento reduzido ignora a abertura; nenhum card recebe essa animação.
 
 RouteTransition usa entrada por opacidade de 220ms e um brilho verde discreto de 700ms no topo do conteúdo. Só a mudança de rota dispara o efeito; filtros não reiniciam a animação. Cards não animam posição nem escala; borda e luminosidade oferecem feedback. Restaurar a rolagem ao mudar a rota.
 
