@@ -1,3 +1,4 @@
+import { FinancingController } from '../financing-controller';
 import { ExternalDataController } from '../external-data-controller';
 import { ExternalLinkController } from '../external-link-controller';
 import { OnboardingController } from '../onboarding-controller';
@@ -27,6 +28,7 @@ import { CurrencyController } from '../currency-controller';
 import { AttachmentController } from '../attachment-controller';
 
 export function loadIpcControllers() {
+  new FinancingController();
   new ListingController();
   new ExternalLinkController();
   new ExternalDataController();

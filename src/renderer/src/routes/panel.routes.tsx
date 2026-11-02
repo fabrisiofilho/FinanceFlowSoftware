@@ -1,3 +1,4 @@
+import { FinancingPage } from '@renderer/pages/Financing';
 import { ExternalDataPage } from '@renderer/pages/ExternalData';
 import PublicRounded from '@mui/icons-material/PublicRounded';
 import { SettingsPage } from '@renderer/pages/Settings/Overview';
@@ -47,6 +48,7 @@ type WithRouteProps<T> = T & {
 };
 
 const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
+  { label: 'Financiamentos', path: '/panel/financing', icon: <AccountBalanceOutlinedIcon />, canAccess: true, routeElement: <FinancingPage />, routePath: '/financing' },
   {
     label: 'Dados externos',
     path: '/panel/external-data',

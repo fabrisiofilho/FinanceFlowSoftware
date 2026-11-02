@@ -15,7 +15,7 @@ export const navigationAreas = [
   { label: 'Dados externos', routes: ['external-data'] },
   {
     label: 'Planejamento',
-    routes: ['budget', 'cash-flow', 'goals', 'income-tax'],
+    routes: ['budget', 'cash-flow', 'goals', 'financing', 'income-tax'],
   },
   { label: 'Análises', routes: ['reports', 'advanced-reports'] },
   { label: 'Configurações', routes: ['settings', 'categories', 'alerts'] },

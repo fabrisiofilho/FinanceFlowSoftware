@@ -1,3 +1,4 @@
+import type { FinancingAPI } from '@shared/interfaces/types/financing.types';
 import type { OnboardingAPI } from '@shared/interfaces/types/onboarding.types';
 import type { ExternalDataAPI } from '@shared/interfaces/types/external-data.types';
 import type { ListingAPI } from '@shared/interfaces/types/listing.types';
@@ -111,6 +112,7 @@ const api: CustomElectronAPI = {
     CONTROLLER_CONFIG.investment.prefix,
     CONTROLLER_CONFIG.investment.methods,
   ),
+  financing: createControllerFromConfig<FinancingAPI>(CONTROLLER_CONFIG.financing.prefix, CONTROLLER_CONFIG.financing.methods),
   financeAuth: createControllerFromConfig<IFinanceAuthController>(
     CONTROLLER_CONFIG.financeAuth.prefix,
     CONTROLLER_CONFIG.financeAuth.methods,

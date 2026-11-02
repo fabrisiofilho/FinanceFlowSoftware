@@ -10,7 +10,7 @@ export interface CashFlowProjection {
 export interface CashFlowDetail {
   id: number;
   type: 'income' | 'expense' | 'transfer';
-  source: 'transaction' | 'recurring' | 'bill';
+  source: 'transaction' | 'recurring' | 'bill' | 'financing';
   description: string;
   amount: number;
   date: Date;
