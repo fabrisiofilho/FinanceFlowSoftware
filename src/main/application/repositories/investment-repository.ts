@@ -1,3 +1,4 @@
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import type {
   Investment,
@@ -5,8 +6,89 @@ import type {
   InvestmentYield,
   InvestmentEvent,
   InvestmentEventInput,
+  InvestmentQuery,
+  InvestmentPage,
 } from '@shared/interfaces/types/investment.types';
 export class InvestmentRepository {
+  async query(userId: number, input: InvestmentQuery): Promise<InvestmentPage> {
+    const page = input.page ?? 0,
+      size = input.size ?? 24;
+    if (
+      !Number.isSafeInteger(page) ||
+      page < 0 ||
+      !Number.isInteger(size) ||
+      size < 1 ||
+      size > 100
+    )
+      throw new Error('Paginação inválida.');
+    if (
+      input.kinds &&
+      (!Array.isArray(input.kinds) ||
+        input.kinds.length > 50 ||
+        input.kinds.some(
+          (kind) => typeof kind !== 'string' || kind.length > 80,
+        ))
+    )
+      throw new Error('Tipos inválidos.');
+    let where = 'user_id=?';
+    const params: unknown[] = [userId];
+    if (input.search?.trim()) {
+      where += " AND name LIKE ? ESCAPE '\\'";
+      params.push(
+        '%' +
+          input.search
+            .trim()
+            .slice(0, 200)
+            .replace(/[\\%_]/g, (char) => '\\' + char) +
+          '%',
+      );
+    }
+    if (input.kinds?.length) {
+      where += ` AND kind IN (${input.kinds.map(() => '?').join(',')})`;
+      params.push(...input.kinds);
+    }
+    const db = getDataSource();
+    const investments: Investment[] = await db.query(
+      `SELECT id,user_id AS userId,name,kind,principal_cents AS principalCents,start_month AS startMonth,monthly_rate AS monthlyRate FROM investments WHERE ${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      [...params, size, page * size],
+    );
+    const ids = investments.map((item) => item.id),
+      placeholders = ids.map(() => '?').join(',');
+    const yields: InvestmentYield[] = ids.length
+      ? await db.query(
+          `SELECT id,investment_id AS investmentId,month,amount_cents AS amountCents FROM investment_yields WHERE investment_id IN (${placeholders}) ORDER BY month DESC`,
+          ids,
+        )
+      : [];
+    const events: InvestmentEvent[] = ids.length
+      ? await db.query(
+          `SELECT id,investment_id AS investmentId,account_id AS accountId,kind,amount_cents AS amountCents,event_date AS eventDate,request_id AS requestId FROM investment_events WHERE user_id=? AND investment_id IN (${placeholders}) ORDER BY event_date DESC,id DESC`,
+          [userId, ...ids],
+        )
+      : [];
+    const [count] = await db.query(
+      `SELECT COUNT(*) AS n FROM investments WHERE ${where}`,
+      params,
+    );
+    const [summary] = await db.query(
+      `SELECT COALESCE((SELECT SUM(principal_cents) FROM investments WHERE user_id=?),0) AS principalCents,COALESCE((SELECT SUM(y.amount_cents) FROM investment_yields y JOIN investments i ON i.id=y.investment_id WHERE i.user_id=?),0) AS yieldCents,COALESCE((SELECT SUM(CASE WHEN kind='initial' THEN 0 WHEN kind='deposit' THEN amount_cents ELSE -amount_cents END) FROM investment_events WHERE user_id=?),0) AS eventsCents`,
+      [userId, userId, userId],
+    );
+    return {
+      investments,
+      yields,
+      events,
+      page,
+      totalElements: count.n,
+      totalPages: Math.ceil(count.n / size),
+      summary: {
+        principalCents: summary.principalCents,
+        yieldCents: summary.yieldCents,
+        balanceCents:
+          summary.principalCents + summary.yieldCents + summary.eventsCents,
+      },
+    };
+  }
   async list(userId: number): Promise<Investment[]> {
     return getDataSource().query(
       'SELECT id,user_id AS userId,name,kind,principal_cents AS principalCents,start_month AS startMonth,monthly_rate AS monthlyRate FROM investments WHERE user_id=? ORDER BY id DESC',
@@ -26,7 +108,7 @@ export class InvestmentRepository {
     );
   }
   async create(userId: number, input: InvestmentInput): Promise<void> {
-    await getDataSource().transaction(async (manager) => {
+    await financialTransaction(async (manager) => {
       if (input.accountId) {
         const [account] = await manager.query(
           "SELECT id FROM accounts WHERE id=? AND user_id=? AND type<>'credit_card' AND balance>=?",
@@ -67,7 +149,7 @@ export class InvestmentRepository {
     });
   }
   async event(userId: number, input: InvestmentEventInput): Promise<void> {
-    await getDataSource().transaction(async (manager) => {
+    await financialTransaction(async (manager) => {
       const previous = await manager.query(
         'SELECT investment_id,account_id,kind,amount_cents,event_date FROM investment_events WHERE user_id=? AND request_id=?',
         [userId, input.requestId],
@@ -145,7 +227,7 @@ export class InvestmentRepository {
     );
   }
   async remove(userId: number, id: number): Promise<void> {
-    await getDataSource().transaction(async (manager) => {
+    await financialTransaction(async (manager) => {
       const [count] = await manager.query(
         'SELECT COUNT(*) AS count FROM investment_events WHERE investment_id=? AND user_id=?',
         [id, userId],

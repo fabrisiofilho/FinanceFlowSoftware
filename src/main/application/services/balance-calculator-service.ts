@@ -1,3 +1,4 @@
+import { balanceImpactCents } from '@shared/finance/ledger';
 import { AccountRepository } from '../repositories/account-repository';
 import { TransactionRepository } from '../repositories/transaction-repository';
 import { TransactionType } from '../entities/transaction.entity';
@@ -33,16 +34,7 @@ export class BalanceCalculatorService {
     type: TransactionType,
     amount: number,
   ): number {
-    const numericAmount = Number(amount);
-
-    // Validar que o valor é um número válido e positivo
-    if (isNaN(numericAmount) || numericAmount < 0) {
-      logger.warning(`Valor inválido detectado: ${amount}, usando 0`);
-      return 0;
-    }
-
-    const normalizedAmount = Math.abs(numericAmount);
-    return type === 'income' ? normalizedAmount : -normalizedAmount;
+    return balanceImpactCents(type, amount) / 100;
   }
   async updateBalanceAfterCreate(
     userId: number,

@@ -2,7 +2,7 @@
 
 Aplicativo desktop para gerenciar ganhos e gastos mensais, derivado do FinanceFlowSoftware de fabrisiofilho.
 
-Interface somente dark neutro, com cards ampliáveis, busca nos detalhes e menu agrupado. Em **Investimentos**, cadastre o valor aplicado, registre ou corrija rendimentos mensais e simule uma taxa mensal definida por você por até 360 meses. A simulação é separada dos registros reais; não calcula automaticamente CDI, impostos, resgates ou novos aportes.
+Interface somente dark neutro, com expansão opcional de histórico, consultas paginadas e menu agrupado. Em **Investimentos**, cadastre o valor aplicado, registre ou corrija rendimentos mensais e simule uma taxa mensal definida por você por até 360 meses. A simulação é separada dos registros reais; não calcula automaticamente CDI, impostos, resgates ou novos aportes.
 
 O sininho oferece preferências, avisos por categoria, orçamento, saldo, vencimento, metas, recorrências, fechamento de fatura e lembretes de rendimento pendente. A avaliação ocorre com o aplicativo aberto e evita avisos automáticos duplicados.
 
@@ -15,7 +15,9 @@ npm ci
 npm run dev
 ```
 
-No primeiro acesso, crie um usuário local. Depois, cadastre uma conta financeira e categorias; use Transações para registrar receitas e despesas. O painel permite selecionar o mês de referência. Os dados são locais, sem integração bancária.
+No primeiro acesso, crie um usuário local. O guia de primeiros passos orienta o cadastro da conta; as categorias comuns já vêm com ícones. Use Transações para registrar receitas e despesas. O painel permite selecionar o mês de referência. Os dados são locais, sem integração bancária.
+
+Consulte as [novidades da versão 2.1.0](docs/RELEASE-2.1.0.md): cadastros em modal, filtros múltiplos, rolagem contínua, imagens e cores de contas, categorias iniciais, guia persistente e fundação financeira compartilhada. A migração de 2.0.x preserva os dados do esquema 3.
 
 ## Funcionalidades disponíveis no código
 
@@ -30,7 +32,7 @@ Na versão 2.0.0 há backup/restauração integral criptografada em Configuraç�
 
 ## Desenvolvimento
 
-Revisão de 02/11/2026: consulte a [auditoria funcional e arquitetural](docs/REVISAO-COMPLETA-2026-11-02.md) e o [plano Android/iPhone com React Native e Google Sheets optativo](docs/PLANO-MOBILE-GOOGLE-SHEETS.md). A revisão registra defeitos ainda pendentes, custos, etapas e critérios de aceite. Mobile e sincronização não estão implementados na versão 2.0.1. A [decisão proposta](docs/decisions/005-mobile-offline-google-sheets.md) prioriza uso offline e primeiro APK sem servidor próprio.
+Revisão de 02/11/2026: consulte a [auditoria funcional e arquitetural](docs/REVISAO-COMPLETA-2026-11-02.md) e o [plano Android/iPhone com React Native e Google Sheets optativo](docs/PLANO-MOBILE-GOOGLE-SHEETS.md). A revisão registra defeitos, custos, etapas e critérios de aceite. As correções e limites da evolução atual estão na [entrega 2.1.0](docs/ENTREGA-2.1.0.md). Mobile e sincronização ainda não estão implementados. A [decisão proposta](docs/decisions/005-mobile-offline-google-sheets.md) prioriza uso offline e primeiro APK sem servidor próprio.
 
 A reestruturação incremental segue [o plano V2](docs/REESTRUTURACAO-V2.md), com [inventário verificável](docs/INVENTARIO-V2.json). O menu agrupa as telas em Visão geral, Movimentações, Contas e cartões, Investimentos, Planejamento, Análises, Configurações e Ajuda. As rotas especializadas permanecem disponíveis.
 

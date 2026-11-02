@@ -1,4 +1,5 @@
 import { PageHeader } from '@renderer/components/PageHeader';
+import { QuickCreate } from '@renderer/components/QuickCreate';
 import { ExpandableCard as Card } from '@renderer/components/ExpandableCard';
 import { ExpandableCard as Paper } from '@renderer/components/ExpandableCard';
 import { DateStringField } from '@renderer/components/Form/DatePicker/DateStringField';
@@ -180,6 +181,7 @@ const rowExcludedStyle = {
 export function BankImportPage() {
   const [step, setStep] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [quickAccount, setQuickAccount] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -485,6 +487,17 @@ export function BankImportPage() {
         }
       />
 
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <strong>Como importar suas transações</strong>
+        <br />
+        Exporte um CSV no seu banco e escolha a conta que receberá os
+        lançamentos. Na próxima etapa, associe as colunas de descrição, valor e
+        data, confira o formato das datas e dos valores e indique como
+        identificar receitas e despesas. Revise cada linha, corrija as
+        categorias e exclua registros que já estão no Contabily para evitar
+        duplicação. Nenhum lançamento é salvo antes da confirmação. A importação
+        não conecta nem sincroniza sua conta bancária.
+      </Alert>
       <Stepper activeStep={step} sx={{ mb: 4 }}>
         {STEPS.map((label) => (
           <Step key={label}>
@@ -598,6 +611,8 @@ export function BankImportPage() {
               </TextField>
               <SelectInput
                 label="Conta Destino"
+                onCreate={() => setQuickAccount(true)}
+                createLabel="Cadastrar conta"
                 value={config.defaultAccountId || ''}
                 items={accounts.map((a) => ({ value: a.id, label: a.name }))}
                 onChange={(e) =>
@@ -937,6 +952,20 @@ export function BankImportPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      {quickAccount && (
+        <QuickCreate
+          kind="account"
+          allowedAccountTypes={['checking', 'savings', 'wallet']}
+          onClose={() => setQuickAccount(false)}
+          onAccount={(account) => {
+            setAccounts((rows) => [...rows, account]);
+            setConfig((previous) => ({
+              ...previous,
+              defaultAccountId: account.id,
+            }));
+          }}
+        />
+      )}
     </ImportContainer>
   );
 }

@@ -1,3 +1,5 @@
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
+import { moneyColumn } from '@main/infrastructure/database/money-column';
 import { AccountEntity } from '../entities/account.entity';
 import { logger } from '@main/infrastructure/log/logger';
 import {
@@ -26,11 +28,44 @@ export class AccountService {
       creditLimit: entity.creditLimit ? Number(entity.creditLimit) : undefined,
       closingDay: entity.closingDay ?? undefined,
       cardColor: entity.cardColor ?? undefined,
+      imageData: entity.imageData,
+      dueDay: entity.dueDay,
       cardBrand: entity.cardBrand as CardBrand | undefined,
       bankName: entity.bankName ?? undefined,
       createdAt: entity.createdAt ?? new Date(),
       updatedAt: entity.updatedAt ?? new Date(),
     };
+  }
+  private validateIdentity(
+    data: CreateAccountInput | UpdateAccountInput,
+  ): void {
+    if (data.cardColor !== undefined && !/^#[0-9a-f]{6}$/i.test(data.cardColor))
+      throw new Error('Cor inválida.');
+    if (
+      data.dueDay !== undefined &&
+      (!Number.isInteger(data.dueDay) || data.dueDay < 1 || data.dueDay > 31)
+    )
+      throw new Error('Vencimento deve estar entre 1 e 31.');
+    if (data.imageData != null) {
+      if (
+        typeof data.imageData !== 'string' ||
+        data.imageData.length > 700000 ||
+        !/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/]+={0,2}$/i.test(
+          data.imageData,
+        )
+      )
+        throw new Error('Use imagem PNG, JPEG ou WebP de até 500 KB.');
+      const bytes = Buffer.from(data.imageData.split(',')[1], 'base64');
+      const valid =
+        bytes
+          .subarray(0, 8)
+          .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
+        (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) ||
+        (bytes.toString('ascii', 0, 4) === 'RIFF' &&
+          bytes.toString('ascii', 8, 12) === 'WEBP');
+      if (!valid || bytes.length > 512000)
+        throw new Error('Imagem inválida ou muito grande.');
+    }
   }
   private validateCreateInput(data: CreateAccountInput): void {
     if (!data.name || data.name.trim().length === 0) {
@@ -63,6 +98,7 @@ export class AccountService {
         );
       }
       if (
+        !Number.isInteger(data.closingDay) ||
         data.closingDay < AccountService.MIN_CLOSING_DAY ||
         data.closingDay > AccountService.MAX_CLOSING_DAY
       ) {
@@ -92,6 +128,7 @@ export class AccountService {
       }
       if (data.closingDay !== undefined) {
         if (
+          !Number.isInteger(data.closingDay) ||
           data.closingDay < AccountService.MIN_CLOSING_DAY ||
           data.closingDay > AccountService.MAX_CLOSING_DAY
         ) {
@@ -105,11 +142,16 @@ export class AccountService {
   async create(userId: number, data: CreateAccountInput): Promise<Account> {
     logger.info('Criando nova conta para usuário:', userId);
     this.validateCreateInput(data);
+    this.validateIdentity(data);
     const accountData: Partial<AccountEntity> = {
       name: data.name.trim(),
       type: data.type,
       balance: data.balance ?? 0,
       initialBalance: data.balance ?? 0,
+      imageData: data.imageData,
+      cardColor: data.cardColor,
+      bankName: data.bankName,
+      dueDay: data.dueDay,
     };
     if (data.type === 'credit_card') {
       accountData.creditLimit = data.creditLimit;
@@ -136,7 +178,17 @@ export class AccountService {
       throw new Error('Conta não encontrada');
     }
     this.validateUpdateInput(data, existingAccount.type as AccountType);
+    this.validateIdentity(data);
     const updateData: Partial<AccountEntity> = {};
+    for (const key of [
+      'imageData',
+      'cardColor',
+      'bankName',
+      'dueDay',
+    ] as const) {
+      if (data[key] !== undefined)
+        Object.assign(updateData, { [key]: data[key] });
+    }
     if (data.name !== undefined) {
       updateData.name = data.name.trim();
     }
@@ -214,13 +266,25 @@ export class AccountService {
     id: number,
     newBalance: number,
   ): Promise<void> {
-    const account = await this.accountRepository.findById(id, userId);
-    if (!account) {
-      throw new Error('Conta não encontrada');
-    }
-    await this.accountRepository.updateBalance(id, userId, newBalance);
-    logger.info(`Saldo da conta ${id} atualizado para ${newBalance}`);
+    const cents = moneyColumn.to(newBalance) as number;
+    await financialTransaction(async (manager) => {
+      const account = await manager
+        .getRepository(AccountEntity)
+        .findOneBy({ id, userId });
+      if (!account) throw new Error('Conta não encontrada');
+      const adjustment = cents - Math.round(account.balance * 100);
+      if (!Number.isSafeInteger(adjustment))
+        throw new Error('Ajuste excede o limite monetário.');
+      await manager.query(
+        'INSERT INTO balance_adjustments(user_id,account_id,delta_cents,reason) VALUES(?,?,?,?)',
+        [userId, id, adjustment, 'Ajuste manual de saldo'],
+      );
+      await manager
+        .getRepository(AccountEntity)
+        .update({ id, userId }, { balance: newBalance });
+    });
   }
+
   async findCreditCards(userId: number): Promise<Account[]> {
     const accounts = await this.accountRepository.findCreditCards(userId);
     return accounts.map((entity) => this.mapEntityToAccount(entity));

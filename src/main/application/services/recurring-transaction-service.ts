@@ -1,3 +1,6 @@
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
+import { requireAccountOwner, requireCategoryOwner } from './ownership';
+import { validateEntryCreate } from '@shared/finance/commands';
 import { AccountRepository } from '../repositories/account-repository';
 import { TransactionRepository } from '../repositories/transaction-repository';
 import { CreditCardService } from './credit-card-service';
@@ -20,6 +23,44 @@ import { BalanceCalculatorService } from './balance-calculator-service';
 import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 
 export class RecurringTransactionService {
+  private async validate(
+    userId: number,
+    data: CreateRecurringTransactionInput,
+  ): Promise<void> {
+    validateEntryCreate({
+      ...data,
+      transactionDate: data.startDate,
+      recurrence: 'once',
+    });
+    if (
+      !['daily', 'weekly', 'biweekly', 'monthly', 'yearly'].includes(
+        data.frequency,
+      )
+    )
+      throw new Error('Frequência inválida.');
+    if (
+      data.dayOfMonth != null &&
+      (!Number.isInteger(data.dayOfMonth) ||
+        data.dayOfMonth < 1 ||
+        data.dayOfMonth > 31)
+    )
+      throw new Error('Dia do mês inválido.');
+    if (
+      data.dayOfWeek != null &&
+      (!Number.isInteger(data.dayOfWeek) ||
+        data.dayOfWeek < 0 ||
+        data.dayOfWeek > 6)
+    )
+      throw new Error('Dia da semana inválido.');
+    if (
+      data.endDate &&
+      (!parseDateSafe(data.endDate) ||
+        parseDateSafe(data.endDate)! < parseDateSafe(data.startDate)!)
+    )
+      throw new Error('Data final deve ser igual ou posterior à inicial.');
+    await requireAccountOwner(userId, data.accountId);
+    await requireCategoryOwner(userId, data.categoryId, data.type);
+  }
   private static readonly generating = new Map<
     number,
     Promise<RecurringGenerationResult>
@@ -71,6 +112,7 @@ export class RecurringTransactionService {
     data: CreateRecurringTransactionInput,
   ): Promise<RecurringTransaction> {
     logger.info('Criando transação recorrente para usuário:', userId);
+    await this.validate(userId, data);
 
     const nextOccurrence = this.calculateNextOccurrence(
       parseDateSafe(data.startDate) ?? new Date(),
@@ -121,6 +163,7 @@ export class RecurringTransactionService {
       throw new Error('Transação recorrente não encontrada');
     }
 
+    await this.validate(userId, { ...recurring, ...data });
     Object.assign(recurring, {
       ...data,
       endDate: data.endDate ? parseDateSafe(data.endDate) : recurring.endDate,
@@ -295,13 +338,14 @@ export class RecurringTransactionService {
     userId: number,
     recurring: RecurringTransactionEntity,
   ): Promise<TransactionEntity> {
-    return getDataSource().transaction(async (manager) => {
+    return financialTransaction(async (manager) => {
       const rules = manager.getRepository(RecurringTransactionEntity);
       const current = await rules.findOne({
         where: { id: recurring.id, userId },
       });
       if (!current || !current.isActive)
         throw new Error('Regra recorrente indisponível.');
+      await this.validate(userId, current);
       const date = parseDateSafe(current.nextOccurrence)!;
       const entries = manager.getRepository(TransactionEntity);
       const existing = await entries.findOne({
@@ -338,7 +382,7 @@ export class RecurringTransactionService {
         .getRepository(AccountEntity)
         .findOne({ where: { id: current.accountId, userId } });
       if (account?.type === 'credit_card' && current.type === 'expense')
-        await new CreditCardService().autoLinkTransactionToInvoice(
+        await new CreditCardService(manager).autoLinkTransactionToInvoice(
           userId,
           entity.id,
           entity.accountId,

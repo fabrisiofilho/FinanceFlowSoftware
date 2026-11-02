@@ -1,11 +1,13 @@
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
+import { QuickCreate } from '@renderer/components/QuickCreate';
 import { AppAlert } from '@renderer/components/Feedback';
 import { Input as TextField } from '@renderer/components/Form/Input';
 
 import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
+  Button,
   Typography,
   IconButton,
   Tooltip,
@@ -77,6 +79,7 @@ interface PaymentFormData {
 export function CreditCardsPage() {
   const [creditCards, setCreditCards] = useState<CreditCardSummary[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [quick, setQuick] = useState<'card' | 'payment' | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -88,6 +91,7 @@ export function CreditCardsPage() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<PaymentFormData>({
     defaultValues: {
@@ -174,6 +178,9 @@ export function CreditCardsPage() {
         actions={
           <>
             <Stack direction="row" spacing={1}>
+              <Button variant="contained" onClick={() => setQuick('card')}>
+                Cadastrar cartão
+              </Button>
               <Tooltip title="Atualizar">
                 <IconButton onClick={loadData} size="small">
                   <RefreshIcon />
@@ -401,9 +408,33 @@ export function CreditCardsPage() {
                 />
               </>
             )}
+            <Button onClick={() => setQuick('payment')}>
+              + Cadastrar conta de pagamento
+            </Button>
           </PaymentFormContainer>
         </Modal>
       </ContentLoading>
+      {quick && (
+        <QuickCreate
+          kind="account"
+          initialAccountType={quick === 'card' ? 'credit_card' : 'checking'}
+          allowedAccountTypes={
+            quick === 'card'
+              ? ['credit_card']
+              : ['checking', 'savings', 'wallet']
+          }
+          onClose={() => setQuick(null)}
+          onAccount={(account) => {
+            if (quick === 'card') void loadData();
+            else {
+              setAccounts((rows) => [...rows, account]);
+              setValue('paymentAccountId', account.id, {
+                shouldValidate: true,
+              });
+            }
+          }}
+        />
+      )}
     </CreditCardsContainer>
   );
 }

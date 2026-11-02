@@ -12,6 +12,19 @@ const __dirname = path.join(root, '.qa');
 fs.mkdirSync(__dirname, { recursive: true });
 app.setPath('userData', path.join(__dirname, 'ui-loading-user-data'));
 const configuration = {};
+const requests = [];
+const accountRows = Array.from({ length: 30 }, (_, index) => ({
+  id: 1000 + index,
+  name: 'Conta paginada ' + index,
+  type: 'checking',
+  balance: index === 0 ? 3800 : 0,
+  cardColor: '#00bcd4',
+  imageData:
+    index === 29
+      ? 'data:image/png;base64,' +
+        fs.readFileSync(path.join(root, 'build/icon.png')).toString('base64')
+      : null,
+}));
 vm.runInNewContext(
   ts.transpileModule(
     fs.readFileSync(
@@ -27,7 +40,61 @@ for (const { prefix, methods } of Object.values(
 ))
   for (const method of methods)
     ipcMain.handle(`${prefix}:${method}`, async (_, ...args) => {
-      if (prefix === 'investment' && method === 'list')
+      requests.push({ prefix, method, input: args[0] });
+      if (prefix === 'category' && method === 'findAll')
+        return {
+          success: true,
+          data: [
+            {
+              id: 100,
+              name: 'Alimentação',
+              type: 'expense',
+              icon: 'Restaurant',
+            },
+            { id: 101, name: 'Salário', type: 'income', icon: 'Payments' },
+          ],
+        };
+      if (prefix === 'category' && method === 'create')
+        return {
+          success: true,
+          data: { id: 600, ...args[0], isDefault: false },
+        };
+      if (prefix === 'account' && method === 'create')
+        return {
+          success: true,
+          data: {
+            id: 601,
+            ...args[0],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        };
+      if (prefix === 'onboarding')
+        return {
+          success: true,
+          data: { step: 0, completed: false, ready: false },
+        };
+      if (prefix === 'listing') {
+        const query = args[0],
+          rows = (query.kind === 'accounts' ? accountRows : []).filter(
+            (row) =>
+              (!query.search || row.name.includes(query.search)) &&
+              (!query.types?.length || query.types.includes(row.type)),
+          );
+        const page = query.page ?? 0,
+          size = query.size ?? 24;
+        return {
+          success: true,
+          data: {
+            content: rows.slice(page * size, (page + 1) * size),
+            page,
+            size,
+            totalElements: rows.length,
+            totalPages: Math.ceil(rows.length / size),
+          },
+        };
+      }
+      if (prefix === 'investment' && ['list', 'query'].includes(method))
         return {
           success: true,
           data: {
@@ -45,6 +112,14 @@ for (const { prefix, methods } of Object.values(
             yields: [
               { id: 1, investmentId: 1, month: '2026-10', amountCents: 20000 },
             ],
+            page: 0,
+            totalElements: 1,
+            totalPages: 1,
+            summary: {
+              principalCents: 3000000,
+              yieldCents: 20000,
+              balanceCents: 3020000,
+            },
           },
         };
       if (prefix === 'autoUpdater')
@@ -97,7 +172,8 @@ for (const { prefix, methods } of Object.values(
           },
         };
       if (prefix === 'report' && method === 'generateReport') {
-        const type = args[0]?.type;
+        const type =
+          args[0]?.types?.length === 1 ? args[0].types[0] : args[0]?.type;
         await new Promise((r) =>
           setTimeout(
             r,
@@ -181,7 +257,7 @@ app
       webPreferences: {
         preload: path.join(appRoot, 'out/preload/index.js'),
         contextIsolation: true,
-        sandbox: false,
+        sandbox: true,
         backgroundThrottling: false,
         offscreen: true,
       },
@@ -224,7 +300,15 @@ app
     );
     await new Promise((r) => setTimeout(r, 2400));
 
-    const run = (code) => window.webContents.executeJavaScript(code);
+    const run = async (code) => {
+      try {
+        return await window.webContents.executeJavaScript(code);
+      } catch (error) {
+        console.error('Script QA:', code.slice(0, 300));
+        console.error('Console QA:', errors.slice(-2));
+        throw error;
+      }
+    };
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const assert = (value, message) => {
       if (!value) throw new Error(message);
@@ -276,6 +360,127 @@ app
           path.join(__dirname, 'v2-settings.png'),
           (await window.webContents.capturePage()).toPNG(),
         );
+      if (route === 'accounts') {
+        assert(
+          await run(
+            'document.querySelectorAll(\'button[aria-label="Editar conta"]\').length===24',
+          ),
+          'board carrega só a primeira página',
+        );
+        await run(
+          "document.getElementById('main-route-section').scrollTop=document.getElementById('main-route-section').scrollHeight",
+        );
+        await sleep(300);
+        assert(
+          await run(
+            'document.querySelectorAll(\'button[aria-label="Editar conta"]\').length===30',
+          ),
+          'rolagem contínua carrega a próxima página',
+        );
+        assert(
+          requests.some(
+            (request) =>
+              request.prefix === 'listing' &&
+              request.input.kind === 'accounts' &&
+              request.input.page === 1,
+          ),
+          'segunda página solicitada ao backend',
+        );
+        await run(
+          "(()=>{const label=Array.from(document.querySelectorAll('label')).find(label=>label.textContent==='Buscar registros');const input=document.getElementById(label.htmlFor);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Conta paginada 29');input.dispatchEvent(new Event('input',{bubbles:true}));})()",
+        );
+        await sleep(450);
+        assert(
+          await run(
+            'document.querySelectorAll(\'button[aria-label="Editar conta"]\').length===1',
+          ),
+          'busca no backend substitui as páginas anteriores',
+        );
+        assert(
+          await run(
+            "Array.from(document.images).some(image=>image.alt==='Conta paginada 29'&&image.naturalWidth>0)",
+          ),
+          'logo da conta renderizada',
+        );
+        fs.writeFileSync(
+          path.join(__dirname, 'v2-accounts.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+
+        assert(
+          await run(
+            'document.querySelectorAll(\'button[aria-label="Ampliar card"]\').length===0',
+          ),
+          'indicadores e contas sem expansão desnecessária',
+        );
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Nova Conta').click()",
+        );
+        await sleep(150);
+        assert(
+          await run(
+            "document.querySelector('[role=dialog]').textContent.includes('Cor de identificação')",
+          ),
+          'cor disponível em conta corrente',
+        );
+        await run(
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(button=>button.textContent==='Cancelar').click()",
+        );
+        await sleep(100);
+      }
+      if (route === 'dashboard') {
+        assert(
+          await run(
+            "document.querySelector('[aria-label=\"Primeiros passos\"]')?.textContent.includes('Retomar guia')",
+          ),
+          'guia pendente aparece na visão geral',
+        );
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Retomar guia').click()",
+        );
+        await sleep(150);
+        assert(
+          await run("location.hash.includes('/panel/accounts')"),
+          'guia abre a tela da etapa',
+        );
+        assert(
+          await run(
+            "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Concluir etapa e avançar').disabled",
+          ),
+          'guia exige cadastro antes de avançar',
+        );
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Continuar depois').click();location.hash='/panel/dashboard'",
+        );
+        await sleep(650);
+        await run(
+          'document.querySelector(\'button[aria-label="Ampliar card"]\').click()',
+        );
+        await sleep(180);
+        assert(
+          await run(
+            "document.querySelector('[role=dialog]').textContent.includes('Buscar lançamentos')",
+          ),
+          'expansão útil usa listagem própria',
+        );
+        await run(
+          "(()=>{const input=document.querySelector('[role=dialog] input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'termo inexistente');input.dispatchEvent(new Event('input',{bubbles:true}));})()",
+        );
+        await sleep(450);
+        assert(
+          requests.some(
+            (request) =>
+              request.prefix === 'transaction' &&
+              request.method === 'findAll' &&
+              request.input.search === 'termo inexistente',
+          ),
+          'busca ampliada consulta endpoint',
+        );
+        await run(
+          'document.querySelector(\'button[aria-label="Fechar detalhes"]\').click()',
+        );
+        await sleep(120);
+      }
       if (route === 'dashboard')
         fs.writeFileSync(
           path.join(__dirname, 'v2-dashboard.png'),
@@ -339,6 +544,46 @@ app
             (await window.webContents.capturePage()).toPNG(),
           );
         }
+        await run(
+          `(()=>{const input=document.querySelector('[role=dialog] input[name=description]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Lançamento preservado');input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+        );
+        for (const [field, label, id] of [
+          ['categoryId', 'Cadastrar categoria', '600'],
+          ['accountId', 'Cadastrar conta', '601'],
+        ]) {
+          await run(
+            `document.querySelector('[role=dialog] input[name=${field}]').parentElement.querySelector('[role=combobox]').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))`,
+          );
+          await sleep(120);
+          await run(
+            `Array.from(document.querySelectorAll('[role=option]')).find(option=>option.textContent.includes('${label}')).click()`,
+          );
+          await sleep(150);
+          assert(
+            await run("document.querySelectorAll('[role=dialog]').length===2"),
+            'cadastro rápido abre modal adicional de ' + field,
+          );
+          await run(
+            `(()=>{const dialog=Array.from(document.querySelectorAll('[role=dialog]')).at(-1);const input=dialog.querySelector('input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Cadastro na hora');input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+          );
+          await sleep(70);
+          await run(
+            "Array.from(document.querySelectorAll('[role=dialog] button')).find(button=>button.textContent==='Cadastrar e selecionar').click()",
+          );
+          await sleep(250);
+          assert(
+            await run(
+              `document.querySelector('[role=dialog] input[name=${field}]').value==='${id}'`,
+            ),
+            'novo cadastro selecionado em ' + field,
+          );
+          assert(
+            await run(
+              "document.querySelector('[role=dialog] input[name=description]').value==='Lançamento preservado'",
+            ),
+            'cadastro rápido preserva lançamento em edição',
+          );
+        }
         fs.writeFileSync(
           path.join(__dirname, 'v2-transaction-form.png'),
           (await window.webContents.capturePage()).toPNG(),
@@ -378,7 +623,7 @@ app
     await run("location.hash='/panel/reports'");
     await sleep(600);
     await run(
-      "window.qaHeader=document.querySelector('[data-page-header]');window.qaCards=Array.from(document.querySelectorAll('[data-card-skeleton]')).map(s=>({node:s.parentElement,width:s.parentElement.getBoundingClientRect().width,height:s.parentElement.getBoundingClientRect().height}));",
+      "window.qaHeader=document.querySelector('[data-page-header]');window.qaCards=Array.from(document.querySelectorAll('[data-card-skeleton]')).filter(s=>!s.closest('[data-filter-panel]')).map(s=>({node:s.parentElement,width:s.parentElement.getBoundingClientRect().width,height:s.parentElement.getBoundingClientRect().height}));",
     );
     assert(
       await run(
@@ -386,15 +631,21 @@ app
       ),
       'área Análises ativa na rota antiga de relatórios',
     );
-    const select = async (value) => {
+    const select = async (value, append = false) => {
+      if (!append) {
+        await run(
+          "Array.from(document.querySelectorAll('[role=combobox]')).at(-1).closest('.MuiAutocomplete-root').querySelector('.MuiAutocomplete-clearIndicator')?.click()",
+        );
+        await sleep(40);
+      }
+      if (!value) return;
       await run(
-        "Array.from(document.querySelectorAll('[role=combobox]')).at(-1).dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))",
+        "Array.from(document.querySelectorAll('[role=combobox]')).at(-1).closest('.MuiAutocomplete-root').querySelector('.MuiAutocomplete-popupIndicator').click()",
       );
-      await sleep(40);
+      await sleep(70);
+      const label = value === 'income' ? 'Receitas' : 'Despesas';
       await run(
-        'document.querySelector(\'[role=option][data-value="' +
-          value +
-          '"]\').click()',
+        `Array.from(document.querySelectorAll('[role=option]')).find(option=>option.textContent==='${label}').click()`,
       );
     };
     await select('income');
@@ -429,6 +680,18 @@ app
     fs.writeFileSync(
       path.join(__dirname, 'stable-reports.png'),
       (await window.webContents.capturePage()).toPNG(),
+    );
+    await select('income', true);
+    await sleep(120);
+    const combined = requests
+      .filter(
+        (request) =>
+          request.prefix === 'report' && request.method === 'generateReport',
+      )
+      .at(-1).input.types;
+    assert(
+      combined.includes('income') && combined.includes('expense'),
+      'filtro múltiplo envia os dois tipos ao backend',
     );
     await select('');
     await sleep(70);

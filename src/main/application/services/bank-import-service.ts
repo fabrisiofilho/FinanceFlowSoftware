@@ -1,3 +1,4 @@
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { BankImportEntity } from '../entities/bank-import.entity';
@@ -85,6 +86,8 @@ export class BankImportService {
     data: CreateBankImportInput,
   ): Promise<BankImport> {
     logger.info('Criando importação bancária para usuário:', userId);
+    if (!(await new AccountRepository().findById(data.accountId, userId)))
+      throw new Error('Conta não encontrada.');
 
     const bankImport = this.importRepository.create({
       userId,
@@ -219,6 +222,15 @@ export class BankImportService {
 
           case 'match':
             if (action.matchedTransactionId) {
+              const match = await this.transactionRepository.findOne({
+                where: {
+                  id: action.matchedTransactionId,
+                  account: { userId },
+                  accountId: bankImport.accountId,
+                },
+              });
+              if (!match)
+                throw new Error('Lançamento de conciliação não encontrado');
               importTx.matchedTransactionId = action.matchedTransactionId;
               importTx.status = 'matched';
               result.matched++;
@@ -263,8 +275,11 @@ export class BankImportService {
   }
 
   async getImportTransactions(
+    userId: number,
     importId: number,
   ): Promise<BankImportTransaction[]> {
+    if (!(await this.getImport(userId, importId)))
+      throw new Error('Importação não encontrada');
     const transactions = await this.importTransactionRepository.find({
       where: { importId },
       relations: ['suggestedCategory'],
@@ -278,6 +293,10 @@ export class BankImportService {
     userId: number,
     importId: number,
   ): Promise<ReconciliationSuggestion[]> {
+    if (!(await this.getImport(userId, importId)))
+      throw new Error('Importação não encontrada');
+    if (!(await this.getImport(userId, importId)))
+      throw new Error('Importação não encontrada');
     const importTxs = await this.importTransactionRepository.find({
       where: { importId, status: 'pending' },
     });
@@ -601,7 +620,7 @@ export class BankImportService {
     importTx: BankImportTransactionEntity,
     categoryId?: number,
   ): Promise<void> {
-    await getDataSource().transaction(async (manager) => {
+    await financialTransaction(async (manager) => {
       const imported = manager.getRepository(BankImportTransactionEntity);
       const current = await imported.findOneByOrFail({
         id: importTx.id,
@@ -615,6 +634,7 @@ export class BankImportService {
         accounts,
         new CategoryRepository(manager),
         new BalanceCalculatorService(accounts, entries),
+        manager,
       );
       const category = categoryId ?? current.suggestedCategoryId;
       if (!category)

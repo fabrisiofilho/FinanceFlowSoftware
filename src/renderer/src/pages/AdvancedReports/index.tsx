@@ -30,6 +30,7 @@ import {
 } from './styles';
 
 interface FinancialHealth {
+  hasData?: boolean;
   score: number;
   savingsRate: number;
   expenseToIncomeRatio: number;
@@ -111,7 +112,13 @@ export function AdvancedReportsPage() {
         <Tab icon={<TrendIcon />} label="Tendências" />
       </Tabs>
       <ContentLoading loading={loading} initial="cards">
-        {tab === 0 && health && (
+        {tab === 0 && health?.hasData === false && (
+          <Alert severity="info">
+            Dados insuficientes. Registre receitas e despesas para avaliar os
+            últimos três meses.
+          </Alert>
+        )}
+        {tab === 0 && health && health.hasData !== false && (
           <Stack spacing={3}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
               <ReportCard sx={{ flex: { md: '0 0 33%' } }}>

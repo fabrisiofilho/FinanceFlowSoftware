@@ -59,6 +59,8 @@ export interface Account {
   creditLimit?: number;
   closingDay?: number;
   cardColor?: string;
+  imageData?: string | null;
+  dueDay?: number;
   cardBrand?: CardBrand;
   bankName?: string;
   createdAt: Date;
@@ -72,6 +74,8 @@ export interface CreateAccountInput {
   creditLimit?: number;
   closingDay?: number;
   cardColor?: string;
+  imageData?: string | null;
+  dueDay?: number;
   cardBrand?: CardBrand;
   bankName?: string;
 }
@@ -81,6 +85,8 @@ export interface UpdateAccountInput {
   creditLimit?: number;
   closingDay?: number;
   cardColor?: string;
+  imageData?: string | null;
+  dueDay?: number;
   cardBrand?: CardBrand;
   bankName?: string;
 }

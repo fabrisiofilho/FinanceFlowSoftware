@@ -1,3 +1,4 @@
+import { TransactionListDetails } from '@renderer/components/TransactionListDetails';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
@@ -335,7 +336,11 @@ export function DashboardPage() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <Card>
+            <Card
+              expandable
+              expandedTitle="Lançamentos"
+              expandedContent={<TransactionListDetails filters={{}} />}
+            >
               <CardContent>
                 <SectionTitle>
                   <Typography variant="h6" fontWeight={600}>

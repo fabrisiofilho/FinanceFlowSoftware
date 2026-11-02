@@ -1,4 +1,14 @@
-# Validação do incremento inicial
+# Histórico de validação do Contabily
+
+## Usabilidade e fundação financeira — 2.1.0, 2026-11-02
+
+Passaram `npm run typecheck`, os 31 testes unitários, `npm run test:sqlite`, `npm run test:orm`, build e o ensaio Electron das 18 telas. Lint: zero erros e os 16 avisos preexistentes.
+
+Regressões adicionais cobrem proprietário de anexos/etiquetas/importações e cadastros vinculados, rejeição de sessão/frame inválido no IPC, contribuições simultâneas em metas, vínculo de fatura e recálculo das duas faturas, vencimento em fevereiro, ajuste persistente de saldo, prefixos de fórmulas no CSV, categorias idempotentes, filtro múltiplo, páginas e consulta de investimentos. A migração 011 preservou saldo e IDs de uma base já preenchida do esquema 3. Snapshot real preservou logo, ajuste e etapa do guia depois de aguardar uma operação financeira.
+
+O ensaio de interface usa sandbox e dados fictícios. Confere guia entre telas, cadastro em modal com seleção e preservação dos campos, primeira/segunda página do board, busca no endpoint, imagem da conta, expansão opcional, filtros múltiplos e respostas fora de ordem, além das verificações anteriores. Capturas locais ficam em `.qa`; não são dados pessoais.
+
+Escopo, decisões por tela e limitações estão em [ENTREGA-2.1.0.md](ENTREGA-2.1.0.md). As seções anteriores abaixo são registros históricos; não devem ser interpretadas como o inventário atual. Ainda não se afirma homologação integral de todo formulário, sincronização ou ciclo de atualização em outro computador.
 
 ## Cores e logo — 2.0.1, 2026-11-02
 

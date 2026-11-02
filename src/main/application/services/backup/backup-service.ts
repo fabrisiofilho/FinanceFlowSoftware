@@ -1,4 +1,5 @@
 import { embedAttachments, restoreAttachments } from './backup-attachments';
+import { serializeFinancialOperation } from '@main/infrastructure/database/financial-transaction';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -15,6 +16,11 @@ import {
 export class BackupService {
   constructor(private readonly attachmentsDirectory?: string) {}
   async export(file: string, password: string): Promise<void> {
+    return serializeFinancialOperation(() =>
+      this.exportSnapshot(file, password),
+    );
+  }
+  private async exportSnapshot(file: string, password: string): Promise<void> {
     const directory = fs.mkdtempSync(
       path.join(os.tmpdir(), 'contabily-backup-'),
     );
@@ -35,6 +41,11 @@ export class BackupService {
     }
   }
   async restore(file: string, password: string): Promise<void> {
+    return serializeFinancialOperation(() =>
+      this.restoreSnapshot(file, password),
+    );
+  }
+  private async restoreSnapshot(file: string, password: string): Promise<void> {
     if (fs.statSync(file).size > 384 * 1024 * 1024)
       throw new Error('Backup muito grande.');
     const bytes = decryptBackup(fs.readFileSync(file, 'utf8'), password);

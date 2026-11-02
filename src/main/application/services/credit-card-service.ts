@@ -1,4 +1,9 @@
-import { getDataSource } from '@main/infrastructure/database/data-source';
+import { assertInvoiceLink } from '@shared/finance/ledger';
+import type { EntityManager } from 'typeorm';
+import { CreditCardInvoiceRepository } from '../repositories/credit-card-invoice-repository';
+import { AccountRepository } from '../repositories/account-repository';
+import { TransactionRepository } from '../repositories/transaction-repository';
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { amountToCents } from '@shared/finance/entry-schedule';
 import {
   CreditCardInvoiceEntity,
@@ -17,14 +22,21 @@ import {
 import { repositoryCache } from '../repositories/repository-cache';
 import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
 export class CreditCardService {
+  constructor(private readonly manager?: EntityManager) {}
   private get invoiceRepository() {
-    return repositoryCache.creditCardInvoiceRepository;
+    return this.manager
+      ? new CreditCardInvoiceRepository(this.manager)
+      : repositoryCache.creditCardInvoiceRepository;
   }
   private get accountRepository() {
-    return repositoryCache.accountRepository;
+    return this.manager
+      ? new AccountRepository(this.manager)
+      : repositoryCache.accountRepository;
   }
   private get transactionRepository() {
-    return repositoryCache.transactionRepository;
+    return this.manager
+      ? new TransactionRepository(this.manager)
+      : repositoryCache.transactionRepository;
   }
   determineInvoiceMonth(
     transactionDate: Date,
@@ -50,7 +62,23 @@ export class CreditCardService {
     year: number,
     month: number,
     closingDay: number,
+    configuredDueDay?: number,
   ): Date {
+    if (configuredDueDay) {
+      const target = new Date(
+        year,
+        month - 1 + (configuredDueDay <= closingDay ? 1 : 0),
+        1,
+      );
+      return new Date(
+        target.getFullYear(),
+        target.getMonth(),
+        Math.min(
+          configuredDueDay,
+          new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate(),
+        ),
+      );
+    }
     const dueDay = closingDay + 10;
     const daysInMonth = new Date(year, month, 0).getDate();
     if (dueDay > daysInMonth) {
@@ -117,6 +145,15 @@ export class CreditCardService {
     year: number,
     month: number,
   ): Promise<CreditCardInvoice> {
+    if (!this.manager)
+      return financialTransaction((manager) =>
+        new CreditCardService(manager).getOrCreateInvoice(
+          userId,
+          accountId,
+          year,
+          month,
+        ),
+      );
     logger.info(
       `Buscando ou criando fatura para ${month}/${year} do cartão ${accountId}`,
     );
@@ -130,7 +167,12 @@ export class CreditCardService {
     if (!account.closingDay) {
       throw new Error('Cartão de crédito sem dia de fechamento configurado');
     }
-    const dueDate = this.calculateDueDate(year, month, account.closingDay);
+    const dueDate = this.calculateDueDate(
+      year,
+      month,
+      account.closingDay,
+      account.dueDay,
+    );
     const invoiceEntity = await this.invoiceRepository.findOrCreate(
       accountId,
       year,
@@ -145,6 +187,14 @@ export class CreditCardService {
     transactionId: number,
     invoiceId: number,
   ): Promise<CreditCardInvoice> {
+    if (!this.manager)
+      return financialTransaction((manager) =>
+        new CreditCardService(manager).linkTransactionToInvoice(
+          userId,
+          transactionId,
+          invoiceId,
+        ),
+      );
     logger.info(`Vinculando transação ${transactionId} à fatura ${invoiceId}`);
     const transaction = await this.transactionRepository.findById(
       transactionId,
@@ -162,9 +212,21 @@ export class CreditCardService {
         'Não é possível vincular transações a uma fatura fechada ou paga',
       );
     }
+    assertInvoiceLink(transaction, invoice);
+    const previousId = transaction.creditCardInvoiceId;
+    if (previousId && previousId !== invoiceId) {
+      const previous = await this.invoiceRepository.findById(
+        previousId,
+        userId,
+      );
+      if (previous?.status !== 'open')
+        throw new Error('A fatura de origem não pode ser alterada.');
+    }
     await this.transactionRepository.updateTransaction(transactionId, userId, {
       creditCardInvoiceId: invoiceId,
     });
+    if (previousId && previousId !== invoiceId)
+      await this.invoiceRepository.recalculateTotalFromTransactions(previousId);
     await this.invoiceRepository.recalculateTotalFromTransactions(invoiceId);
     const updatedInvoice = await this.invoiceRepository.findById(
       invoiceId,
@@ -209,7 +271,7 @@ export class CreditCardService {
     logger.info(`Pagando fatura ${data.invoiceId}`);
     let amountToPay = 0;
     let newBalance = 0;
-    await getDataSource().transaction(async (manager) => {
+    await financialTransaction(async (manager) => {
       const [invoice] = await manager.query(
         'SELECT i.* FROM credit_card_invoices i JOIN accounts a ON a.id=i.account_id WHERE i.id=? AND a.user_id=?',
         [data.invoiceId, userId],

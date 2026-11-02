@@ -1,3 +1,10 @@
+import { AppAlert } from '@renderer/components/Feedback';
+import { QuickCreate } from '@renderer/components/QuickCreate';
+import {
+  useBoardListing,
+  BoardFilters,
+  BoardMore,
+} from '@renderer/components/BoardListing';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { DateStringField } from '@renderer/components/Form/DatePicker/DateStringField';
@@ -66,7 +73,10 @@ export function RecurringTransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quick, setQuick] = useState<'account' | 'category' | null>(null);
+  const [quickField, setQuickField] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -87,18 +97,19 @@ export function RecurringTransactionsPage() {
   const creditCards = accounts.filter((a) => a.type === 'credit_card');
   const isCreditCard = formData.paymentMethod === 'credit';
 
+  const board = useBoardListing('recurring', setRecurrings);
+  const queryFirst = board.first;
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [recRes, catRes, accRes] = await Promise.all([
-      window.electronAPI.recurring.findAll(),
+    const [, catRes, accRes] = await Promise.all([
+      queryFirst(),
       window.electronAPI.category.findAll(),
       window.electronAPI.account.findAll(),
     ]);
-    if (recRes.success && recRes.data) setRecurrings(recRes.data);
     if (catRes.success && catRes.data) setCategories(catRes.data);
     if (accRes.success && accRes.data) setAccounts(accRes.data);
     setLoading(false);
-  }, []);
+  }, [queryFirst]);
 
   useEffect(() => {
     loadData();
@@ -116,6 +127,7 @@ export function RecurringTransactionsPage() {
       !formData.categoryId
     )
       return;
+    setFormError('');
     setFormLoading(true);
     try {
       if (editingId) {
@@ -129,7 +141,14 @@ export function RecurringTransactionsPage() {
           paymentMethod:
             formData.type === 'expense' ? formData.paymentMethod : undefined,
         };
-        await window.electronAPI.recurring.update(editingId, updateData);
+        const response = await window.electronAPI.recurring.update(
+          editingId,
+          updateData,
+        );
+        if (!response.success)
+          throw new Error(
+            response.error || 'Não foi possível salvar a recorrência.',
+          );
       } else {
         const createData: CreateRecurringTransactionInput = {
           description: formData.description,
@@ -143,10 +162,18 @@ export function RecurringTransactionsPage() {
           paymentMethod:
             formData.type === 'expense' ? formData.paymentMethod : undefined,
         };
-        await window.electronAPI.recurring.create(createData);
+        const response = await window.electronAPI.recurring.create(createData);
+        if (!response.success)
+          throw new Error(
+            response.error || 'Não foi possível salvar a recorrência.',
+          );
       }
       closeForm();
       loadData();
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Não foi possível salvar.',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -238,6 +265,13 @@ export function RecurringTransactionsPage() {
           </>
         }
       />
+      <BoardFilters
+        board={board}
+        typeOptions={[
+          { id: 'income', label: 'Receita' },
+          { id: 'expense', label: 'Despesa' },
+        ]}
+      />
       <ContentLoading loading={loading} initial="cards">
         {recurrings.length === 0 ? (
           <Typography color="text.secondary" textAlign="center" py={4}>
@@ -325,6 +359,11 @@ export function RecurringTransactionsPage() {
             {editingId ? 'Editar' : 'Nova'} Transação Recorrente
           </DialogTitle>
           <DialogContent>
+            {formError && (
+              <AppAlert severity="error" sx={{ mb: 2 }}>
+                {formError}
+              </AppAlert>
+            )}
             <Stack spacing={2} mt={1}>
               <TextField
                 label="Descrição"
@@ -399,6 +438,10 @@ export function RecurringTransactionsPage() {
               {isCreditCard && formData.type === 'expense' ? (
                 <SelectInput
                   label="Cartão de Crédito"
+                  onCreate={() => {
+                    setQuick('account');
+                    setQuickField('creditCardId');
+                  }}
                   value={formData.creditCardId}
                   items={creditCards.map((c) => ({
                     value: c.id,
@@ -415,6 +458,10 @@ export function RecurringTransactionsPage() {
               ) : (
                 <SelectInput
                   label="Conta"
+                  onCreate={() => {
+                    setQuick('account');
+                    setQuickField('accountId');
+                  }}
                   value={formData.accountId}
                   items={regularAccounts.map((a) => ({
                     value: a.id,
@@ -431,6 +478,10 @@ export function RecurringTransactionsPage() {
               )}
               <SelectInput
                 label="Categoria"
+                onCreate={() => {
+                  setQuick('category');
+                  setQuickField('categoryId');
+                }}
                 value={formData.categoryId}
                 items={filteredCategories.map((c) => ({
                   value: c.id,
@@ -481,7 +532,32 @@ export function RecurringTransactionsPage() {
             </Button>
           </DialogActions>
         </Dialog>
+        <BoardMore board={board} />
       </ContentLoading>
+      {quick && (
+        <QuickCreate
+          kind={quick}
+          initialAccountType={
+            quickField === 'creditCardId' ? 'credit_card' : 'checking'
+          }
+          type={formData.type}
+          onClose={() => setQuick(null)}
+          onAccount={(account) => {
+            setAccounts((rows) => [...rows, account]);
+            setFormData((previous) => ({
+              ...previous,
+              [quickField]: account.id,
+            }));
+          }}
+          onCategory={(category) => {
+            setCategories((rows) => [...rows, category]);
+            setFormData((previous) => ({
+              ...previous,
+              categoryId: category.id,
+            }));
+          }}
+        />
+      )}
     </RecurringContainer>
   );
 }

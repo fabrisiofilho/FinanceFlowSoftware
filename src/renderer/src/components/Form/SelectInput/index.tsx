@@ -31,6 +31,8 @@ type SelectChangeTarget = {
 
 export type SelectInputProps = TextFieldProps & {
   items: SelectInputItem[];
+  onCreate?: () => void;
+  createLabel?: string;
   loading?: boolean;
   disabled?: boolean;
   objectValue?: boolean;
@@ -40,6 +42,8 @@ export type SelectInputProps = TextFieldProps & {
 
 export const SelectInput = forwardRef(function SelectInput(
   {
+    onCreate,
+    createLabel = 'Cadastrar agora',
     customKey,
     objectValue,
     items,
@@ -57,6 +61,10 @@ export const SelectInput = forwardRef(function SelectInput(
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
+    if (event.target.value === '__create__') {
+      onCreate?.();
+      return;
+    }
     if (objectValue) {
       const objectData = {
         target: {
@@ -133,6 +141,7 @@ export const SelectInput = forwardRef(function SelectInput(
     <TextField
       ref={ref as Ref<HTMLDivElement>}
       {...rest}
+      name={name}
       select
       value={handleGetValue(value) ?? ''}
       defaultValue={handleGetValue(defaultValue) ?? ''}
@@ -172,6 +181,7 @@ export const SelectInput = forwardRef(function SelectInput(
         );
       })}
 
+      {onCreate && <MenuItem value="__create__">+ {createLabel}</MenuItem>}
       {handleRenderLoading()}
     </TextField>
   );

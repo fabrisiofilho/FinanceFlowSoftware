@@ -50,6 +50,10 @@ export class AccountEntity extends AuditableEntity {
   creditLimit?: number;
   @Column({ name: 'closing_day', type: 'integer', nullable: true })
   closingDay?: number;
+  @Column({ name: 'image_data', type: 'text', nullable: true })
+  imageData?: string | null;
+  @Column({ name: 'due_day', type: 'integer', nullable: true })
+  dueDay?: number;
   @Column({ name: 'card_color', type: 'text', nullable: true })
   cardColor?: string;
   @Column({ name: 'card_brand', type: 'text', nullable: true })

@@ -1,10 +1,13 @@
+import { InfiniteMore, MultiFilter } from '@renderer/components/BoardListing';
+import { QuickCreate } from '@renderer/components/QuickCreate';
+import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { DateStringField } from '@renderer/components/Form/DatePicker/DateStringField';
 import type { Account } from '@shared/interfaces/types/account.types';
 import type { InvestmentEventInput } from '@shared/interfaces/types/investment.types';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { SelectInput } from '@renderer/components/Form/SelectInput';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import {
   Box,
   Button,
@@ -68,6 +71,9 @@ export function InvestmentsPage() {
     [loss, setLoss] = useState(false),
     [horizon, setHorizon] = useState('12');
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [quickAccount, setQuickAccount] = useState<'initial' | 'event' | null>(
+    null,
+  );
   const [accountId, setAccountId] = useState<number | string>('');
   const [eventKind, setEventKind] =
     useState<InvestmentEventInput['kind']>('deposit');
@@ -83,21 +89,129 @@ export function InvestmentsPage() {
         setAccounts(result.data.filter((item) => item.type !== 'credit_card'));
     });
   }, []);
-  const load = useCallback(async () => {
-    try {
-      const result = await window.electronAPI.investment.list();
-      if (!result.success || !result.data)
-        throw new Error(result.error || 'Falha ao carregar investimentos');
-      setPortfolio(result.data);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Falha ao carregar');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [search, setSearch] = useState(''),
+    [query, setQuery] = useState(''),
+    [kinds, setKinds] = useState<string[]>([]);
+  const [total, setTotal] = useState(0),
+    [hasMore, setHasMore] = useState(false),
+    [listingBusy, setListingBusy] = useState(false);
+  const [totals, setTotals] = useState({
+    principalCents: 0,
+    yieldCents: 0,
+    balanceCents: 0,
+  });
+  const cursor = useRef(0),
+    inFlight = useRef(false);
+  const { begin, isCurrent } = useRequestSequence();
   useEffect(() => {
+    const timer = setTimeout(() => setQuery(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  const load = useCallback(async () => {
+    const request = begin();
+    inFlight.current = true;
+    setListingBusy(true);
+    setError('');
+    try {
+      let combined: InvestmentPortfolio = {
+        investments: [],
+        yields: [],
+        events: [],
+      };
+      const through = cursor.current;
+      for (let page = 0; page <= through; page++) {
+        const result = await window.electronAPI.investment.query({
+          page,
+          size: 24,
+          search: query,
+          kinds,
+        });
+        if (!isCurrent(request)) return;
+        if (!result.success || !result.data)
+          throw new Error(result.error || 'Falha ao carregar investimentos.');
+        const data = result.data;
+        combined = {
+          investments: [...combined.investments, ...data.investments],
+          yields: [...combined.yields, ...data.yields],
+          events: [...(combined.events ?? []), ...(data.events ?? [])],
+        };
+        setTotals(data.summary);
+        setTotal(data.totalElements);
+        setHasMore(page + 1 < data.totalPages);
+        cursor.current = page;
+        if (page + 1 >= data.totalPages) break;
+      }
+      setPortfolio(combined);
+    } catch (reason) {
+      if (isCurrent(request))
+        setError(
+          reason instanceof Error ? reason.message : 'Falha ao carregar.',
+        );
+    } finally {
+      if (isCurrent(request)) {
+        inFlight.current = false;
+        setLoading(false);
+        setListingBusy(false);
+      }
+    }
+  }, [query, kinds, begin, isCurrent]);
+  useEffect(() => {
+    cursor.current = 0;
+    setLoading(true);
     void load();
   }, [load]);
+  const more = useCallback(async () => {
+    if (inFlight.current || !hasMore || error) return;
+    const request = begin();
+    inFlight.current = true;
+    setListingBusy(true);
+    try {
+      const result = await window.electronAPI.investment.query({
+        page: cursor.current + 1,
+        size: 24,
+        search: query,
+        kinds,
+      });
+      if (!isCurrent(request)) return;
+      if (!result.success || !result.data)
+        throw new Error(result.error || 'Falha ao carregar.');
+      const data = result.data;
+      cursor.current++;
+      setPortfolio((previous) => ({
+        investments: [
+          ...previous.investments,
+          ...data.investments.filter(
+            (i) => !previous.investments.some((p) => p.id === i.id),
+          ),
+        ],
+        yields: [
+          ...previous.yields,
+          ...data.yields.filter(
+            (i) => !previous.yields.some((p) => p.id === i.id),
+          ),
+        ],
+        events: [
+          ...(previous.events ?? []),
+          ...(data.events ?? []).filter(
+            (i) => !previous.events?.some((p) => p.id === i.id),
+          ),
+        ],
+      }));
+      setHasMore(cursor.current + 1 < data.totalPages);
+      setTotal(data.totalElements);
+      setTotals(data.summary);
+    } catch (reason) {
+      if (isCurrent(request))
+        setError(
+          reason instanceof Error ? reason.message : 'Falha ao carregar.',
+        );
+    } finally {
+      if (isCurrent(request)) {
+        inFlight.current = false;
+        setListingBusy(false);
+      }
+    }
+  }, [query, kinds, hasMore, error, begin, isCurrent]);
   const run = async (
     action: () => Promise<{ success: boolean; error?: string }>,
     done?: () => void,
@@ -149,14 +263,8 @@ export function InvestmentsPage() {
       projectionError =
         reason instanceof Error ? reason.message : 'Parâmetros inválidos';
     }
-  const totalPrincipal = portfolio.investments.reduce(
-    (sum, item) => sum + item.principalCents,
-    0,
-  );
-  const totalYield = portfolio.yields.reduce(
-    (sum, item) => sum + item.amountCents,
-    0,
-  );
+  const totalPrincipal = totals.principalCents,
+    totalYield = totals.yieldCents;
   return (
     <PageContainer>
       <PageHeader
@@ -180,6 +288,30 @@ export function InvestmentsPage() {
           </>
         }
       />
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+        <Input
+          label="Buscar investimentos"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          sx={{ flex: 2 }}
+        />
+        <MultiFilter
+          label="Tipos de investimento"
+          options={[
+            'CDB',
+            'LCI',
+            'LCA',
+            'Tesouro Direto',
+            'Poupança',
+            'Outros',
+          ].map((kind) => ({ id: kind, label: kind }))}
+          value={kinds}
+          onChange={setKinds}
+        />
+        <Typography variant="caption">
+          {total} investimento(s) · totais da carteira completa
+        </Typography>
+      </Stack>
       <ContentLoading loading={loading} initial="inline">
         {error && !selected && !creating && (
           <AppAlert severity="error">{error}</AppAlert>
@@ -200,15 +332,7 @@ export function InvestmentsPage() {
               {[
                 ['Valor aplicado', money(totalPrincipal)],
                 ['Rendimento registrado', money(totalYield)],
-                [
-                  'Saldo acompanhado',
-                  money(
-                    portfolio.investments.reduce(
-                      (sum, item) => sum + balance(item),
-                      0,
-                    ),
-                  ),
-                ],
+                ['Saldo acompanhado', money(totals.balanceCents)],
               ].map(([label, value]) => (
                 <ContentSurface key={label} sx={{ p: 3 }}>
                   <Typography color="text.secondary" variant="body2">
@@ -221,8 +345,9 @@ export function InvestmentsPage() {
               ))}
             </Box>
             <AppAlert severity="info">
-              Os registros desta carteira não movimentam automaticamente as
-              contas. A projeção usa a taxa mensal informada, com juros
+              Aportes e resgates com conta vinculada movimentam o saldo da
+              conta. Rendimentos, taxas e impostos alteram apenas o
+              investimento. A projeção usa a taxa mensal informada, com juros
               compostos, sem impostos, aportes ou resgates.
             </AppAlert>
             <Box
@@ -347,6 +472,8 @@ export function InvestmentsPage() {
               />
               <SelectInput
                 label="Conta de origem"
+                onCreate={() => setQuickAccount('initial')}
+                createLabel="Cadastrar conta"
                 value={accountId}
                 items={[
                   {
@@ -442,6 +569,8 @@ export function InvestmentsPage() {
               {(eventKind === 'deposit' || eventKind === 'withdrawal') && (
                 <SelectInput
                   label="Conta de caixa"
+                  onCreate={() => setQuickAccount('event')}
+                  createLabel="Cadastrar conta"
                   value={eventAccount}
                   items={[
                     { value: '', label: 'Selecione' },
@@ -658,7 +787,26 @@ export function InvestmentsPage() {
             </Button>
           </DialogActions>
         </Dialog>
+        <InfiniteMore
+          busy={listingBusy}
+          error={error || undefined}
+          hasMore={hasMore}
+          onMore={more}
+          onRetry={load}
+        />
       </ContentLoading>
+      {quickAccount && (
+        <QuickCreate
+          kind="account"
+          allowedAccountTypes={['checking', 'savings', 'wallet']}
+          onClose={() => setQuickAccount(null)}
+          onAccount={(account) => {
+            setAccounts((rows) => [...rows, account]);
+            if (quickAccount === 'initial') setAccountId(account.id);
+            else setEventAccount(account.id);
+          }}
+        />
+      )}
     </PageContainer>
   );
 }

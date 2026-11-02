@@ -5,10 +5,7 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 function loadRules() {
-  const source = fs.readFileSync(
-    'src/main/domain/financial-validation.ts',
-    'utf8',
-  );
+  const source = fs.readFileSync('src/shared/finance/validation.ts', 'utf8');
   const code = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS },
   }).outputText;

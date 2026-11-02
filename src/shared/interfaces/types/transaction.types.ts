@@ -64,6 +64,11 @@ export interface SortConfig {
   direction: SortDirection;
 }
 export interface TransactionFilters {
+  search?: string;
+  accountIds?: number[];
+  categoryIds?: number[];
+  types?: TransactionType[];
+  statuses?: ('pending' | 'settled' | 'cancelled')[];
   status?: EntryStatus;
   startDate?: Date;
   endDate?: Date;

@@ -8,7 +8,7 @@ O produto faz sentido como gerenciador financeiro pessoal local: reúne registro
 
 Recomendação: corrigir a fundação primeiro; desenvolver mobile em React Native com Expo para Android e iPhone; entregar o primeiro APK offline; adicionar Google Sheets de forma optativa e progressiva, começando por publicação/consulta. Não criar servidor próprio nesta etapa. Plano em [PLANO-MOBILE-GOOGLE-SHEETS.md](PLANO-MOBILE-GOOGLE-SHEETS.md).
 
-Esta entrega é revisão e planejamento. Os achados abaixo permanecem pendentes no código; não representam correções já publicadas.
+Este documento preserva os achados da versão 2.0.1. A evolução e os limites das correções estão na [entrega 2.1.0](ENTREGA-2.1.0.md); a lista histórica abaixo não representa o estado de todos os achados após essa entrega.
 
 ## Método e limites
 

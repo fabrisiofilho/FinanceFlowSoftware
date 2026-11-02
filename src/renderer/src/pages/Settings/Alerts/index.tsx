@@ -1,5 +1,6 @@
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
+import { QuickCreate } from '@renderer/components/QuickCreate';
 import { AppAlert } from '@renderer/components/Feedback';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -92,6 +93,7 @@ export function AlertsPage() {
     [],
   );
   const [categories, setCategories] = useState<Category[]>([]);
+  const [quick, setQuick] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -108,6 +110,7 @@ export function AlertsPage() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<AlertFormData>({
     defaultValues: {
@@ -473,6 +476,9 @@ export function AlertsPage() {
                 </Typography>
               </Stack>
             </Box>
+            <Button onClick={() => setQuick(true)}>
+              + Cadastrar categoria
+            </Button>
           </FormContainer>
         </Modal>
 
@@ -499,6 +505,17 @@ export function AlertsPage() {
           </Typography>
         </Modal>
       </ContentLoading>
+      {quick && (
+        <QuickCreate
+          kind="category"
+          type="expense"
+          onClose={() => setQuick(false)}
+          onCategory={(category) => {
+            setCategories((rows) => [...rows, category]);
+            setValue('categoryId', category.id, { shouldValidate: true });
+          }}
+        />
+      )}
     </AlertsContainer>
   );
 }

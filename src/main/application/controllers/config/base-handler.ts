@@ -1,3 +1,4 @@
+import { FinanceAuthService } from '../../services/finance-auth-service';
 import { BrowserWindow, ipcMain } from 'electron';
 import { logger } from '@main/infrastructure/log/logger';
 import {
@@ -23,6 +24,30 @@ export abstract class BaseHandler {
       ipcMain.handle(
         channel,
         async (_event: Electron.IpcMainInvokeEvent, ...args: unknown[]) => {
+          if (
+            !_event.senderFrame ||
+            _event.senderFrame !== _event.sender.mainFrame ||
+            !BrowserWindow.fromWebContents(_event.sender)
+          ) {
+            return {
+              success: false,
+              error: 'Origem da solicitação não autorizada.',
+            };
+          }
+          const publicMethods = [
+            'app:openExternal',
+            'financeAuth:register',
+            'financeAuth:login',
+            'financeAuth:checkAuth',
+            'financeAuth:getCurrentUser',
+          ];
+          if (
+            !publicMethods.includes(channel) &&
+            !channel.startsWith('autoUpdater:') &&
+            !FinanceAuthService.getInstance().getCurrentUserId()
+          ) {
+            return { success: false, error: 'Usuário não autenticado.' };
+          }
           const method = handler[methodName];
 
           if (typeof method !== 'function') {

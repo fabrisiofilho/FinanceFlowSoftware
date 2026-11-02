@@ -1,4 +1,4 @@
-import { IconButton, Stack, Tooltip } from '@mui/material';
+import { Avatar, IconButton, Stack, Tooltip } from '@mui/material';
 import {
   AccountBalanceOutlined as CheckingIcon,
   SavingsOutlined as SavingsIcon,
@@ -65,11 +65,24 @@ export function AccountCard({
   const hasNegativeBalance = account.balance < 0;
   const isCreditCard = account.type === 'credit_card';
   return (
-    <AccountCardContainer $type={account.type}>
+    <AccountCardContainer
+      $type={account.type}
+      sx={{ borderLeftColor: account.cardColor || undefined }}
+    >
       <AccountCardHeader>
         <Stack direction="row" alignItems="center" flex={1} minWidth={0}>
           <AccountTypeIcon $type={account.type}>
-            {getAccountIcon(account.type)}
+            <Avatar
+              src={account.imageData || undefined}
+              alt={account.name}
+              sx={{
+                width: 36,
+                height: 36,
+                bgcolor: account.cardColor || 'transparent',
+              }}
+            >
+              {getAccountIcon(account.type)}
+            </Avatar>
           </AccountTypeIcon>
           <AccountInfo>
             <AccountName>{account.name}</AccountName>

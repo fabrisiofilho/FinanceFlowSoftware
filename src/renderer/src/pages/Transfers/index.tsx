@@ -1,3 +1,10 @@
+import { AppAlert } from '@renderer/components/Feedback';
+import { QuickCreate } from '@renderer/components/QuickCreate';
+import {
+  useBoardListing,
+  BoardFilters,
+  BoardMore,
+} from '@renderer/components/BoardListing';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { DatePicker } from '@renderer/components/Form/DatePicker';
@@ -42,7 +49,10 @@ export function TransfersPage() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quick, setQuick] = useState<'account' | 'category' | null>(null);
+  const [quickField, setQuickField] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({
     fromAccountId: 0,
@@ -57,12 +67,13 @@ export function TransfersPage() {
     if (response.success && response.data) setAccounts(response.data);
   }, []);
 
+  const board = useBoardListing('transfers', setTransfers);
+  const queryFirst = board.first;
   const loadTransfers = useCallback(async () => {
     setLoading(true);
-    const response = await window.electronAPI.transfer.findAll();
-    if (response.success && response.data) setTransfers(response.data);
+    await queryFirst();
     setLoading(false);
-  }, []);
+  }, [queryFirst]);
 
   useEffect(() => {
     loadAccounts();
@@ -73,15 +84,20 @@ export function TransfersPage() {
     if (!formData.fromAccountId || !formData.toAccountId || !formData.amount)
       return;
     if (formData.fromAccountId === formData.toAccountId) return;
+    setFormError('');
     setFormLoading(true);
     try {
-      await window.electronAPI.transfer.create({
+      const response = await window.electronAPI.transfer.create({
         fromAccountId: formData.fromAccountId,
         toAccountId: formData.toAccountId,
         amount: formData.amount,
         description: formData.description || undefined,
         transferDate: parseDateSafe(formData.transferDate) ?? new Date(),
       });
+      if (!response.success)
+        throw new Error(
+          response.error || 'Não foi possível salvar a transferência.',
+        );
       setIsFormOpen(false);
       setFormData({
         fromAccountId: 0,
@@ -92,6 +108,10 @@ export function TransfersPage() {
       });
       loadTransfers();
       loadAccounts();
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Não foi possível salvar.',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -128,6 +148,7 @@ export function TransfersPage() {
           </>
         }
       />
+      <BoardFilters board={board} />
       <ContentLoading loading={loading} initial="table">
         {accounts.length < 2 && (
           <Alert severity="warning" sx={{ mb: 2 }}>
@@ -200,9 +221,18 @@ export function TransfersPage() {
         >
           <DialogTitle>Nova Transferência</DialogTitle>
           <DialogContent>
+            {formError && (
+              <AppAlert severity="error" sx={{ mb: 2 }}>
+                {formError}
+              </AppAlert>
+            )}
             <Stack spacing={2} mt={1}>
               <SelectInput
                 label="Conta de Origem"
+                onCreate={() => {
+                  setQuick('account');
+                  setQuickField('fromAccountId');
+                }}
                 value={formData.fromAccountId}
                 items={accounts
                   .filter((a) => a.id !== formData.toAccountId)
@@ -220,6 +250,10 @@ export function TransfersPage() {
               />
               <SelectInput
                 label="Conta de Destino"
+                onCreate={() => {
+                  setQuick('account');
+                  setQuickField('toAccountId');
+                }}
                 value={formData.toAccountId}
                 items={accounts
                   .filter((a) => a.id !== formData.fromAccountId)
@@ -287,7 +321,22 @@ export function TransfersPage() {
             </Button>
           </DialogActions>
         </Dialog>
+        <BoardMore board={board} />
       </ContentLoading>
+      {quick && (
+        <QuickCreate
+          kind="account"
+          allowedAccountTypes={['checking', 'savings', 'wallet']}
+          onClose={() => setQuick(null)}
+          onAccount={(account) => {
+            setAccounts((rows) => [...rows, account]);
+            setFormData((previous) => ({
+              ...previous,
+              [quickField]: account.id,
+            }));
+          }}
+        />
+      )}
     </TransfersContainer>
   );
 }

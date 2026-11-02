@@ -1,6 +1,9 @@
 import { TransactionType, CategoryExpense } from './transaction.types';
 export type ExportFormat = 'csv' | 'pdf';
 export interface ReportFilters {
+  categoryIds?: number[];
+  accountIds?: number[];
+  types?: TransactionType[];
   startDate: Date;
   endDate: Date;
   categoryId?: number;

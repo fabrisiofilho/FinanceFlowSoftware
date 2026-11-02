@@ -1,4 +1,6 @@
 import { AlertEntity } from '../entities/alert.entity';
+import { requireCategoryOwner } from './ownership';
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { logger } from '@main/infrastructure/log/logger';
 import {
   Alert,
@@ -67,6 +69,8 @@ export class AlertService {
   async create(userId: number, data: CreateAlertInput): Promise<Alert> {
     logger.info('Criando novo alerta para usuário:', userId);
     this.validateCreateInput(data);
+    amountToCents(data.limitAmount);
+    await requireCategoryOwner(userId, data.categoryId, 'expense');
     const existingAlert = await this.alertRepository.alertExistsForCategory(
       userId,
       data.categoryId,
@@ -107,6 +111,9 @@ export class AlertService {
       throw new Error('Alerta não encontrado');
     }
     this.validateUpdateInput(data);
+    if (data.limitAmount !== undefined) amountToCents(data.limitAmount);
+    if (data.categoryId !== undefined)
+      await requireCategoryOwner(userId, data.categoryId, 'expense');
     if (
       data.categoryId !== undefined &&
       data.categoryId !== existingAlert.categoryId

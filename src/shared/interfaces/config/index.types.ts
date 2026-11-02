@@ -31,6 +31,8 @@ export interface IpcResultEvent {
 }
 
 export interface CustomElectronAPI {
+  onboarding: import('../types/onboarding.types').OnboardingAPI;
+  listing: import('../types/listing.types').ListingAPI;
   backup: BackupAPI;
   investment: InvestmentAPI;
   financeAuth: IFinanceAuthController;

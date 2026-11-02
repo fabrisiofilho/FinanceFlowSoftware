@@ -17,13 +17,34 @@ import Database from 'better-sqlite3';
   for (const file of fs
     .readdirSync('src/main/infrastructure/database/migrations')
     .filter((f) => f.endsWith('.sql'))
-    .sort())
+    .sort()) {
+    if (file.startsWith('011_')) {
+      db.exec(
+        "INSERT INTO finance_users(id,name,email,password_hash) VALUES(999,'Migração','migration@example.test','dummy'); INSERT INTO accounts(id,user_id,name,type,balance,initial_balance) VALUES(999,999,'Conta preservada','wallet',12345,12345); INSERT INTO categories(id,name,type,icon,is_default) VALUES(999,'Moradia','expense','home',1);",
+      );
+    }
     db.exec(
       fs.readFileSync(
         'src/main/infrastructure/database/migrations/' + file,
         'utf8',
       ),
     );
+    if (file.startsWith('011_')) {
+      assert.equal(
+        db.prepare('SELECT balance FROM accounts WHERE id=999').get().balance,
+        12345,
+      );
+      assert.equal(
+        db.prepare('SELECT icon FROM categories WHERE id=999').get().icon,
+        'Home',
+      );
+      assert.equal(
+        db.prepare('SELECT image_data FROM accounts WHERE id=999').get()
+          .image_data,
+        null,
+      );
+    }
+  }
   for (const file of fs
     .readdirSync('src/main/infrastructure/database/migrations')
     .filter((file) => file.endsWith('.sql')))
@@ -53,6 +74,20 @@ import Database from 'better-sqlite3';
       }
     },
   };
+  const financialQueue = {};
+  vm.runInNewContext(
+    ts.transpileModule(
+      fs.readFileSync(
+        'src/main/infrastructure/database/financial-transaction.ts',
+        'utf8',
+      ),
+      { compilerOptions: { module: 1, target: 9 } },
+    ).outputText,
+    {
+      exports: financialQueue,
+      require: () => ({ getDataSource: () => source }),
+    },
+  );
   const exports = {};
   vm.runInNewContext(
     ts.transpileModule(
@@ -62,7 +97,16 @@ import Database from 'better-sqlite3';
       ),
       { compilerOptions: { module: 1, target: 9 } },
     ).outputText,
-    { exports, require: () => ({ getDataSource: () => source }) },
+    {
+      exports,
+      require: (name) =>
+        name.includes('financial-transaction')
+          ? {
+              financialTransaction: (operation) =>
+                source.transaction(operation),
+            }
+          : { getDataSource: () => source },
+    },
   );
   const repository = new exports.InvestmentRepository();
   await repository.create(1, {
@@ -341,6 +385,7 @@ import Database from 'better-sqlite3';
     'better-sqlite3': Database,
     '../../../domain/backup-codec': codec,
     './backup-attachments': attachmentExports,
+    '@main/infrastructure/database/financial-transaction': financialQueue,
     '@main/infrastructure/database/data-source': {
       getDatabasePath: () => active,
       getDataSource: () => ({

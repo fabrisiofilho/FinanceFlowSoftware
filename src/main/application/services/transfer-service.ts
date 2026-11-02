@@ -1,3 +1,4 @@
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { TransferEntity } from '../entities/transfer.entity';
@@ -10,7 +11,7 @@ import {
   TransferSummary,
 } from '@shared/interfaces/types/transfer.types';
 import { parseDateSafe } from '@main/infrastructure/utils/date-utils';
-import { validateTransferValues } from '../../domain/financial-validation';
+import { validateTransferValues } from '@shared/finance/validation';
 import { TransferCategoryService } from './transfer-category-service';
 
 export class TransferService {
@@ -68,30 +69,25 @@ export class TransferService {
       throw new Error('Conta de origem e destino devem ser diferentes');
     }
 
-    const fromAccount = await this.accountRepository.findOne({
-      where: { id: data.fromAccountId, userId },
-    });
-    const toAccount = await this.accountRepository.findOne({
-      where: { id: data.toAccountId, userId },
-    });
+    return financialTransaction(async (manager) => {
+      const fromAccount = await manager.getRepository(AccountEntity).findOne({
+        where: { id: data.fromAccountId, userId },
+      });
+      const toAccount = await manager.getRepository(AccountEntity).findOne({
+        where: { id: data.toAccountId, userId },
+      });
 
-    if (!fromAccount || !toAccount) {
-      throw new Error('Conta não encontrada');
-    }
+      if (!fromAccount || !toAccount) {
+        throw new Error('Conta não encontrada');
+      }
 
-    const dataSource = getDataSource();
-    const queryRunner = dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
       const expenseCategoryId = await this.categoryService.getOrCreate(
-        queryRunner.manager,
+        manager,
         userId,
         'expense',
       );
       const incomeCategoryId = await this.categoryService.getOrCreate(
-        queryRunner.manager,
+        manager,
         userId,
         'income',
       );
@@ -108,7 +104,7 @@ export class TransferService {
         accountId: data.fromAccountId,
         categoryId: expenseCategoryId,
       });
-      const savedFromTx = await queryRunner.manager.save(fromTransaction);
+      const savedFromTx = await manager.save(fromTransaction);
 
       // Create income transaction (to account)
 
@@ -124,7 +120,7 @@ export class TransferService {
         accountId: data.toAccountId,
         categoryId: incomeCategoryId,
       });
-      const savedToTx = await queryRunner.manager.save(toTransaction);
+      const savedToTx = await manager.save(toTransaction);
 
       // Create transfer record
       const transfer = this.transferRepository.create({
@@ -139,43 +135,32 @@ export class TransferService {
         fromTransactionId: savedFromTx.id,
         toTransactionId: savedToTx.id,
       });
-      const savedTransfer = await queryRunner.manager.save(transfer);
+      const savedTransfer = await manager.save(transfer);
 
       // Update account balances
       fromAccount.balance = Number(fromAccount.balance) - data.amount;
       toAccount.balance = Number(toAccount.balance) + convertedAmount;
-      await queryRunner.manager.save(fromAccount);
-      await queryRunner.manager.save(toAccount);
+      await manager.save(fromAccount);
+      await manager.save(toAccount);
 
-      await queryRunner.commitTransaction();
       logger.success('Transferência criada:', savedTransfer.id);
 
       return this.findById(userId, savedTransfer.id) as Promise<Transfer>;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 
   async delete(userId: number, id: number): Promise<void> {
     logger.info('Excluindo transferência:', id);
 
-    const transfer = await this.transferRepository.findOne({
-      where: { id, userId },
-    });
+    return financialTransaction(async (manager) => {
+      const transfer = await manager.getRepository(TransferEntity).findOne({
+        where: { id, userId },
+      });
 
-    if (!transfer) {
-      throw new Error('Transferência não encontrada');
-    }
+      if (!transfer) {
+        throw new Error('Transferência não encontrada');
+      }
 
-    const dataSource = getDataSource();
-    const queryRunner = dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
       // Reverse account balances
       const fromAccount = await this.accountRepository.findOne({
         where: { id: transfer.fromAccountId },
@@ -187,40 +172,28 @@ export class TransferService {
       if (fromAccount) {
         fromAccount.balance =
           Number(fromAccount.balance) + Number(transfer.amount);
-        await queryRunner.manager.save(fromAccount);
+        await manager.save(fromAccount);
       }
 
       if (toAccount) {
         const amountToReverse = transfer.convertedAmount ?? transfer.amount;
         toAccount.balance = Number(toAccount.balance) - Number(amountToReverse);
-        await queryRunner.manager.save(toAccount);
+        await manager.save(toAccount);
       }
 
       // Delete related transactions
       if (transfer.fromTransactionId) {
-        await queryRunner.manager.delete(
-          TransactionEntity,
-          transfer.fromTransactionId,
-        );
+        await manager.delete(TransactionEntity, transfer.fromTransactionId);
       }
       if (transfer.toTransactionId) {
-        await queryRunner.manager.delete(
-          TransactionEntity,
-          transfer.toTransactionId,
-        );
+        await manager.delete(TransactionEntity, transfer.toTransactionId);
       }
 
       // Delete transfer
-      await queryRunner.manager.remove(transfer);
+      await manager.remove(transfer);
 
-      await queryRunner.commitTransaction();
       logger.success('Transferência excluída:', id);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 
   async findById(userId: number, id: number): Promise<Transfer | null> {

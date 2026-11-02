@@ -47,7 +47,10 @@ export class ReportService {
     if (value === undefined || value === null) {
       return '';
     }
-    const stringValue = String(value);
+    const stringValue =
+      typeof value === 'string' && /^[\s]*[=+@-]/.test(value)
+        ? "'" + value
+        : String(value);
     if (/[,"\n\r;]/.test(stringValue)) {
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
@@ -88,6 +91,9 @@ export class ReportService {
       startDate: new Date(filters.startDate),
       endDate: new Date(filters.endDate),
       categoryId: filters.categoryId,
+      categoryIds: filters.categoryIds,
+      accountIds: filters.accountIds,
+      types: filters.types,
       accountId: filters.accountId,
       type: filters.type,
     };
@@ -192,6 +198,9 @@ export class ReportService {
         startDate: new Date(filters.startDate),
         endDate: new Date(filters.endDate),
         categoryId: filters.categoryId,
+        categoryIds: filters.categoryIds,
+        accountIds: filters.accountIds,
+        types: filters.types,
         accountId: filters.accountId,
         type: filters.type,
       };
@@ -286,6 +295,9 @@ export class ReportService {
         startDate: new Date(filters.startDate),
         endDate: new Date(filters.endDate),
         categoryId: filters.categoryId,
+        categoryIds: filters.categoryIds,
+        accountIds: filters.accountIds,
+        types: filters.types,
         accountId: filters.accountId,
         type: filters.type,
       };

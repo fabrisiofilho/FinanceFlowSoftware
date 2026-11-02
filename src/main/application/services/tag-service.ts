@@ -1,3 +1,5 @@
+import { requireTransactionOwner } from './ownership';
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { TagEntity } from '../entities/tag.entity';
@@ -111,9 +113,13 @@ export class TagService {
   }
 
   async addTagToTransaction(
+    userId: number,
     transactionId: number,
     tagId: number,
   ): Promise<void> {
+    await requireTransactionOwner(userId, transactionId);
+    if (!(await this.findById(userId, tagId)))
+      throw new Error('Tag não encontrada');
     const existing = await this.transactionTagRepository.findOne({
       where: { transactionId, tagId },
     });
@@ -132,16 +138,22 @@ export class TagService {
   }
 
   async removeTagFromTransaction(
+    userId: number,
     transactionId: number,
     tagId: number,
   ): Promise<void> {
+    await requireTransactionOwner(userId, transactionId);
     await this.transactionTagRepository.delete({ transactionId, tagId });
     logger.info(`Tag ${tagId} removida da transação ${transactionId}`);
   }
 
-  async getTransactionTags(transactionId: number): Promise<TransactionTag[]> {
+  async getTransactionTags(
+    userId: number,
+    transactionId: number,
+  ): Promise<TransactionTag[]> {
+    await requireTransactionOwner(userId, transactionId);
     const transactionTags = await this.transactionTagRepository.find({
-      where: { transactionId },
+      where: { transactionId, tag: { userId } },
       relations: ['tag'],
     });
 
@@ -154,16 +166,22 @@ export class TagService {
   }
 
   async setTransactionTags(
+    userId: number,
     transactionId: number,
     tagIds: number[],
   ): Promise<void> {
-    // Remove existing tags
-    await this.transactionTagRepository.delete({ transactionId });
-
-    // Add new tags
-    for (const tagId of tagIds) {
-      await this.addTagToTransaction(transactionId, tagId);
-    }
+    await requireTransactionOwner(userId, transactionId);
+    if (!Array.isArray(tagIds) || tagIds.length > 100)
+      throw new Error('Tags inválidas');
+    for (const id of tagIds)
+      if (!(await this.findById(userId, id)))
+        throw new Error('Tag não encontrada');
+    await financialTransaction(async (manager) => {
+      const repository = manager.getRepository(TransactionTagEntity);
+      await repository.delete({ transactionId });
+      for (const tagId of new Set(tagIds))
+        await repository.save({ transactionId, tagId });
+    });
   }
 
   async findTransactionsByTag(
@@ -173,8 +191,11 @@ export class TagService {
     const transactionTags = await this.transactionTagRepository
       .createQueryBuilder('tt')
       .innerJoin('tt.tag', 'tag')
+      .innerJoin('tt.transaction', 'entry')
+      .innerJoin('entry.account', 'account')
       .where('tag.user_id = :userId', { userId })
       .andWhere('tt.tag_id = :tagId', { tagId })
+      .andWhere('account.user_id=:userId', { userId })
       .getMany();
 
     return transactionTags.map((tt) => tt.transactionId);

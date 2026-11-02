@@ -1,7 +1,8 @@
+import type { OnboardingAPI } from '@shared/interfaces/types/onboarding.types';
+import type { ListingAPI } from '@shared/interfaces/types/listing.types';
 import type { BackupAPI } from '@shared/interfaces/types/backup.types';
 import type { InvestmentAPI } from '@shared/interfaces/types/investment.types';
-import { contextBridge, ipcRenderer, shell } from 'electron';
-import { electronAPI } from '@electron-toolkit/preload';
+import { contextBridge, ipcRenderer } from 'electron';
 import {
   CustomElectronAPI,
   IpcResultEvent,
@@ -32,7 +33,6 @@ import type { ITagController } from '@shared/interfaces/controllers/tag.controll
 import type { INotificationController } from '@shared/interfaces/controllers/notification.controller.interface';
 import type { ICurrencyController } from '@shared/interfaces/controllers/currency.controller.interface';
 import type { IAttachmentController } from '@shared/interfaces/controllers/attachment.controller.interface';
-import '@shared/config/dateFnsLocale';
 
 console.log('PRELOAD LOADED!');
 console.log('contextIsolated:', process.contextIsolated);
@@ -94,6 +94,11 @@ function createControllerFromConfig<T extends object>(
 }
 
 const api: CustomElectronAPI = {
+  onboarding: createControllerFromConfig<OnboardingAPI>('onboarding', [
+    'state',
+    'advance',
+  ]),
+  listing: createControllerFromConfig<ListingAPI>('listing', ['query']),
   backup: createControllerFromConfig<BackupAPI>(
     CONTROLLER_CONFIG.backup.prefix,
     CONTROLLER_CONFIG.backup.methods,
@@ -211,7 +216,7 @@ const api: CustomElectronAPI = {
   ),
 
   openExternalUrl: (url: string) => {
-    shell.openExternal(url);
+    void ipcRenderer.invoke('app:openExternal', url);
   },
   windowControls: {
     minimize: () => ipcRenderer.send('window:control', 'minimize'),
@@ -244,15 +249,12 @@ const api: CustomElectronAPI = {
 if (process.contextIsolated) {
   try {
     console.log('Exposing APIs via contextBridge...');
-    contextBridge.exposeInMainWorld('electron', electronAPI);
     contextBridge.exposeInMainWorld('electronAPI', api);
     console.log('APIs exposed successfully!');
   } catch (error: unknown) {
     console.log('[ERROR] Error exposing APIs:', error);
   }
 } else {
-  window.electron = electronAPI;
-
   window.electronAPI = api;
 }
 

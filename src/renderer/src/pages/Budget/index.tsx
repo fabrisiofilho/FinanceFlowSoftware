@@ -1,3 +1,4 @@
+import { QuickCreate } from '@renderer/components/QuickCreate';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
@@ -52,12 +53,14 @@ export function BudgetPage() {
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quick, setQuick] = useState<'account' | 'category' | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [formData, setFormData] = useState({
     categoryId: 0,
     plannedAmount: 0,
   });
+  const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
   const loadCategories = useCallback(async () => {
@@ -98,24 +101,40 @@ export function BudgetPage() {
 
   const handleSave = async () => {
     if (!formData.categoryId || !formData.plannedAmount) return;
+    setFormError('');
     setFormLoading(true);
     try {
       if (editingBudget) {
-        await window.electronAPI.budget.update(editingBudget.id, {
-          plannedAmount: formData.plannedAmount,
-        });
+        const response = await window.electronAPI.budget.update(
+          editingBudget.id,
+          {
+            plannedAmount: formData.plannedAmount,
+          },
+        );
+        if (!response.success)
+          throw new Error(
+            response.error || 'Não foi possível salvar o orçamento.',
+          );
       } else {
-        await window.electronAPI.budget.create({
+        const response = await window.electronAPI.budget.create({
           categoryId: formData.categoryId,
           year,
           month,
           plannedAmount: formData.plannedAmount,
         });
+        if (!response.success)
+          throw new Error(
+            response.error || 'Não foi possível salvar o orçamento.',
+          );
       }
       setIsFormOpen(false);
       setEditingBudget(null);
       setFormData({ categoryId: 0, plannedAmount: 0 });
       loadSummary();
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Não foi possível salvar.',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -354,10 +373,16 @@ export function BudgetPage() {
             {editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}
           </DialogTitle>
           <DialogContent>
+            {formError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {formError}
+              </Alert>
+            )}
             <Stack spacing={2} mt={1}>
               {!editingBudget && (
                 <SelectInput
                   label="Categoria"
+                  onCreate={() => setQuick('category')}
                   value={formData.categoryId}
                   items={availableCategories.map((c) => ({
                     value: c.id,
@@ -397,6 +422,20 @@ export function BudgetPage() {
           </DialogActions>
         </Dialog>
       </ContentLoading>
+      {quick && (
+        <QuickCreate
+          kind="category"
+          type="expense"
+          onClose={() => setQuick(null)}
+          onCategory={(category) => {
+            setCategories((rows) => [...rows, category]);
+            setFormData((previous) => ({
+              ...previous,
+              categoryId: category.id,
+            }));
+          }}
+        />
+      )}
     </BudgetContainer>
   );
 }

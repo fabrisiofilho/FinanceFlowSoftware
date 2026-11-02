@@ -1,3 +1,6 @@
+import { ExternalLinkController } from '../external-link-controller';
+import { OnboardingController } from '../onboarding-controller';
+import { ListingController } from '../listing-controller';
 import { BackupController } from '../backup-controller';
 import { InvestmentController } from '../investment-controller';
 import { logger } from '@main/infrastructure/log/logger';
@@ -23,6 +26,9 @@ import { CurrencyController } from '../currency-controller';
 import { AttachmentController } from '../attachment-controller';
 
 export function loadIpcControllers() {
+  new ListingController();
+  new ExternalLinkController();
+  new OnboardingController();
   new InvestmentController();
   new BackupController();
   logger.info('Loading IPC controllers...');

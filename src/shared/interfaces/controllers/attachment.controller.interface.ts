@@ -11,9 +11,11 @@ export interface IAttachmentController {
   ): Promise<ApiResponse<AttachmentUploadResult>>;
   delete(id: number): Promise<ApiResponse<void>>;
   findByTransaction(transactionId: number): Promise<ApiResponse<Attachment[]>>;
-  getFile(
-    id: number,
-  ): Promise<
-    ApiResponse<{ data: ArrayBuffer; mimeType: string; filename: string }>
+  getFile(id: number): Promise<
+    ApiResponse<{
+      data: ArrayBuffer;
+      mimeType: string;
+      filename: string;
+    } | null>
   >;
 }

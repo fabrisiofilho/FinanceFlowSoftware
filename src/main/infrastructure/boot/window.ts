@@ -55,10 +55,18 @@ export const createMainWindow = (): BrowserWindow => {
       contextIsolation: true,
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
-      sandbox: false,
+      sandbox: true,
     },
   });
 
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const current = mainWindow.webContents.getURL().split('#')[0];
+    if (url.split('#')[0] !== current) event.preventDefault();
+  });
+  mainWindow.webContents.on('will-attach-webview', (event) =>
+    event.preventDefault(),
+  );
   mainWindow.setMenu(null);
   registerWindowControls(mainWindow);
 

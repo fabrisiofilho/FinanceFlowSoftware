@@ -1,3 +1,8 @@
+import {
+  useBoardListing,
+  BoardFilters,
+  BoardMore,
+} from '@renderer/components/BoardListing';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { AppAlert } from '@renderer/components/Feedback';
@@ -61,7 +66,9 @@ interface AccountFormData {
   balance: number;
   creditLimit?: number;
   closingDay?: number;
+  dueDay?: number;
   cardColor?: string;
+  imageData?: string | null;
   cardBrand?: CardBrand;
   bankName?: string;
 }
@@ -81,6 +88,7 @@ export function AccountsPage() {
     control,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<AccountFormData>({
@@ -90,24 +98,29 @@ export function AccountsPage() {
       balance: 0,
       creditLimit: undefined,
       closingDay: undefined,
+      dueDay: undefined,
       cardColor: '#1a1a2e',
       cardBrand: undefined,
       bankName: undefined,
+      imageData: null,
     },
   });
   const watchedType = watch('type');
   const isCreditCard = watchedType === 'credit_card';
+  const board = useBoardListing('accounts', setAccounts);
+  const queryFirst = board.first;
   const loadAccounts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [accountsResponse, totalBalanceResponse] = await Promise.all([
-        window.electronAPI.account.findAll(),
+        queryFirst(),
         window.electronAPI.account.getTotalBalance(),
       ]);
-      if (accountsResponse.success && accountsResponse.data) {
-        setAccounts(accountsResponse.data);
-      } else {
+      if (
+        !accountsResponse.success &&
+        accountsResponse.error !== 'Consulta substituída'
+      ) {
         setError('Erro ao carregar contas');
       }
       if (totalBalanceResponse.success) {
@@ -119,7 +132,7 @@ export function AccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryFirst]);
   useEffect(() => {
     loadAccounts();
   }, [loadAccounts]);
@@ -131,9 +144,11 @@ export function AccountsPage() {
       balance: 0,
       creditLimit: undefined,
       closingDay: undefined,
+      dueDay: undefined,
       cardColor: '#1a1a2e',
       cardBrand: undefined,
       bankName: undefined,
+      imageData: null,
     });
     setIsFormOpen(true);
   };
@@ -145,9 +160,11 @@ export function AccountsPage() {
       balance: account.balance,
       creditLimit: account.creditLimit,
       closingDay: account.closingDay,
+      dueDay: account.dueDay,
       cardColor: account.cardColor || '#1a1a2e',
       cardBrand: account.cardBrand,
       bankName: account.bankName,
+      imageData: account.imageData,
     });
     setIsFormOpen(true);
   };
@@ -162,6 +179,9 @@ export function AccountsPage() {
       if (selectedAccount) {
         const updateData: UpdateAccountInput = {
           name: data.name,
+          imageData: data.imageData,
+          dueDay: data.dueDay,
+          cardColor: data.cardColor,
         };
         if (data.type === 'credit_card') {
           updateData.creditLimit = data.creditLimit;
@@ -182,6 +202,9 @@ export function AccountsPage() {
           name: data.name,
           type: data.type,
           balance: data.balance,
+          imageData: data.imageData,
+          cardColor: data.cardColor,
+          dueDay: data.dueDay,
         };
         if (data.type === 'credit_card') {
           createData.creditLimit = data.creditLimit;
@@ -198,7 +221,7 @@ export function AccountsPage() {
       handleCloseForm();
       loadAccounts();
     } catch (err) {
-      console.error('Erro ao salvar conta:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao salvar conta.');
     } finally {
       setFormLoading(false);
     }
@@ -283,6 +306,15 @@ export function AccountsPage() {
           </>
         }
       />
+      <BoardFilters
+        board={board}
+        typeOptions={[
+          { id: 'checking', label: 'Conta corrente' },
+          { id: 'savings', label: 'Poupança' },
+          { id: 'wallet', label: 'Carteira' },
+          { id: 'credit_card', label: 'Cartão de crédito' },
+        ]}
+      />
       <ContentLoading loading={loading} initial="cards">
         {error && (
           <AppAlert severity="error" sx={{ mb: 3 }}>
@@ -345,6 +377,7 @@ export function AccountsPage() {
           setMaxWidth="500px"
         >
           <FormContainer>
+            {error && <AppAlert severity="error">{error}</AppAlert>}
             <Controller
               name="name"
               control={control}
@@ -498,13 +531,42 @@ export function AccountsPage() {
             )}
             {isCreditCard && (
               <Controller
+                name="dueDay"
+                control={control}
+                rules={{
+                  required: 'Informe o dia de vencimento',
+                  min: { value: 1, message: 'Dia entre 1 e 31' },
+                  max: { value: 31, message: 'Dia entre 1 e 31' },
+                }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(event) =>
+                      field.onChange(Number(event.target.value))
+                    }
+                    label="Dia de vencimento da fatura"
+                    type="number"
+                    error={!!fieldState.error}
+                    helperText={
+                      fieldState.error?.message ||
+                      'Se for anterior ou igual ao fechamento, vence no mês seguinte. Em meses curtos, usa o último dia.'
+                    }
+                    required
+                    fullWidth
+                  />
+                )}
+              />
+            )}
+            {
+              <Controller
                 name="cardColor"
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     select
-                    label="Cor do Cartão"
+                    label="Cor de identificação"
                     fullWidth
                     value={field.value || '#1a1a2e'}
                     SelectProps={{
@@ -556,7 +618,42 @@ export function AccountsPage() {
                   </TextField>
                 )}
               />
-            )}
+            }
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Button component="label">
+                Selecionar logo / imagem
+                <input
+                  hidden
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 512000) {
+                      setError('Use uma imagem de até 500 KB.');
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () =>
+                      setValue('imageData', String(reader.result));
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </Button>
+              {watch('imageData') && (
+                <>
+                  <Box
+                    component="img"
+                    alt="Logo da conta"
+                    src={watch('imageData') || ''}
+                    sx={{ width: 48, height: 48, objectFit: 'contain' }}
+                  />
+                  <Button onClick={() => setValue('imageData', null)}>
+                    Remover
+                  </Button>
+                </>
+              )}
+            </Stack>
           </FormContainer>
         </Modal>
 
@@ -582,6 +679,7 @@ export function AccountsPage() {
             esta conta também serão afetadas.
           </Typography>
         </Modal>
+        <BoardMore board={board} />
       </ContentLoading>
     </AccountsContainer>
   );

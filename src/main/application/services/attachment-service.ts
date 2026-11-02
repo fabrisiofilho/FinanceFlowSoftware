@@ -1,3 +1,4 @@
+import { requireTransactionOwner } from './ownership';
 import { logger } from '@main/infrastructure/log/logger';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { app } from 'electron';
@@ -16,8 +17,9 @@ import {
 export class AttachmentService {
   private attachmentsDir: string;
 
-  constructor() {
-    this.attachmentsDir = path.join(app.getPath('userData'), 'attachments');
+  constructor(directory?: string) {
+    this.attachmentsDir =
+      directory ?? path.join(app.getPath('userData'), 'attachments');
     this.ensureAttachmentsDir();
   }
 
@@ -45,9 +47,14 @@ export class AttachmentService {
     };
   }
 
-  async upload(data: CreateAttachmentInput): Promise<AttachmentUploadResult> {
+  async upload(
+    userId: number,
+    data: CreateAttachmentInput,
+  ): Promise<AttachmentUploadResult> {
     logger.info('Uploading attachment for transaction:', data.transactionId);
 
+    await requireTransactionOwner(userId, data.transactionId);
+    let pendingFile: string | undefined;
     try {
       // Validate file
       if (
@@ -74,6 +81,7 @@ export class AttachmentService {
 
       // Save file
       fs.writeFileSync(filePath, data.file.buffer);
+      pendingFile = filePath;
 
       // Create database record
       const attachment = this.attachmentRepository.create({
@@ -86,6 +94,7 @@ export class AttachmentService {
       });
 
       const saved = await this.attachmentRepository.save(attachment);
+      pendingFile = undefined;
       logger.success('Attachment uploaded:', saved.id);
 
       return {
@@ -93,6 +102,7 @@ export class AttachmentService {
         attachment: this.mapEntityToAttachment(saved),
       };
     } catch (error) {
+      if (pendingFile && fs.existsSync(pendingFile)) fs.unlinkSync(pendingFile);
       logger.error('Error uploading attachment:', error);
       return {
         success: false,
@@ -102,7 +112,12 @@ export class AttachmentService {
     }
   }
 
-  async delete(id: number): Promise<void> {
+  private validatePath(file: string): void {
+    const resolved = path.resolve(file);
+    if (path.dirname(resolved) !== path.resolve(this.attachmentsDir))
+      throw new Error('Local do anexo inválido.');
+  }
+  async delete(userId: number, id: number): Promise<void> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id },
     });
@@ -111,6 +126,9 @@ export class AttachmentService {
       throw new Error('Anexo não encontrado');
     }
 
+    await requireTransactionOwner(userId, attachment.transactionId);
+    this.validatePath(attachment.filePath);
+    if (attachment.thumbnailPath) this.validatePath(attachment.thumbnailPath);
     // Delete file from disk
     if (fs.existsSync(attachment.filePath)) {
       fs.unlinkSync(attachment.filePath);
@@ -125,15 +143,21 @@ export class AttachmentService {
     logger.success('Attachment deleted:', id);
   }
 
-  async findById(id: number): Promise<Attachment | null> {
+  async findById(userId: number, id: number): Promise<Attachment | null> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id },
     });
 
+    if (attachment)
+      await requireTransactionOwner(userId, attachment.transactionId);
     return attachment ? this.mapEntityToAttachment(attachment) : null;
   }
 
-  async findByTransaction(transactionId: number): Promise<Attachment[]> {
+  async findByTransaction(
+    userId: number,
+    transactionId: number,
+  ): Promise<Attachment[]> {
+    await requireTransactionOwner(userId, transactionId);
     const attachments = await this.attachmentRepository.find({
       where: { transactionId },
       order: { createdAt: 'DESC' },
@@ -143,16 +167,20 @@ export class AttachmentService {
   }
 
   async getFileBuffer(
+    userId: number,
     id: number,
   ): Promise<{ buffer: Buffer; mimeType: string; filename: string } | null> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id },
     });
 
+    if (attachment)
+      await requireTransactionOwner(userId, attachment.transactionId);
     if (!attachment || !fs.existsSync(attachment.filePath)) {
       return null;
     }
 
+    this.validatePath(attachment.filePath);
     return {
       buffer: fs.readFileSync(attachment.filePath),
       mimeType: attachment.mimeType,
@@ -160,12 +188,18 @@ export class AttachmentService {
     };
   }
 
-  async deleteByTransaction(transactionId: number): Promise<void> {
+  async deleteByTransaction(
+    userId: number,
+    transactionId: number,
+  ): Promise<void> {
+    await requireTransactionOwner(userId, transactionId);
     const attachments = await this.attachmentRepository.find({
       where: { transactionId },
     });
 
     for (const attachment of attachments) {
+      this.validatePath(attachment.filePath);
+      if (attachment.thumbnailPath) this.validatePath(attachment.thumbnailPath);
       if (fs.existsSync(attachment.filePath)) {
         fs.unlinkSync(attachment.filePath);
       }
@@ -180,13 +214,16 @@ export class AttachmentService {
     );
   }
 
-  async getTotalSize(transactionId?: number): Promise<number> {
+  async getTotalSize(userId: number, transactionId?: number): Promise<number> {
     const query = this.attachmentRepository
       .createQueryBuilder('a')
+      .innerJoin('a.transaction', 't')
+      .innerJoin('t.account', 'account')
+      .where('account.user_id=:userId', { userId })
       .select('SUM(a.file_size)', 'total');
 
     if (transactionId) {
-      query.where('a.transaction_id = :transactionId', { transactionId });
+      query.andWhere('a.transaction_id = :transactionId', { transactionId });
     }
 
     const result = await query.getRawOne();

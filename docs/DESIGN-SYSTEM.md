@@ -10,7 +10,7 @@ A aplicação utiliza somente dark neutro: fundo #101216, superfície #191C22, b
 
 - PageContainer: largura máxima de 1600px e espaçamento fluido de 20–40px.
 - PageHeader: título h1, descrição e ações com a mesma hierarquia, tamanhos e quebra responsiva em todos os 16 módulos do painel, incluindo Dashboard e Manual. Cabeçalhos e filtros permanecem montados durante consultas.
-- ContentSurface/ExpandableCard: superfície neutra com borda, ação de ampliar e modal com busca e rolagem. Formulários preservam controles próprios. Cards da mesma linha esticam juntos; resumos financeiros usam metricCardStyles, altura mínima de 112px e padding de 24px.
+- ContentSurface/ExpandableCard: superfície neutra com borda. A ação de ampliar é opcional e restrita a históricos relevantes, com busca e paginação no backend; indicadores e cadastros individuais não ampliam. Formulários preservam controles próprios. Cards da mesma linha esticam juntos; resumos financeiros usam metricCardStyles, altura mínima de 112px e padding de 24px.
 - TitleBar: barra integrada de 40px e controles da janela fora da área de arraste. Cabeçalho interno e menu persistem entre rotas.
 - Tabs: ícone e nome na horizontal; nome sozinho quando não existe ícone.
 - Manual: índice com ícones, busca e orientação por função em pages/Manual/topics.ts; usa o mesmo PageHeader das páginas financeiras.

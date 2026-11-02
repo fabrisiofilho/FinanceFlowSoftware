@@ -1,3 +1,4 @@
+import { QuickCreate } from '../QuickCreate';
 import { installmentAmounts } from '@shared/finance/entry-schedule';
 import { AppAlert as Alert } from '@renderer/components/Feedback';
 import { Input as TextField } from '@renderer/components/Form/Input';
@@ -170,6 +171,9 @@ export function TransactionForm({
   loading = false,
   initialType = 'expense',
 }: Readonly<TransactionFormProps>) {
+  const [quick, setQuick] = useState<'account' | 'category' | null>(null);
+  const [createdAccounts, setCreatedAccounts] = useState<Account[]>([]);
+  const [createdCategories, setCreatedCategories] = useState<Category[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [transactionType, setTransactionType] = useState<TransactionType>(
     transaction?.type ?? initialType,
@@ -227,8 +231,13 @@ export function TransactionForm({
     }
   }, [open, defaultValues, reset]);
   const filteredCategories = useMemo(() => {
-    return categories.filter((cat) => cat.type === transactionType);
-  }, [categories, transactionType]);
+    return [
+      ...categories,
+      ...createdCategories.filter(
+        (c) => !categories.some((existing) => existing.id === c.id),
+      ),
+    ].filter((cat) => cat.type === transactionType);
+  }, [categories, createdCategories, transactionType]);
   const categoryOptions: SelectInputItem[] = useMemo(
     () => [
       { value: 0, label: 'Selecione uma categoria' },
@@ -242,12 +251,17 @@ export function TransactionForm({
   const accountOptions: SelectInputItem[] = useMemo(
     () => [
       { value: 0, label: 'Selecione uma conta' },
-      ...accounts.map((acc) => ({
+      ...[
+        ...accounts,
+        ...createdAccounts.filter(
+          (a) => !accounts.some((existing) => existing.id === a.id),
+        ),
+      ].map((acc) => ({
         value: acc.id,
         label: acc.name,
       })),
     ],
-    [accounts],
+    [accounts, createdAccounts],
   );
   const installments = useMemo(() => {
     if (
@@ -335,244 +349,266 @@ export function TransactionForm({
       ? 'Nova Receita'
       : 'Nova Despesa';
   return (
-    <Modal
-      variant="form"
-      open={open}
-      title={modalTitle}
-      handleClose={onClose}
-      handleConfirm={handleSubmit(onSubmit)}
-      confirmLabel="Salvar"
-      cancelLabel="Cancelar"
-      loading={loading || isSubmitting}
-      confirmDisabled={loading || isSubmitting}
-      setMaxWidth="600px"
-      width="100%"
-    >
-      <FormContainer>
-        {}
-        {submitError && (
-          <Alert severity="error" onClose={() => setSubmitError(null)}>
-            {submitError}
-          </Alert>
-        )}
-        {}
-        <FormSection>
-          <SectionTitle>Tipo de Transação</SectionTitle>
-          <TransactionTypeToggle
-            value={watchType}
-            exclusive
-            onChange={handleTypeChange}
-            aria-label="tipo de transação"
-          >
-            <ToggleButton value="income" aria-label="receita">
-              <TrendingUpIcon sx={{ mr: 0.5 }} />
-              Receita
-            </ToggleButton>
-            <ToggleButton value="expense" aria-label="despesa">
-              <TrendingDownIcon sx={{ mr: 0.5 }} />
-              Despesa
-            </ToggleButton>
-          </TransactionTypeToggle>
-        </FormSection>
-        <FormDivider />
-        {}
-        <FormSection>
-          <SectionTitle>Informações Básicas</SectionTitle>
-          <FormGrid>
-            {}
-            <FullWidthField>
-              <FormTextField
-                control={control}
-                name="description"
-                label="Descrição"
-                placeholder="Ex: Salário, Aluguel, Supermercado..."
-                required
-                fullWidth
-              />
-            </FullWidthField>
-            {}
-            <FormCurrencyField
-              control={control}
-              name="amount"
-              label="Valor"
-              required
-              fullWidth
-            />
-            {}
-            <FormSelectField
-              control={control}
-              name="categoryId"
-              label="Categoria"
-              items={categoryOptions}
-              required
-              fullWidth
-            />
-            {}
-            <FormSelectField
-              control={control}
-              name="accountId"
-              label="Conta"
-              items={accountOptions}
-              required
-              fullWidth
-            />
-            {}
-            <FormDatePickerField
-              control={control}
-              name="transactionDate"
-              label="Data de competência"
-              required
-              fullWidth
-            />
-            {}
-            <FormSelectField
-              control={control}
-              name="status"
-              label="Situação"
-              items={[
-                { value: 'pending', label: 'Pendente' },
-                { value: 'settled', label: 'Liquidado' },
-                { value: 'cancelled', label: 'Cancelado' },
-              ]}
-              fullWidth
-            />
-            {watchStatus === 'settled' && (
-              <FormDatePickerField
-                control={control}
-                name="settlementDate"
-                label="Pago / recebido em"
-                required
-                fullWidth
-              />
-            )}
-            {transactionType === 'expense' && (
-              <FormDatePickerField
-                control={control}
-                name="dueDate"
-                label="Data de Vencimento"
-                fullWidth
-              />
-            )}
-          </FormGrid>
-        </FormSection>
-        {}
-        {transactionType === 'expense' && (
-          <>
-            <FormDivider />
-            <FormSection>
-              <SectionTitle>Detalhes da Despesa</SectionTitle>
-              <FormGrid>
-                {}
-                <FormSelectField
-                  control={control}
-                  name="paymentMethod"
-                  label="Forma de Pagamento"
-                  items={paymentMethodOptions}
-                  required
-                  fullWidth
-                />
-                {}
-                <FormSelectField
-                  control={control}
-                  name="expenseType"
-                  label="Tipo de Despesa"
-                  items={expenseTypeOptions}
-                  required
-                  fullWidth
-                />
-              </FormGrid>
-            </FormSection>
-          </>
-        )}
-        <FormDivider />
-        {}
-        <FormSection>
-          <SectionTitle>Recorrência</SectionTitle>
-          <FormGrid>
-            <FormSelectField
-              control={control}
-              name="recurrence"
-              label="Frequência"
-              items={recurrenceOptions}
-              required
-              fullWidth
-            />
-          </FormGrid>
-          {watchRecurrence !== 'once' && (
-            <Alert severity="info" sx={{ mt: 1 }}>
-              {watchRecurrence === 'monthly'
-                ? 'Esta transação será repetida mensalmente nos próximos 12 meses.'
-                : 'Esta transação será repetida semanalmente nas próximas 12 semanas.'}
+    <>
+      <Modal
+        variant="form"
+        open={open}
+        title={modalTitle}
+        handleClose={onClose}
+        handleConfirm={handleSubmit(onSubmit)}
+        confirmLabel="Salvar"
+        cancelLabel="Cancelar"
+        loading={loading || isSubmitting}
+        confirmDisabled={loading || isSubmitting}
+        setMaxWidth="600px"
+        width="100%"
+      >
+        <FormContainer>
+          {}
+          {submitError && (
+            <Alert severity="error" onClose={() => setSubmitError(null)}>
+              {submitError}
             </Alert>
           )}
-        </FormSection>
-        {}
-        {transactionType === 'expense' && (
-          <>
-            <FormDivider />
-            <FormSection>
-              <SectionTitle>Parcelamento</SectionTitle>
-              <AdditionalOptionsContainer>
-                <Controller
+          {}
+          <FormSection>
+            <SectionTitle>Tipo de Transação</SectionTitle>
+            <TransactionTypeToggle
+              value={watchType}
+              exclusive
+              onChange={handleTypeChange}
+              aria-label="tipo de transação"
+            >
+              <ToggleButton value="income" aria-label="receita">
+                <TrendingUpIcon sx={{ mr: 0.5 }} />
+                Receita
+              </ToggleButton>
+              <ToggleButton value="expense" aria-label="despesa">
+                <TrendingDownIcon sx={{ mr: 0.5 }} />
+                Despesa
+              </ToggleButton>
+            </TransactionTypeToggle>
+          </FormSection>
+          <FormDivider />
+          {}
+          <FormSection>
+            <SectionTitle>Informações Básicas</SectionTitle>
+            <FormGrid>
+              {}
+              <FullWidthField>
+                <FormTextField
                   control={control}
-                  name="hasInstallments"
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          {...field}
-                          checked={field.value}
-                          disabled={!canHaveInstallments}
-                        />
-                      }
-                      label="Parcelar"
-                    />
-                  )}
+                  name="description"
+                  label="Descrição"
+                  placeholder="Ex: Salário, Aluguel, Supermercado..."
+                  required
+                  fullWidth
                 />
-                {watchHasInstallments && canHaveInstallments && (
-                  <InstallmentsContainer>
-                    <InstallmentText>em</InstallmentText>
-                    <Controller
-                      control={control}
-                      name="totalInstallments"
-                      render={({ field, fieldState: { error } }) => (
-                        <TextField
-                          {...field}
-                          type="number"
-                          size="small"
-                          sx={{ width: 80 }}
-                          inputProps={{ min: 2, max: 48 }}
-                          error={!!error}
-                          helperText={error?.message}
-                        />
-                      )}
-                    />
-                    <InstallmentText>vezes</InstallmentText>
-                    {installments.length > 0 && (
-                      <InstallmentPreview>
-                        {formatCurrency(installments[0])} / parcela
-                        {installments.at(-1) !== installments[0] &&
-                          ' · última: ' + formatCurrency(installments.at(-1)!)}
-                      </InstallmentPreview>
-                    )}
-                  </InstallmentsContainer>
-                )}
-              </AdditionalOptionsContainer>
-              {!canHaveInstallments && transactionType === 'expense' && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
-                  Parcelamento disponível apenas para despesas únicas no cartão
-                  de crédito.
-                </Typography>
+              </FullWidthField>
+              {}
+              <FormCurrencyField
+                control={control}
+                name="amount"
+                label="Valor"
+                required
+                fullWidth
+              />
+              {}
+              <FormSelectField
+                control={control}
+                name="categoryId"
+                label="Categoria"
+                items={categoryOptions}
+                onCreate={() => setQuick('category')}
+                createLabel="Cadastrar categoria"
+                required
+                fullWidth
+              />
+              {}
+              <FormSelectField
+                control={control}
+                name="accountId"
+                label="Conta"
+                items={accountOptions}
+                onCreate={() => setQuick('account')}
+                createLabel="Cadastrar conta"
+                required
+                fullWidth
+              />
+              {}
+              <FormDatePickerField
+                control={control}
+                name="transactionDate"
+                label="Data de competência"
+                required
+                fullWidth
+              />
+              {}
+              <FormSelectField
+                control={control}
+                name="status"
+                label="Situação"
+                items={[
+                  { value: 'pending', label: 'Pendente' },
+                  { value: 'settled', label: 'Liquidado' },
+                  { value: 'cancelled', label: 'Cancelado' },
+                ]}
+                fullWidth
+              />
+              {watchStatus === 'settled' && (
+                <FormDatePickerField
+                  control={control}
+                  name="settlementDate"
+                  label="Pago / recebido em"
+                  required
+                  fullWidth
+                />
               )}
-            </FormSection>
-          </>
-        )}
-      </FormContainer>
-    </Modal>
+              {transactionType === 'expense' && (
+                <FormDatePickerField
+                  control={control}
+                  name="dueDate"
+                  label="Data de Vencimento"
+                  fullWidth
+                />
+              )}
+            </FormGrid>
+          </FormSection>
+          {}
+          {transactionType === 'expense' && (
+            <>
+              <FormDivider />
+              <FormSection>
+                <SectionTitle>Detalhes da Despesa</SectionTitle>
+                <FormGrid>
+                  {}
+                  <FormSelectField
+                    control={control}
+                    name="paymentMethod"
+                    label="Forma de Pagamento"
+                    items={paymentMethodOptions}
+                    required
+                    fullWidth
+                  />
+                  {}
+                  <FormSelectField
+                    control={control}
+                    name="expenseType"
+                    label="Tipo de Despesa"
+                    items={expenseTypeOptions}
+                    required
+                    fullWidth
+                  />
+                </FormGrid>
+              </FormSection>
+            </>
+          )}
+          <FormDivider />
+          {}
+          <FormSection>
+            <SectionTitle>Recorrência</SectionTitle>
+            <FormGrid>
+              <FormSelectField
+                control={control}
+                name="recurrence"
+                label="Frequência"
+                items={recurrenceOptions}
+                required
+                fullWidth
+              />
+            </FormGrid>
+            {watchRecurrence !== 'once' && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                {watchRecurrence === 'monthly'
+                  ? 'Esta transação será repetida mensalmente nos próximos 12 meses.'
+                  : 'Esta transação será repetida semanalmente nas próximas 12 semanas.'}
+              </Alert>
+            )}
+          </FormSection>
+          {}
+          {transactionType === 'expense' && (
+            <>
+              <FormDivider />
+              <FormSection>
+                <SectionTitle>Parcelamento</SectionTitle>
+                <AdditionalOptionsContainer>
+                  <Controller
+                    control={control}
+                    name="hasInstallments"
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            {...field}
+                            checked={field.value}
+                            disabled={!canHaveInstallments}
+                          />
+                        }
+                        label="Parcelar"
+                      />
+                    )}
+                  />
+                  {watchHasInstallments && canHaveInstallments && (
+                    <InstallmentsContainer>
+                      <InstallmentText>em</InstallmentText>
+                      <Controller
+                        control={control}
+                        name="totalInstallments"
+                        render={({ field, fieldState: { error } }) => (
+                          <TextField
+                            {...field}
+                            type="number"
+                            size="small"
+                            sx={{ width: 80 }}
+                            inputProps={{ min: 2, max: 48 }}
+                            error={!!error}
+                            helperText={error?.message}
+                          />
+                        )}
+                      />
+                      <InstallmentText>vezes</InstallmentText>
+                      {installments.length > 0 && (
+                        <InstallmentPreview>
+                          {formatCurrency(installments[0])} / parcela
+                          {installments.at(-1) !== installments[0] &&
+                            ' · última: ' +
+                              formatCurrency(installments.at(-1)!)}
+                        </InstallmentPreview>
+                      )}
+                    </InstallmentsContainer>
+                  )}
+                </AdditionalOptionsContainer>
+                {!canHaveInstallments && transactionType === 'expense' && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
+                    Parcelamento disponível apenas para despesas únicas no
+                    cartão de crédito.
+                  </Typography>
+                )}
+              </FormSection>
+            </>
+          )}
+        </FormContainer>
+      </Modal>
+      {quick && (
+        <QuickCreate
+          kind={quick}
+          type={transactionType}
+          onClose={() => setQuick(null)}
+          onAccount={(account) => {
+            setCreatedAccounts((current) => [...current, account]);
+            setValue('accountId', account.id, { shouldValidate: true });
+          }}
+          onCategory={(category) => {
+            setCreatedCategories((current) => [...current, category]);
+            setValue('categoryId', category.id, { shouldValidate: true });
+          }}
+        />
+      )}
+    </>
   );
 }
 export default TransactionForm;

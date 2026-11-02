@@ -1,3 +1,8 @@
+import {
+  useBoardListing,
+  BoardFilters,
+  BoardMore,
+} from '@renderer/components/BoardListing';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { AppAlert } from '@renderer/components/Feedback';
@@ -116,14 +121,14 @@ export function GoalsPage() {
       amount: 0,
     },
   });
+  const board = useBoardListing('goals', setGoals);
+  const queryFirst = board.first;
   const loadGoals = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await window.electronAPI.goal.findAll();
-      if (response.success && response.data) {
-        setGoals(response.data);
-      } else {
+      const response = await queryFirst();
+      if (!response.success && response.error !== 'Consulta substituída') {
         setError('Erro ao carregar metas');
       }
     } catch (err) {
@@ -132,7 +137,7 @@ export function GoalsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryFirst]);
   useEffect(() => {
     loadGoals();
   }, [loadGoals]);
@@ -284,6 +289,7 @@ export function GoalsPage() {
           </>
         }
       />
+      <BoardFilters board={board} />
       <ContentLoading loading={loading} initial="cards">
         {error && (
           <AppAlert severity="error" sx={{ mb: 3 }}>
@@ -595,6 +601,7 @@ export function GoalsPage() {
             )}
           </ContributionFormContainer>
         </Modal>
+        <BoardMore board={board} />
       </ContentLoading>
     </GoalsContainer>
   );

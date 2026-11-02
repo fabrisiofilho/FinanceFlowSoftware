@@ -9,8 +9,13 @@ import type {
   InvestmentInput,
   InvestmentPortfolio,
   InvestmentEventInput,
+  InvestmentQuery,
+  InvestmentPage,
 } from '@shared/interfaces/types/investment.types';
 export class InvestmentService {
+  async query(userId: number, input: InvestmentQuery): Promise<InvestmentPage> {
+    return this.repository.query(userId, input);
+  }
   constructor(private readonly repository = new InvestmentRepository()) {}
   async list(userId: number): Promise<InvestmentPortfolio> {
     const [investments, yields, events] = await Promise.all([

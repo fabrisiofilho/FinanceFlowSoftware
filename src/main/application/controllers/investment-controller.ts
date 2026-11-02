@@ -6,8 +6,12 @@ import { wrap } from '@main/infrastructure/utils/try-catch';
 import type {
   InvestmentInput,
   InvestmentEventInput,
+  InvestmentQuery,
 } from '@shared/interfaces/types/investment.types';
 export class InvestmentController extends BaseHandler {
+  @IpcMethod('investment:query') query(input: InvestmentQuery) {
+    return wrap(() => this.service.query(this.userId(), input))();
+  }
   private readonly service = new InvestmentService();
   private userId(): number {
     const id = FinanceAuthService.getInstance().getCurrentUserId();

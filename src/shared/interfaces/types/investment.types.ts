@@ -40,6 +40,7 @@ export interface InvestmentEventInput {
   requestId: string;
 }
 export interface InvestmentAPI {
+  query(input: InvestmentQuery): Promise<ApiResponse<InvestmentPage>>;
   event(input: InvestmentEventInput): Promise<ApiResponse<void>>;
   list(): Promise<ApiResponse<InvestmentPortfolio>>;
   create(input: InvestmentInput): Promise<ApiResponse<void>>;
@@ -49,4 +50,16 @@ export interface InvestmentAPI {
     amountCents: number,
   ): Promise<ApiResponse<void>>;
   remove(id: number): Promise<ApiResponse<void>>;
+}
+export interface InvestmentQuery {
+  page?: number;
+  size?: number;
+  search?: string;
+  kinds?: string[];
+}
+export interface InvestmentPage extends InvestmentPortfolio {
+  page: number;
+  totalElements: number;
+  totalPages: number;
+  summary: { principalCents: number; yieldCents: number; balanceCents: number };
 }

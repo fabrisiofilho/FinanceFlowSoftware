@@ -1,3 +1,5 @@
+import { MultiFilter, InfiniteMore } from '@renderer/components/BoardListing';
+import { Input } from '@renderer/components/Form/Input';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { useSearchParams } from 'react-router-dom';
 import { ContentLoading } from '@renderer/components/ContentLoading';
@@ -18,7 +20,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
   Chip,
   Checkbox,
   TableSortLabel,
@@ -33,10 +34,7 @@ import {
   WarningAmberRounded as WarningIcon,
   DeleteSweepOutlined as DeleteSweepIcon,
 } from '@mui/icons-material';
-import {
-  SelectInput,
-  type SelectInputItem,
-} from '@renderer/components/Form/SelectInput';
+import { type SelectInputItem } from '@renderer/components/Form/SelectInput';
 import { TransactionForm } from '@renderer/components/TransactionForm';
 import { Modal } from '@renderer/components/Modal';
 import { formatDateToShow } from '@renderer/utils/date';
@@ -62,11 +60,6 @@ import type { Category } from '@shared/interfaces/types/category.types';
 import type { Account } from '@shared/interfaces/types/account.types';
 import { formatCurrency } from '@renderer/utils/currency';
 
-const typeOptions: SelectInputItem[] = [
-  { value: '', label: 'Todos' },
-  { value: 'income', label: 'Receitas' },
-  { value: 'expense', label: 'Despesas' },
-];
 const MONTH_NAMES = [
   'Janeiro',
   'Fevereiro',
@@ -93,7 +86,15 @@ export function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [search, setSearch] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(0);
+      setFilters((previous) => ({ ...previous, search }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  const rowsPerPage = 25;
   const [totalElements, setTotalElements] = useState(0);
   const [filters, setFilters] = useState<TransactionFilters>({
     startMonth: currentMonth,
@@ -159,7 +160,17 @@ export function TransactionsPage() {
       });
       if (!isCurrent(requestId)) return;
       if (response.success && response.data) {
-        setTransactions(response.data.content);
+        const content = response.data.content;
+        setTransactions((previous) =>
+          page === 0
+            ? content
+            : [
+                ...previous,
+                ...content.filter(
+                  (item) => !previous.some((row) => row.id === item.id),
+                ),
+              ],
+        );
         setTotalElements(response.data.totalElements);
       } else {
         setError('Erro ao carregar transações');
@@ -179,6 +190,17 @@ export function TransactionsPage() {
   useEffect(() => {
     loadTransactions();
   }, [loadTransactions]);
+  const refreshTransactions = () => {
+    setSelectedIds([]);
+    if (page === 0) void loadTransactions();
+    else setPage(0);
+  };
+  const loadMore = useCallback(() => {
+    if (!loading && transactions.length < totalElements) {
+      setLoading(true);
+      setPage((previous) => previous + 1);
+    }
+  }, [loading, transactions.length, totalElements]);
   const handleSort = (field: TransactionSortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'ASC' ? 'DESC' : 'ASC');
@@ -188,42 +210,8 @@ export function TransactionsPage() {
     }
     setPage(0);
   };
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-    setSelectedIds([]);
-  };
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-    setSelectedIds([]);
-  };
-  const handleCategoryChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as string | number;
-    setFilters((prev) => ({
-      ...prev,
-      categoryId: value ? Number(value) : undefined,
-    }));
-    setPage(0);
-  };
-  const handleTypeChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as string;
-    setFilters((prev) => ({
-      ...prev,
-      type: value ? (value as TransactionType) : undefined,
-    }));
-    setPage(0);
-  };
-  const handleAccountChange = (event: { target: { value: unknown } }) => {
-    const value = event.target.value as string | number;
-    setFilters((prev) => ({
-      ...prev,
-      accountId: value ? Number(value) : undefined,
-    }));
-    setPage(0);
-  };
   const handleClearFilters = () => {
+    setSearch('');
     setFilters({
       startMonth: currentMonth,
       startYear: currentYear,
@@ -233,7 +221,12 @@ export function TransactionsPage() {
     setPage(0);
   };
   const hasActiveFilters = () => {
-    return !!(filters.categoryId || filters.type || filters.accountId);
+    return !!(
+      filters.categoryIds?.length ||
+      filters.types?.length ||
+      filters.accountIds?.length ||
+      filters.statuses?.length
+    );
   };
   const formatPeriod = (): string => {
     const startMonthName =
@@ -265,7 +258,7 @@ export function TransactionsPage() {
         transactionToDelete.id,
       );
       if (response.success) {
-        loadTransactions();
+        refreshTransactions();
         setIsDeleteModalOpen(false);
         setTransactionToDelete(null);
       } else {
@@ -301,7 +294,7 @@ export function TransactionsPage() {
       const response =
         await window.electronAPI.transaction.deleteMany(selectedIds);
       if (response.success) {
-        loadTransactions();
+        refreshTransactions();
         setSelectedIds([]);
         setIsDeleteManyModalOpen(false);
       } else {
@@ -338,7 +331,7 @@ export function TransactionsPage() {
           throw new Error(response.error ?? 'Erro ao criar transação');
         }
       }
-      loadTransactions();
+      refreshTransactions();
     } finally {
       setFormLoading(false);
     }
@@ -396,7 +389,7 @@ export function TransactionsPage() {
                 </Tooltip>
               )}
               <Tooltip title="Atualizar">
-                <IconButton onClick={loadTransactions} size="small">
+                <IconButton onClick={refreshTransactions} size="small">
                   <RefreshIcon />
                 </IconButton>
               </Tooltip>
@@ -428,30 +421,44 @@ export function TransactionsPage() {
               color="primary"
               variant="outlined"
             />
-            {filters.categoryId && (
+            {!!filters.categoryIds?.length && (
               <Chip
-                label={`Categoria: ${getCategoryName(filters.categoryId)}`}
-                size="small"
-                onDelete={() => handleCategoryChange({ target: { value: '' } })}
+                label={filters.categoryIds.map(getCategoryName).join(', ')}
               />
             )}
-            {filters.type && (
+            {!!filters.accountIds?.length && (
+              <Chip label={filters.accountIds.map(getAccountName).join(', ')} />
+            )}
+            {!!filters.types?.length && (
               <Chip
-                label={`Tipo: ${filters.type === 'income' ? 'Receitas' : 'Despesas'}`}
-                size="small"
-                onDelete={() => handleTypeChange({ target: { value: '' } })}
+                label={filters.types
+                  .map((type) => (type === 'income' ? 'Receitas' : 'Despesas'))
+                  .join(', ')}
               />
             )}
-            {filters.accountId && (
+            {!!filters.statuses?.length && (
               <Chip
-                label={`Conta: ${getAccountName(filters.accountId)}`}
-                size="small"
-                onDelete={() => handleAccountChange({ target: { value: '' } })}
+                label={filters.statuses
+                  .map(
+                    (status) =>
+                      ({
+                        pending: 'Pendentes',
+                        settled: 'Liquidados',
+                        cancelled: 'Cancelados',
+                      })[status],
+                  )
+                  .join(', ')}
               />
             )}
           </FiltersSummary>
         }
       >
+        <Input
+          label="Buscar descrição"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          fullWidth
+        />
         <MonthRangeFields
           value={{
             startMonth: filters.startMonth ?? currentMonth,
@@ -464,48 +471,67 @@ export function TransactionsPage() {
             setPage(0);
           }}
         />
-        <SelectInput
-          label="Categoria"
-          value={filters.categoryId ?? ''}
-          items={categoryOptions}
-          onChange={handleCategoryChange}
-          fullWidth
-        />
-        <SelectInput
-          label="Conta"
-          value={filters.accountId ?? ''}
-          items={accountOptions}
-          onChange={handleAccountChange}
-          fullWidth
-        />
-        <SelectInput
-          label="Tipo"
-          value={filters.type ?? ''}
-          items={typeOptions}
-          onChange={handleTypeChange}
-          fullWidth
-        />
-        <SelectInput
-          label="Situação"
-          value={filters.status ?? ''}
-          items={[
-            { value: '', label: 'Todas' },
-            { value: 'pending', label: 'Pendentes' },
-            { value: 'settled', label: 'Liquidados' },
-            { value: 'cancelled', label: 'Cancelados' },
-          ]}
-          onChange={(event) => {
+        <MultiFilter
+          label="Categorias"
+          options={categoryOptions
+            .filter((o) => o.value)
+            .map((o) => ({ id: String(o.value), label: o.label }))}
+          value={(filters.categoryIds ?? []).map(String)}
+          onChange={(values) => {
             setPage(0);
             setFilters((previous) => ({
               ...previous,
-              status: (event.target.value ||
-                undefined) as TransactionFilters['status'],
+              categoryIds: values.map(Number),
             }));
           }}
-          fullWidth
+        />
+        <MultiFilter
+          label="Contas"
+          options={accountOptions
+            .filter((o) => o.value)
+            .map((o) => ({ id: String(o.value), label: o.label }))}
+          value={(filters.accountIds ?? []).map(String)}
+          onChange={(values) => {
+            setPage(0);
+            setFilters((previous) => ({
+              ...previous,
+              accountIds: values.map(Number),
+            }));
+          }}
+        />
+        <MultiFilter
+          label="Tipos"
+          options={[
+            { id: 'income', label: 'Receitas' },
+            { id: 'expense', label: 'Despesas' },
+          ]}
+          value={filters.types ?? []}
+          onChange={(values) => {
+            setPage(0);
+            setFilters((previous) => ({
+              ...previous,
+              types: values as TransactionType[],
+            }));
+          }}
+        />
+        <MultiFilter
+          label="Situações"
+          options={[
+            { id: 'pending', label: 'Pendentes' },
+            { id: 'settled', label: 'Liquidados' },
+            { id: 'cancelled', label: 'Cancelados' },
+          ]}
+          value={filters.statuses ?? []}
+          onChange={(values) => {
+            setPage(0);
+            setFilters((previous) => ({
+              ...previous,
+              statuses: values as NonNullable<TransactionFilters['statuses']>,
+            }));
+          }}
         />
       </FilterPanel>
-      <ContentLoading loading={loading} initial="table">
+      <ContentLoading loading={loading && page === 0} initial="table">
         <StyledTableContainer>
           <TableContainer>
             <Table>
@@ -731,18 +757,15 @@ export function TransactionsPage() {
             </Table>
           </TableContainer>
 
-          <TablePagination
-            component="div"
-            count={totalElements}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            labelRowsPerPage="Resultados por página:"
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}–${to} de ${count !== -1 ? count : `mais de ${to}`}`
-            }
+          <Typography variant="caption" sx={{ px: 3 }}>
+            {transactions.length} de {totalElements} lançamento(s)
+          </Typography>
+          <InfiniteMore
+            busy={loading}
+            error={error || undefined}
+            hasMore={transactions.length < totalElements}
+            onMore={loadMore}
+            onRetry={refreshTransactions}
           />
         </StyledTableContainer>
 

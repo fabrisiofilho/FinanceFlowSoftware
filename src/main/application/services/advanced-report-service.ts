@@ -41,6 +41,7 @@ export interface CategoryBreakdown {
 }
 
 export interface FinancialHealth {
+  hasData?: boolean;
   score: number; // 0-100
   savingsRate: number;
   expenseToIncomeRatio: number;
@@ -318,6 +319,18 @@ export class AdvancedReportService {
     const expenses = Number(
       summary.find((s) => s.type === 'expense')?.total ?? 0,
     );
+    if (!summary.length)
+      return {
+        hasData: false,
+        score: 0,
+        savingsRate: 0,
+        expenseToIncomeRatio: 0,
+        budgetAdherence: 0,
+        emergencyFundMonths: 0,
+        recommendations: [
+          'Dados insuficientes: registre receitas e despesas para avaliar os últimos três meses.',
+        ],
+      };
 
     // Calculate metrics
     const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;

@@ -11,16 +11,16 @@ const DEFAULT_CATEGORIES: Array<{
   type: CategoryType;
   icon?: string;
 }> = [
-  { name: 'Moradia', type: 'expense', icon: 'home' },
-  { name: 'Alimentação', type: 'expense', icon: 'restaurant' },
-  { name: 'Transporte', type: 'expense', icon: 'directions_car' },
-  { name: 'Lazer', type: 'expense', icon: 'sports_esports' },
-  { name: 'Saúde', type: 'expense', icon: 'local_hospital' },
-  { name: 'Educação', type: 'expense', icon: 'school' },
-  { name: 'Salário', type: 'income', icon: 'payments' },
-  { name: 'Investimentos', type: 'income', icon: 'trending_up' },
-  { name: 'Freelas', type: 'income', icon: 'work' },
-  { name: 'Outros', type: 'expense', icon: 'more_horiz' },
+  { name: 'Moradia', type: 'expense', icon: 'Home' },
+  { name: 'Alimentação', type: 'expense', icon: 'Restaurant' },
+  { name: 'Transporte', type: 'expense', icon: 'DirectionsCar' },
+  { name: 'Lazer', type: 'expense', icon: 'SportsEsports' },
+  { name: 'Saúde', type: 'expense', icon: 'LocalHospital' },
+  { name: 'Educação', type: 'expense', icon: 'School' },
+  { name: 'Salário', type: 'income', icon: 'Payments' },
+  { name: 'Investimentos', type: 'income', icon: 'TrendingUp' },
+  { name: 'Freelas', type: 'income', icon: 'Work' },
+  { name: 'Outros', type: 'expense', icon: 'MoreHoriz' },
 ];
 export class CategoryService {
   private get categoryRepository() {
@@ -57,18 +57,22 @@ export class CategoryService {
   }
   async initializeDefaults(): Promise<void> {
     logger.info('Verificando categorias padrão do sistema');
-    const hasDefaults = await this.categoryRepository.hasDefaultCategories();
-    if (hasDefaults) {
-      logger.info('Categorias padrão já existem');
-      return;
-    }
-    logger.info('Criando categorias padrão do sistema');
-    for (const categoryData of DEFAULT_CATEGORIES) {
-      await this.categoryRepository.createDefaultCategory({
-        name: categoryData.name,
-        type: categoryData.type,
-        icon: categoryData.icon,
-      });
+    const existing = await this.categoryRepository.findDefaultCategories();
+    for (const category of DEFAULT_CATEGORIES) {
+      const found = existing.find(
+        (item) => item.name === category.name && item.type === category.type,
+      );
+      if (!found) await this.categoryRepository.createDefaultCategory(category);
+      else if (
+        !found.icon ||
+        found.icon.includes('_') ||
+        found.icon[0] === found.icon[0].toLowerCase()
+      ) {
+        await this.categoryRepository.update(
+          { id: found.id },
+          { icon: category.icon },
+        );
+      }
     }
     logger.success('Categorias padrão criadas com sucesso');
   }

@@ -535,6 +535,353 @@ try {
   });
   assert.equal(otherUser.currentBalance, 0);
   assert.equal(otherUser.netCashFlow, 0);
+
+  const pagedInvestments = await investments.query(1, { page: 0, size: 1 });
+  assert.ok(pagedInvestments.investments.length <= 1);
+  const allInvestments = await investments.list(1);
+  const allYields = await investments.yields(1);
+  assert.equal(
+    pagedInvestments.summary.principalCents,
+    allInvestments.reduce((sum, item) => sum + item.principalCents, 0),
+  );
+  assert.equal(
+    pagedInvestments.summary.yieldCents,
+    allYields.reduce((sum, item) => sum + item.amountCents, 0),
+  );
+  assert.equal((await investments.query(999, {})).totalElements, 0);
+  await assert.rejects(() => investments.query(1, { size: 101 }), /Paginação/);
+  const {
+    AlertService,
+  } = require('../src/main/application/services/alert-service.ts');
+  await assert.rejects(
+    () =>
+      new BudgetService().create(999, {
+        categoryId: 100,
+        year: 2026,
+        month: 1,
+        plannedAmount: 10,
+      }),
+    /Categoria não encontrada/,
+  );
+  await assert.rejects(
+    () => new AlertService().create(999, { categoryId: 100, limitAmount: 10 }),
+    /Categoria não encontrada/,
+  );
+  await assert.rejects(
+    () =>
+      new RecurringTransactionService().create(999, {
+        description: 'Regra alheia',
+        amount: 10,
+        type: 'expense',
+        frequency: 'monthly',
+        accountId: account.id,
+        categoryId: 100,
+        startDate: new Date(),
+      }),
+    /Conta não encontrada/,
+  );
+  // Regressões de integridade/autorização e listagens da evolução de produto.
+  const {
+    ListingService,
+  } = require('../src/main/application/services/listing-service.ts');
+  const listing = new ListingService();
+  const {
+    CategoryService,
+  } = require('../src/main/application/services/category-service.ts');
+  const categoriesService = new CategoryService();
+  await categoriesService.initializeDefaults();
+  const defaultsBefore = await source.query(
+    'SELECT id,icon FROM categories WHERE is_default=1',
+  );
+  await categoriesService.initializeDefaults();
+  assert.equal(
+    (await source.query('SELECT id FROM categories WHERE is_default=1')).length,
+    defaultsBefore.length,
+  );
+  assert.ok(
+    defaultsBefore.every((item) => /^[A-Z]/.test(item.icon)),
+    JSON.stringify(defaultsBefore),
+  );
+  const testAccount = await accounts.create(1, {
+    name: 'Prova % literal',
+    type: 'checking',
+    balance: 10,
+    cardColor: '#00bcd4',
+  });
+  assert.equal(testAccount.cardColor, '#00bcd4');
+  await accounts.updateBalance(1, testAccount.id, 25.67);
+  assert.equal(
+    await new BalanceCalculatorService().recalculateAccountBalance(
+      1,
+      testAccount.id,
+    ),
+    25.67,
+  );
+  await assert.rejects(
+    () =>
+      accounts.update(1, testAccount.id, {
+        imageData: 'data:image/png;base64,YWJj',
+      }),
+    /Imagem/,
+  );
+  assert.equal(
+    (
+      await listing.query(1, {
+        kind: 'accounts',
+        search: '% literal',
+        page: 0,
+        size: 1,
+      })
+    ).totalElements,
+    1,
+  );
+  assert.equal(
+    (await listing.query(999, { kind: 'accounts', search: '% literal' }))
+      .totalElements,
+    0,
+  );
+  await assert.rejects(
+    () => listing.query(1, { kind: 'accounts', page: -1 }),
+    /Paginação/,
+  );
+  await assert.rejects(
+    () => listing.query(1, { kind: 'accounts', size: 1000 }),
+    /Paginação/,
+  );
+  for (let index = 0; index < 26; index++)
+    await accounts.create(1, {
+      name: 'Paginação ' + index,
+      type: index % 2 ? 'wallet' : 'checking',
+    });
+  const firstPage = await listing.query(1, {
+    kind: 'accounts',
+    search: 'Paginação',
+    types: ['wallet', 'checking'],
+    page: 0,
+    size: 24,
+  });
+  const secondPage = await listing.query(1, {
+    kind: 'accounts',
+    search: 'Paginação',
+    types: ['wallet', 'checking'],
+    page: 1,
+    size: 24,
+  });
+  assert.equal(firstPage.content.length, 24);
+  assert.equal(secondPage.content.length, 2);
+  assert.equal(
+    new Set([...firstPage.content, ...secondPage.content].map((row) => row.id))
+      .size,
+    26,
+  );
+  const ownedEntry = await entries.create(1, {
+    description: 'Proteção % de proprietário',
+    amount: 1.23,
+    type: 'income',
+    accountId: testAccount.id,
+    categoryId: 101,
+    transactionDate: new Date(2026, 0, 1),
+    status: 'pending',
+  });
+  const matching = await entries.findAll(1, {
+    search: '% de proprietário',
+    accountIds: [testAccount.id],
+    categoryIds: [101],
+    types: ['income', 'expense'],
+    statuses: ['pending', 'settled'],
+  });
+  assert.equal(matching.totalElements, 1);
+  assert.equal(matching.content[0].id, ownedEntry.id);
+  assert.equal(
+    (await entries.findAll(999, { accountIds: [testAccount.id] }))
+      .totalElements,
+    0,
+  );
+  const {
+    TagService,
+  } = require('../src/main/application/services/tag-service.ts');
+  const tags = new TagService();
+  const ownedTag = await tags.create(1, { name: 'Teste autorização' });
+  await tags.setTransactionTags(1, ownedEntry.id, [ownedTag.id]);
+  await assert.rejects(
+    () => tags.getTransactionTags(999, ownedEntry.id),
+    /não encontrado/,
+  );
+  await assert.rejects(
+    () => tags.setTransactionTags(999, ownedEntry.id, []),
+    /não encontrado/,
+  );
+  assert.equal((await tags.getTransactionTags(1, ownedEntry.id)).length, 1);
+  const {
+    AttachmentService,
+  } = require('../src/main/application/services/attachment-service.ts');
+  const attachments = new AttachmentService(directory);
+  await assert.rejects(
+    () => attachments.findByTransaction(999, ownedEntry.id),
+    /não encontrado/,
+  );
+  const goalsService = new GoalService();
+  const concurrentGoal = await goalsService.create(1, {
+    name: 'Concorrência',
+    targetAmount: 1,
+  });
+  await Promise.all(
+    Array.from({ length: 10 }, () =>
+      goalsService.addContribution(1, concurrentGoal.id, { amount: 0.01 }),
+    ),
+  );
+  assert.equal(
+    (await goalsService.findById(1, concurrentGoal.id)).currentAmount,
+    0.1,
+  );
+  await assert.rejects(
+    () => goalsService.addContribution(999, concurrentGoal.id, { amount: 1 }),
+    /não encontrada/,
+  );
+  await assert.rejects(
+    () =>
+      goalsService.create(999, {
+        name: 'Conta alheia',
+        targetAmount: 1,
+        accountId: testAccount.id,
+      }),
+    /Conta não encontrada/,
+  );
+  await assert.rejects(
+    () => bankImporter.getImportTransactions(999, importGroup.id),
+    /não encontrada/,
+  );
+  const anotherCard = await accounts.create(1, {
+    name: 'Outro cartão',
+    type: 'credit_card',
+    creditLimit: 1000,
+    closingDay: 5,
+  });
+  const wrongInvoice = await cards.getOrCreateInvoice(
+    1,
+    anotherCard.id,
+    2026,
+    1,
+  );
+  await assert.rejects(
+    () => cards.linkTransactionToInvoice(1, ownedEntry.id, wrongInvoice.id),
+    /mesmo cartão/,
+  );
+  await accounts.update(1, anotherCard.id, { dueDay: 31 });
+  const sourcePurchase = await entries.create(1, {
+    description: 'Compra com troca de fatura',
+    amount: 12.34,
+    type: 'expense',
+    accountId: anotherCard.id,
+    categoryId: 100,
+    transactionDate: new Date(2026, 0, 2),
+    status: 'pending',
+  });
+  const destinationInvoice = await cards.getOrCreateInvoice(
+    1,
+    anotherCard.id,
+    2026,
+    2,
+  );
+  assert.equal(new Date(destinationInvoice.dueDate).getDate(), 28);
+  await cards.linkTransactionToInvoice(
+    1,
+    sourcePurchase.id,
+    destinationInvoice.id,
+  );
+  assert.equal(
+    (
+      await source.query(
+        'SELECT total_amount AS n FROM credit_card_invoices WHERE id=?',
+        [wrongInvoice.id],
+      )
+    )[0].n,
+    0,
+  );
+  assert.equal(
+    (
+      await source.query(
+        'SELECT total_amount AS n FROM credit_card_invoices WHERE id=?',
+        [destinationInvoice.id],
+      )
+    )[0].n,
+    1234,
+  );
+  const reportSerializer = new ReportService();
+  for (const text of ['=1+1', '+1', '-1', '@SUM(A1)', '  =1', '\t=1'])
+    assert.ok(reportSerializer.escapeCSVValue(text).startsWith("'"));
+  assert.equal(reportSerializer.escapeCSVValue(123.45), '123.45');
+  const {
+    OnboardingService,
+  } = require('../src/main/application/services/onboarding-service.ts');
+  const guide = new OnboardingService();
+  assert.equal((await guide.state(1)).step, 0);
+  assert.equal((await guide.advance(1, 0)).step, 1);
+  await assert.rejects(() => guide.advance(1, 0), /Etapa inválida/);
+  assert.equal((await guide.advance(1, 1)).step, 2);
+  assert.equal((await guide.advance(1, 2)).step, 3);
+  assert.equal((await guide.advance(1, 3)).step, 4);
+  assert.equal((await guide.advance(1, 4, true)).step, 5);
+  assert.equal((await guide.advance(1, 5)).completed, true);
+  assert.equal((await new OnboardingService().state(1)).completed, true);
+  assert.equal((await guide.state(999)).step, 0);
+  await assert.rejects(() => guide.advance(999, 0, true), /Conclua/);
+  const imageData =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
+  assert.equal(
+    (await accounts.update(1, testAccount.id, { imageData })).imageData,
+    imageData,
+  );
+  const {
+    BackupService,
+  } = require('../src/main/application/services/backup/backup-service.ts');
+  const {
+    financialTransaction,
+  } = require('../src/main/infrastructure/database/financial-transaction.ts');
+  const backupPath = path.join(directory, 'foundation.ctbackup');
+  await Promise.all([
+    financialTransaction(async (manager) => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      await manager.query('UPDATE accounts SET name=? WHERE id=?', [
+        'Snapshot íntegro',
+        testAccount.id,
+      ]);
+    }),
+    new BackupService().export(backupPath, 'senha-teste-12345'),
+  ]);
+  const { decryptBackup } = require('../src/main/domain/backup-codec.ts');
+  const SnapshotDatabase = require('better-sqlite3');
+  const snapshot = new SnapshotDatabase(
+    decryptBackup(fs.readFileSync(backupPath, 'utf8'), 'senha-teste-12345'),
+  );
+  assert.equal(
+    snapshot.prepare('SELECT name FROM accounts WHERE id=?').get(testAccount.id)
+      .name,
+    'Snapshot íntegro',
+  );
+  assert.equal(
+    snapshot
+      .prepare('SELECT image_data FROM accounts WHERE id=?')
+      .get(testAccount.id).image_data,
+    imageData,
+  );
+  assert.ok(
+    snapshot
+      .prepare('SELECT completed_at FROM onboarding_progress WHERE user_id=1')
+      .get().completed_at,
+  );
+  assert.equal(
+    snapshot
+      .prepare(
+        'SELECT SUM(delta_cents) AS n FROM balance_adjustments WHERE account_id=?',
+      )
+      .get(testAccount.id).n,
+    1567,
+  );
+  snapshot.close();
+  console.log(
+    'Regressões: autorização, ajuste persistente, metas concorrentes, categorias idempotentes, multisseleção e paginação: OK',
+  );
   await database.closeDatabase();
   const NativeDatabase = require('better-sqlite3');
   const previous = new NativeDatabase(file);

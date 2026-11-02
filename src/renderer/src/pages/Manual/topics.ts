@@ -1,5 +1,31 @@
 export const manualTopics = [
   {
+    title: 'Primeiros passos e cadastros rápidos',
+    route: '/panel/dashboard',
+    description:
+      'Um guia que acompanha o cadastro inicial e permite retomar de onde parou.',
+    steps: [
+      'Na visão geral, clique em Retomar guia. Cada etapa abre a tela correspondente e explica o que cadastrar. A etapa fica salva no seu perfil mesmo ao fechar o programa.',
+      'Depois de cadastrar, conclua a etapa para avançar. A verificação exige os registros necessários; orçamento é uma etapa opcional.',
+      'Ao criar uma transação, abra a seleção de categoria ou conta e escolha Cadastrar agora. O cadastro abre em outro modal e o novo item é selecionado sem apagar os valores já preenchidos.',
+      'Recorrências, transferências, orçamento, alertas, cartões, investimentos e importação também permitem criar os cadastros necessários dentro do formulário.',
+      'As categorias iniciais já incluem ícones. Em Contas, escolha uma cor de identificação ou envie uma imagem PNG, JPEG ou WebP de até 500 KB. As imagens são guardadas localmente e incluídas no backup.',
+    ],
+  },
+  {
+    title: 'Busca, filtros e listagens',
+    route: '/panel/transactions',
+    description:
+      'Encontre registros usando filtros combinados e carregamento por páginas.',
+    steps: [
+      'Os filtros de contas, categorias, tipos e situações aceitam várias opções. Dentro de um filtro, qualquer uma das opções é aceita; entre filtros diferentes, todos os critérios precisam ser atendidos.',
+      'Contas, categorias, metas, recorrências, transferências, transações e investimentos consultam o banco ao buscar e carregam mais registros conforme a rolagem. Carregar mais e Tentar novamente também estão disponíveis.',
+      'Os totais de listagem informam quantos registros atendem à busca, mesmo quando nem todos foram carregados.',
+      'A expansão é restrita a listagens úteis. No painel, amplie Transações Recentes para consultar o histórico com busca e paginação no banco. Indicadores e cadastros individuais não têm botão de expansão.',
+      'Relatórios e suas exportações utilizam os mesmos filtros múltiplos.',
+    ],
+  },
+  {
     title: 'Simulação de IR',
     route: '/panel/income-tax',
     description:

@@ -2,7 +2,7 @@ import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { FilterPanel, MonthRangeFields } from '@renderer/components/Filters';
-import { SelectInput } from '@renderer/components/Form/SelectInput';
+import { MultiFilter } from '@renderer/components/BoardListing';
 import { AppAlert as Alert } from '@renderer/components/Feedback';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -64,9 +64,9 @@ interface FilterState {
   startYear: number;
   endMonth: number;
   endYear: number;
-  categoryId: number | '';
-  accountId: number | '';
-  type: TransactionType | '';
+  categoryIds: number[];
+  accountIds: number[];
+  types: TransactionType[];
 }
 interface ReportSummary {
   totalIncome: number;
@@ -82,9 +82,9 @@ export function ReportsPage() {
     startYear: currentYear,
     endMonth: currentMonth,
     endYear: currentYear,
-    categoryId: '',
-    accountId: '',
-    type: '',
+    categoryIds: [],
+    accountIds: [],
+    types: [],
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -138,9 +138,9 @@ export function ReportsPage() {
     return {
       startDate,
       endDate,
-      categoryId: filters.categoryId !== '' ? filters.categoryId : undefined,
-      accountId: filters.accountId !== '' ? filters.accountId : undefined,
-      type: filters.type !== '' ? filters.type : undefined,
+      categoryIds: filters.categoryIds,
+      accountIds: filters.accountIds,
+      types: filters.types,
     };
   };
   const { begin, isCurrent } = useRequestSequence();
@@ -152,9 +152,9 @@ export function ReportsPage() {
       const response = await window.electronAPI.report.generateReport({
         startDate: new Date(filters.startYear, filters.startMonth - 1, 1),
         endDate: new Date(filters.endYear, filters.endMonth, 0),
-        categoryId: filters.categoryId || undefined,
-        accountId: filters.accountId || undefined,
-        type: filters.type || undefined,
+        categoryIds: filters.categoryIds,
+        accountIds: filters.accountIds,
+        types: filters.types,
       });
       if (!isCurrent(requestId)) return;
       if (!response.success || !response.data)
@@ -181,38 +181,15 @@ export function ReportsPage() {
       loadReportData();
     }
   }, [loadReportData, loadingCategories, loadingAccounts]);
-  const handleFilterChange = (
-    field: keyof FilterState,
-    value: string | number,
-  ) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev, [field]: value };
-      const startDate = new Date(
-        newFilters.startYear,
-        newFilters.startMonth - 1,
-      );
-      const endDate = new Date(newFilters.endYear, newFilters.endMonth - 1);
-      if (endDate < startDate) {
-        if (field === 'startMonth' || field === 'startYear') {
-          newFilters.endMonth = newFilters.startMonth;
-          newFilters.endYear = newFilters.startYear;
-        } else {
-          newFilters.startMonth = newFilters.endMonth;
-          newFilters.startYear = newFilters.endYear;
-        }
-      }
-      return newFilters;
-    });
-  };
   const handleClearFilters = () => {
     setFilters({
       startMonth: currentMonth,
       startYear: currentYear,
       endMonth: currentMonth,
       endYear: currentYear,
-      categoryId: '',
-      accountId: '',
-      type: '',
+      categoryIds: [],
+      accountIds: [],
+      types: [],
     });
   };
   const handleExportPdf = async () => {
@@ -332,40 +309,41 @@ export function ReportsPage() {
           value={filters}
           onChange={(range) => setFilters((prev) => ({ ...prev, ...range }))}
         />
-        <SelectInput
-          label="Categoria"
-          fullWidth
-          value={filters.categoryId}
-          items={[
-            { value: '', label: 'Todas' },
-            ...categories.map((item) => ({ value: item.id, label: item.name })),
-          ]}
-          onChange={(e) =>
-            handleFilterChange('categoryId', e.target.value as string | number)
+        <MultiFilter
+          label="Categorias"
+          options={categories.map((c) => ({ id: String(c.id), label: c.name }))}
+          value={filters.categoryIds.map(String)}
+          onChange={(values) =>
+            setFilters((previous) => ({
+              ...previous,
+              categoryIds: values.map(Number),
+            }))
           }
         />
-        <SelectInput
-          label="Conta"
-          fullWidth
-          value={filters.accountId}
-          items={[
-            { value: '', label: 'Todas' },
-            ...accounts.map((item) => ({ value: item.id, label: item.name })),
-          ]}
-          onChange={(e) =>
-            handleFilterChange('accountId', e.target.value as string | number)
+        <MultiFilter
+          label="Contas"
+          options={accounts.map((c) => ({ id: String(c.id), label: c.name }))}
+          value={filters.accountIds.map(String)}
+          onChange={(values) =>
+            setFilters((previous) => ({
+              ...previous,
+              accountIds: values.map(Number),
+            }))
           }
         />
-        <SelectInput
-          label="Tipo"
-          fullWidth
-          value={filters.type}
-          items={[
-            { value: '', label: 'Todos' },
-            { value: 'income', label: 'Receitas' },
-            { value: 'expense', label: 'Despesas' },
+        <MultiFilter
+          label="Tipos"
+          options={[
+            { id: 'income', label: 'Receitas' },
+            { id: 'expense', label: 'Despesas' },
           ]}
-          onChange={(e) => handleFilterChange('type', e.target.value as string)}
+          value={filters.types}
+          onChange={(values) =>
+            setFilters((previous) => ({
+              ...previous,
+              types: values as TransactionType[],
+            }))
+          }
         />
       </FilterPanel>
       <ContentLoading

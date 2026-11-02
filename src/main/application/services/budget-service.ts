@@ -1,4 +1,6 @@
 import { logger } from '@main/infrastructure/log/logger';
+import { requireCategoryOwner } from './ownership';
+import { amountToCents } from '@shared/finance/entry-schedule';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { BudgetEntity } from '../entities/budget.entity';
 import { CategoryEntity } from '../entities/category.entity';
@@ -53,6 +55,17 @@ export class BudgetService {
 
   async create(userId: number, data: CreateBudgetInput): Promise<Budget> {
     logger.info('Criando orçamento para usuário:', userId);
+    amountToCents(data.plannedAmount);
+    if (
+      !Number.isInteger(data.month) ||
+      data.month < 1 ||
+      data.month > 12 ||
+      !Number.isInteger(data.year) ||
+      data.year < 1000 ||
+      data.year > 9999
+    )
+      throw new Error('Competência inválida.');
+    await requireCategoryOwner(userId, data.categoryId, 'expense');
 
     const category = await this.categoryRepository.findOne({
       where: { id: data.categoryId },
@@ -106,6 +119,7 @@ export class BudgetService {
     }
 
     if (data.plannedAmount !== undefined) {
+      amountToCents(data.plannedAmount);
       budget.plannedAmount = data.plannedAmount;
     }
 

@@ -1,3 +1,5 @@
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
+import { contributeToGoal } from '@shared/finance/ledger';
 import { GoalEntity } from '../entities/goal.entity';
 import { GoalContributionEntity } from '../entities/goal-contribution.entity';
 import { logger } from '@main/infrastructure/log/logger';
@@ -114,6 +116,14 @@ export class GoalService {
   async create(userId: number, data: CreateGoalInput): Promise<Goal> {
     logger.info('Criando nova meta para usuário:', userId);
     this.validateCreateInput(data);
+    if (
+      data.accountId &&
+      !(await repositoryCache.accountRepository.findById(
+        data.accountId,
+        userId,
+      ))
+    )
+      throw new Error('Conta não encontrada.');
     const goalData: Partial<GoalEntity> = {
       name: data.name.trim(),
       targetAmount: data.targetAmount,
@@ -138,6 +148,14 @@ export class GoalService {
       throw new Error('Meta não encontrada');
     }
     this.validateUpdateInput(data);
+    if (
+      data.accountId &&
+      !(await repositoryCache.accountRepository.findById(
+        data.accountId,
+        userId,
+      ))
+    )
+      throw new Error('Conta não encontrada.');
     const updateData: Partial<GoalEntity> = {};
     if (data.name !== undefined) {
       updateData.name = data.name.trim();
@@ -192,32 +210,46 @@ export class GoalService {
   ): Promise<Goal> {
     logger.info('Adicionando contribuição à meta:', goalId);
     this.validateContributionInput(data);
-    const existingGoal = await this.goalRepository.findById(goalId, userId);
-    if (!existingGoal) {
-      throw new Error('Meta não encontrada');
-    }
-    const currentAmount = Number(existingGoal.currentAmount);
-    const targetAmount = Number(existingGoal.targetAmount);
-    const wasCompleted = currentAmount >= targetAmount;
-    const contributionData: Partial<GoalContributionEntity> = {
-      goalId,
-      amount: data.amount,
-      contributionDate: data.contributionDate
-        ? (parseDateSafe(data.contributionDate) ?? new Date())
-        : new Date(),
-    };
-    await this.contributionRepository.createContribution(contributionData);
-    const newCurrentAmount = currentAmount + data.amount;
-    await this.goalRepository.updateCurrentAmount(
-      goalId,
-      userId,
-      newCurrentAmount,
+    const date = data.contributionDate
+      ? parseDateSafe(data.contributionDate)
+      : new Date();
+    if (!date) throw new Error('Data da contribuição inválida.');
+    const result = await financialTransaction(async (manager) =>
+      contributeToGoal(
+        {
+          findOwnedGoal: async (actorId, id) => {
+            const goal = await manager
+              .getRepository(GoalEntity)
+              .findOneBy({ id, userId: actorId });
+            return goal
+              ? {
+                  currentCents: Math.round(goal.currentAmount * 100),
+                  targetCents: Math.round(goal.targetAmount * 100),
+                }
+              : null;
+          },
+          append: async (id, cents, date) => {
+            await manager.getRepository(GoalContributionEntity).save({
+              goalId: id,
+              amount: cents / 100,
+              contributionDate: date,
+            });
+          },
+          recompute: async (id) => {
+            await manager.query(
+              'UPDATE goals SET current_amount=(SELECT COALESCE(SUM(amount),0) FROM goal_contributions WHERE goal_id=?) WHERE id=? AND user_id=?',
+              [id, id, userId],
+            );
+            return manager
+              .getRepository(GoalEntity)
+              .findOneByOrFail({ id, userId });
+          },
+        },
+        { actorId: userId, goalId, amount: data.amount, date },
+      ),
     );
-    const updatedGoal = await this.goalRepository.findById(goalId, userId);
-    if (!updatedGoal) {
-      throw new Error('Erro ao atualizar meta');
-    }
-    const goal = this.mapEntityToGoal(updatedGoal);
+    const wasCompleted = result.wasCompleted;
+    const goal = this.mapEntityToGoal(result.entity);
     const isNowCompleted = goal.progress >= 100;
     if (!wasCompleted && isNowCompleted) {
       this.notifyGoalCompleted(goal);

@@ -1,11 +1,4 @@
-import {
-  createContext,
-  forwardRef,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, forwardRef, useContext, useRef, useState } from 'react';
 import {
   Box,
   Dialog,
@@ -18,69 +11,41 @@ import {
   Typography,
   type PaperProps,
 } from '@mui/material';
-import {
-  CloseRounded,
-  OpenInFullRounded,
-  SearchRounded,
-} from '@mui/icons-material';
-import { Input } from '../Form/Input';
+import { CloseRounded, OpenInFullRounded } from '@mui/icons-material';
+
 import { CardSkeleton, useContentLoading } from '../ContentLoading';
 
 const ExpandedContext = createContext(false);
 export const ExpandableCard = forwardRef<
   HTMLDivElement,
-  PaperProps & { loading?: boolean }
+  PaperProps & {
+    loading?: boolean;
+    expandable?: boolean;
+    expandedContent?: React.ReactNode;
+    expandedTitle?: string;
+  }
 >(function ExpandableCard(
   {
     children,
     loading: explicitLoading,
+    expandable = false,
+    expandedContent,
+    expandedTitle,
     ...props
-  }: PaperProps & { loading?: boolean },
+  }: PaperProps & {
+    loading?: boolean;
+    expandable?: boolean;
+    expandedContent?: React.ReactNode;
+    expandedTitle?: string;
+  },
   ref,
 ) {
   const contextLoading = useContentLoading();
   const busy = explicitLoading ?? contextLoading;
   const expandedParent = useContext(ExpandedContext);
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [count, setCount] = useState(0);
-  const body = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement | null>(null);
-  const [title, setTitle] = useState('Detalhes do card');
-  useEffect(() => {
-    if (!open || !body.current) return;
-    const rows = Array.from(
-      body.current.querySelectorAll<HTMLElement>(
-        'tbody tr, li, [data-card-row]',
-      ),
-    );
-    const elements = rows.length
-      ? rows
-      : Array.from(
-          body.current.querySelectorAll<HTMLElement>('p, h2, h3, h4, h5, h6'),
-        );
-    const normalize = (text: string): string =>
-      text
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase();
-    const matches = elements.filter((element) =>
-      normalize(element.textContent || '').includes(normalize(query)),
-    );
-    elements.forEach((element) => {
-      element.dataset.cardFilterHidden = String(
-        Boolean(query) && rows.length > 0 && !matches.includes(element),
-      );
-      element.style.outline =
-        query && matches.includes(element) ? '1px solid #81c9a4' : '';
-    });
-    setCount(query ? matches.length : 0);
-    return () =>
-      elements.forEach((element) => {
-        delete element.dataset.cardFilterHidden;
-        element.style.outline = '';
-      });
-  }, [open, query, children]);
+  const [title, setTitle] = useState('Detalhes');
   return (
     <>
       <Paper
@@ -128,7 +93,7 @@ export const ExpandableCard = forwardRef<
         >
           <CardSkeleton />
         </Box>
-        {!expandedParent && !props['aria-hidden'] && (
+        {expandable && !expandedParent && !props['aria-hidden'] && (
           <Tooltip title="Ampliar card">
             <IconButton
               size="small"
@@ -146,11 +111,13 @@ export const ExpandableCard = forwardRef<
               onClick={(event) => {
                 event.stopPropagation();
                 setTitle(
-                  card.current?.querySelector(
-                    '[data-card-title],h2,h3,h4,h5,h6,p,span',
-                  )?.textContent || 'Detalhes do card',
+                  expandedTitle ||
+                    card.current?.querySelector(
+                      '[data-card-title],h2,h3,h4,h5,h6,p,span',
+                    )?.textContent ||
+                    'Detalhes do card',
                 );
-                setQuery('');
+
                 setOpen(true);
               }}
             >
@@ -183,36 +150,17 @@ export const ExpandableCard = forwardRef<
             </IconButton>
           </Stack>
         </DialogTitle>
-        <Box sx={{ px: 3, pb: 2 }}>
-          <Input
-            fullWidth
-            label="Buscar neste card"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <SearchRounded sx={{ mr: 1, color: 'text.secondary' }} />
-                ),
-              },
-            }}
-          />
-          {query && (
-            <Typography variant="caption">{count} correspondências</Typography>
-          )}
-        </Box>
         <DialogContent dividers>
           <ExpandedContext.Provider value={true}>
             <Box
-              ref={body}
               sx={{
                 minWidth: 0,
-                '[data-card-filter-hidden=true]': { display: 'none' },
+
                 '& .expand-card': { display: 'none' },
                 overflow: 'auto',
               }}
             >
-              {children}
+              {expandedContent ?? children}
             </Box>
           </ExpandedContext.Provider>
         </DialogContent>

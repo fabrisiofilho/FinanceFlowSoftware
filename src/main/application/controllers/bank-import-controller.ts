@@ -67,7 +67,10 @@ export class BankImportController extends BaseHandler {
     importId: number,
   ): Promise<ApiResponse<BankImportTransaction[]>> {
     return wrap(async () => {
-      return await this.bankImportService.getImportTransactions(importId);
+      return await this.bankImportService.getImportTransactions(
+        this.getUserId(),
+        importId,
+      );
     })();
   }
 

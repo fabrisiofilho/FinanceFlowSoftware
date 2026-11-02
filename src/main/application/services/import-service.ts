@@ -650,7 +650,7 @@ export class ImportService {
       userId,
       name,
       type,
-      icon: type === 'income' ? 'trending_up' : 'trending_down',
+      icon: type === 'income' ? 'TrendingUp' : 'TrendingDown',
       isDefault: true,
     });
     return created.id;

@@ -1,3 +1,8 @@
+import {
+  useBoardListing,
+  BoardFilters,
+  BoardMore,
+} from '@renderer/components/BoardListing';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { AppAlert } from '@renderer/components/Feedback';
@@ -18,7 +23,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
   Chip,
 } from '@mui/material';
 import {
@@ -70,10 +74,6 @@ export function CategoriesPage() {
   );
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Pagination
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
   const {
     control,
     handleSubmit,
@@ -87,14 +87,14 @@ export function CategoriesPage() {
     },
   });
 
+  const board = useBoardListing('categories', setCategories);
+  const queryFirst = board.first;
   const loadCategories = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await window.electronAPI.category.findAll();
-      if (response.success && response.data) {
-        setCategories(response.data);
-      } else {
+      const response = await queryFirst();
+      if (!response.success && response.error !== 'Consulta substituída') {
         setError('Erro ao carregar categorias');
       }
     } catch (err) {
@@ -103,7 +103,7 @@ export function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryFirst]);
 
   useEffect(() => {
     loadCategories();
@@ -164,7 +164,9 @@ export function CategoriesPage() {
       handleCloseForm();
       loadCategories();
     } catch (err) {
-      console.error('Erro ao salvar categoria:', err);
+      setError(
+        err instanceof Error ? err.message : 'Erro ao salvar categoria.',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -196,21 +198,7 @@ export function CategoriesPage() {
     }
   };
 
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const paginatedCategories = categories.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage,
-  );
+  const paginatedCategories = categories;
 
   return (
     <CategoriesContainer>
@@ -236,6 +224,13 @@ export function CategoriesPage() {
             </Stack>
           </>
         }
+      />
+      <BoardFilters
+        board={board}
+        typeOptions={[
+          { id: 'income', label: 'Receita' },
+          { id: 'expense', label: 'Despesa' },
+        ]}
       />
       <ContentLoading loading={loading} initial="cards">
         {error && (
@@ -330,19 +325,6 @@ export function CategoriesPage() {
                 </TableBody>
               </Table>
             </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={categories.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              labelRowsPerPage="Linhas por página:"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-              }
-            />
           </Paper>
         ) : (
           <EmptyStateContainer>
@@ -377,6 +359,7 @@ export function CategoriesPage() {
           setMaxWidth="400px"
         >
           <FormContainer>
+            {error && <AppAlert severity="error">{error}</AppAlert>}
             <Controller
               name="name"
               control={control}
@@ -457,6 +440,7 @@ export function CategoriesPage() {
             categoria podem ser afetadas.
           </Typography>
         </Modal>
+        <BoardMore board={board} />
       </ContentLoading>
     </CategoriesContainer>
   );

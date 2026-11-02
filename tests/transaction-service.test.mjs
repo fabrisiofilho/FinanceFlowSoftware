@@ -98,12 +98,21 @@ function fixture(failAt = 0) {
       '@shared/finance/entry-schedule': load(
         'src/shared/finance/entry-schedule.ts',
       ),
+      '@main/infrastructure/database/financial-transaction': load(
+        'src/main/infrastructure/database/financial-transaction.ts',
+        {
+          './data-source': { getDataSource: () => source },
+        },
+      ),
       '@main/infrastructure/database/data-source': {
         getDataSource: () => source,
       },
-      '../../domain/financial-validation': load(
-        'src/main/domain/financial-validation.ts',
-      ),
+      '@shared/finance/commands': load('src/shared/finance/commands.ts', {
+        './validation': load('src/shared/finance/validation.ts'),
+        './entry-schedule': load('src/shared/finance/entry-schedule.ts'),
+        './calendar-date': load('src/shared/finance/calendar-date.ts'),
+      }),
+      '@shared/finance/validation': load('src/shared/finance/validation.ts'),
       '../repositories/transaction-repository': {
         TransactionRepository: Transactions,
       },

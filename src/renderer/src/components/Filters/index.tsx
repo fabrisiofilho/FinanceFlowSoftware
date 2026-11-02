@@ -18,7 +18,7 @@ export function FilterPanel({
   const [expanded, setExpanded] = useState(true);
   const id = useId();
   return (
-    <ContentSurface loading={false} sx={{ p: 3, mb: 3 }}>
+    <ContentSurface data-filter-panel loading={false} sx={{ p: 3, mb: 3 }}>
       <Stack
         direction="row"
         justifyContent="space-between"

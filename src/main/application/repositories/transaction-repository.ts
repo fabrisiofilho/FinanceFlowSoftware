@@ -16,6 +16,11 @@ export interface SortConfig {
   direction: SortDirection;
 }
 export interface TransactionFilters {
+  search?: string;
+  accountIds?: number[];
+  categoryIds?: number[];
+  types?: TransactionType[];
+  statuses?: ('pending' | 'settled' | 'cancelled')[];
   status?: 'pending' | 'settled' | 'cancelled';
   startDate?: Date;
   endDate?: Date;
@@ -62,85 +67,19 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
     userId: number,
     filters: TransactionFilters,
   ): Promise<PaginatedResult<TransactionEntity>> {
-    try {
-      let effectiveStartDate = filters.startDate;
-      let effectiveEndDate = filters.endDate;
-      if (filters.startMonth && filters.startYear) {
-        effectiveStartDate = new Date(
-          filters.startYear,
-          filters.startMonth - 1,
-          1,
-        );
-      }
-      if (filters.endMonth && filters.endYear) {
-        // Last day of the month
-        effectiveEndDate = new Date(filters.endYear, filters.endMonth, 0);
-      }
-
-      const where: Record<string, unknown> = {
-        account: { userId },
-      };
-      if (filters.status) where.status = filters.status;
-      if (filters.type) {
-        where.type = filters.type;
-      }
-      if (filters.categoryId) {
-        where.categoryId = filters.categoryId;
-      }
-      if (filters.accountId) {
-        where.accountId = filters.accountId;
-      }
-      if (filters.creditCardInvoiceId) {
-        where.creditCardInvoiceId = filters.creditCardInvoiceId;
-      }
-      const order: Record<string, string> = {};
-      if (filters.sort) {
-        const fieldMap: Record<TransactionSortField, string> = {
-          transactionDate: 'transactionDate',
-          amount: 'amount',
-          description: 'description',
-          type: 'type',
-          createdAt: 'createdAt',
-        };
-        const sortField = fieldMap[filters.sort.field] || 'transactionDate';
-        order[sortField] = filters.sort.direction;
-        if (filters.sort.field !== 'createdAt') {
-          order.createdAt = 'DESC';
-        }
-      } else {
-        order.transactionDate = 'DESC';
-        order.createdAt = 'DESC';
-      }
-      const page = filters.page ?? 0;
-      const size = filters.size ?? 10;
-      if (effectiveStartDate || effectiveEndDate) {
-        return await this.findWithFiltersUsingQueryBuilder(userId, {
-          ...filters,
-          startDate: effectiveStartDate,
-          endDate: effectiveEndDate,
-        });
-      }
-      const totalElements = await this.count(where);
-      const content = await this.repository.find({
-        where,
-        relations: ['account', 'category'],
-        order,
-        skip: page * size,
-        take: size,
-      });
-      return {
-        content,
-        page,
-        size,
-        totalElements,
-        totalPages: Math.ceil(totalElements / size),
-      };
-    } catch (error) {
-      const err = error as Error;
-      console.error('Erro em findWithFilters:', err.message);
-      console.error('Stack:', err.stack);
-      throw error;
-    }
+    const startDate =
+      filters.startMonth && filters.startYear
+        ? new Date(filters.startYear, filters.startMonth - 1, 1)
+        : filters.startDate;
+    const endDate =
+      filters.endMonth && filters.endYear
+        ? new Date(filters.endYear, filters.endMonth, 0)
+        : filters.endDate;
+    return this.findWithFiltersUsingQueryBuilder(userId, {
+      ...filters,
+      startDate,
+      endDate,
+    });
   }
   private async findWithFiltersUsingQueryBuilder(
     userId: number,
@@ -151,6 +90,36 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .innerJoinAndSelect('transaction.account', 'account')
       .leftJoinAndSelect('transaction.category', 'category')
       .where('account.user_id = :userId', { userId });
+    for (const [key, column] of [
+      ['accountIds', 'account_id'],
+      ['categoryIds', 'category_id'],
+      ['types', 'type'],
+      ['statuses', 'status'],
+    ] as const) {
+      const values = filters[key];
+      if (
+        values !== undefined &&
+        (!Array.isArray(values) || values.length > 100)
+      )
+        throw new Error('Filtro inválido.');
+      if (values?.length)
+        queryBuilder.andWhere(`transaction.${column} IN (:...${key})`, {
+          [key]: values,
+        });
+    }
+    if (filters.search?.trim())
+      queryBuilder.andWhere(
+        "LOWER(transaction.description) LIKE LOWER(:search) ESCAPE '\\'",
+        {
+          search:
+            '%' +
+            filters.search
+              .trim()
+              .slice(0, 200)
+              .replace(/[\\%_]/g, (character) => '\\' + character) +
+            '%',
+        },
+      );
 
     // Helper function to format date as YYYY-MM-DD using local timezone
     const formatDateLocal = (date: Date): string => {
@@ -226,6 +195,15 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
     const totalElements = await queryBuilder.getCount();
     const page = filters.page ?? 0;
     const size = filters.size ?? 10;
+    if (
+      !Number.isSafeInteger(page) ||
+      page < 0 ||
+      !Number.isInteger(size) ||
+      size < 1 ||
+      size > 100
+    )
+      throw new Error('Paginação inválida.');
+    queryBuilder.addOrderBy('transaction.id', 'DESC');
     queryBuilder.skip(page * size).take(size);
     const content = await queryBuilder.getMany();
 
@@ -246,6 +224,36 @@ export class TransactionRepository extends BaseRepository<TransactionEntity> {
       .innerJoinAndSelect('transaction.account', 'account')
       .leftJoinAndSelect('transaction.category', 'category')
       .where('account.user_id = :userId', { userId });
+    for (const [key, column] of [
+      ['accountIds', 'account_id'],
+      ['categoryIds', 'category_id'],
+      ['types', 'type'],
+      ['statuses', 'status'],
+    ] as const) {
+      const values = filters[key];
+      if (
+        values !== undefined &&
+        (!Array.isArray(values) || values.length > 100)
+      )
+        throw new Error('Filtro inválido.');
+      if (values?.length)
+        queryBuilder.andWhere(`transaction.${column} IN (:...${key})`, {
+          [key]: values,
+        });
+    }
+    if (filters.search?.trim())
+      queryBuilder.andWhere(
+        "LOWER(transaction.description) LIKE LOWER(:search) ESCAPE '\\'",
+        {
+          search:
+            '%' +
+            filters.search
+              .trim()
+              .slice(0, 200)
+              .replace(/[\\%_]/g, (character) => '\\' + character) +
+            '%',
+        },
+      );
 
     // Helper function to format date as YYYY-MM-DD using local timezone
     const formatDateLocal = (date: Date): string => {

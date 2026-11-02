@@ -67,7 +67,10 @@ export class TagController extends BaseHandler {
     transactionId: number,
   ): Promise<ApiResponse<TransactionTag[]>> {
     return wrap(async () => {
-      return await this.tagService.getTransactionTags(transactionId);
+      return await this.tagService.getTransactionTags(
+        this.getUserId(),
+        transactionId,
+      );
     })();
   }
 
@@ -77,7 +80,11 @@ export class TagController extends BaseHandler {
     tagIds: number[],
   ): Promise<ApiResponse<void>> {
     return wrap(async () => {
-      await this.tagService.setTransactionTags(transactionId, tagIds);
+      await this.tagService.setTransactionTags(
+        this.getUserId(),
+        transactionId,
+        tagIds,
+      );
     })();
   }
 }

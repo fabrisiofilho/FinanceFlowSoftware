@@ -1,12 +1,15 @@
+import type { EntityManager } from 'typeorm';
+import { financialTransaction } from '@main/infrastructure/database/financial-transaction';
 import { CreditCardService } from './credit-card-service';
 import { entryState, settledAmount } from '@shared/finance/entry-state';
 import {
-  amountToCents,
   installmentAmounts,
   occurrenceDate,
 } from '@shared/finance/entry-schedule';
-import { getDataSource } from '@main/infrastructure/database/data-source';
-import { assertPositiveAmount } from '../../domain/financial-validation';
+import {
+  validateEntryCreate,
+  validateEntryUpdate,
+} from '@shared/finance/commands';
 import {
   TransactionRepository,
   TransactionFilters as RepoFilters,
@@ -69,6 +72,7 @@ export class TransactionService {
     accountRepository?: AccountRepository,
     categoryRepository?: CategoryRepository,
     balanceCalculatorService?: BalanceCalculatorService,
+    private readonly manager?: EntityManager,
   ) {
     if (transactionRepository) {
       this._injectedTransactionRepository = transactionRepository;
@@ -86,7 +90,7 @@ export class TransactionService {
   private async atomic<T>(
     action: (service: TransactionService) => Promise<T>,
   ): Promise<T> {
-    return getDataSource().transaction((manager) => {
+    return financialTransaction((manager) => {
       const accounts = new AccountRepository(manager);
       const transactions = new TransactionRepository(manager);
       return action(
@@ -95,6 +99,7 @@ export class TransactionService {
           accounts,
           new CategoryRepository(manager),
           new BalanceCalculatorService(accounts, transactions),
+          manager,
         ),
       );
     });
@@ -127,70 +132,10 @@ export class TransactionService {
     };
   }
   private validateCreateInput(data: CreateTransactionInput): void {
-    if (!data.description || data.description.trim().length === 0) {
-      throw new Error('Descrição é obrigatória');
-    }
-    if (data.amount === undefined || data.amount === null) {
-      throw new Error('Valor é obrigatório');
-    }
-    assertPositiveAmount(data.amount);
-    amountToCents(data.amount);
-    if (!parseDateSafe(data.transactionDate))
-      throw new Error('Data da transação inválida');
-    if (data.dueDate && !parseDateSafe(data.dueDate))
-      throw new Error('Vencimento inválido');
-    if (data.totalInstallments !== undefined)
-      installmentAmounts(data.amount, data.totalInstallments);
-    if (!data.type) {
-      throw new Error('Tipo da transação é obrigatório');
-    }
-    const validTypes: Transaction['type'][] = ['income', 'expense'];
-    if (!validTypes.includes(data.type)) {
-      throw new Error('Tipo de transação inválido');
-    }
-    if (!data.transactionDate) {
-      throw new Error('Data da transação é obrigatória');
-    }
-    if (!data.accountId) {
-      throw new Error('Conta é obrigatória');
-    }
-    if (!data.categoryId) {
-      throw new Error('Categoria é obrigatória');
-    }
-    if (
-      data.totalInstallments !== undefined &&
-      data.totalInstallments !== null
-    ) {
-      if (data.totalInstallments < 1) {
-        throw new Error('Número de parcelas deve ser maior que zero');
-      }
-    }
-    if (data.recurrence) {
-      const validRecurrences: Transaction['recurrence'][] = [
-        'once',
-        'monthly',
-        'weekly',
-      ];
-      if (!validRecurrences.includes(data.recurrence)) {
-        throw new Error('Tipo de recorrência inválido');
-      }
-    }
+    validateEntryCreate(data);
   }
   private validateUpdateInput(data: UpdateTransactionInput): void {
-    if (
-      data.description !== undefined &&
-      data.description.trim().length === 0
-    ) {
-      throw new Error('Descrição não pode ser vazia');
-    }
-    if (data.amount !== undefined) amountToCents(data.amount);
-    if (
-      data.transactionDate !== undefined &&
-      !parseDateSafe(data.transactionDate)
-    )
-      throw new Error('Data da transação inválida');
-    if (data.dueDate !== undefined && !parseDateSafe(data.dueDate))
-      throw new Error('Vencimento inválido');
+    validateEntryUpdate(data);
   }
   private async validateAccount(
     userId: number,
@@ -261,7 +206,7 @@ export class TransactionService {
       entity.type === 'expense' &&
       entity.status !== 'cancelled'
     )
-      await new CreditCardService().autoLinkTransactionToInvoice(
+      await new CreditCardService(this.manager).autoLinkTransactionToInvoice(
         userId,
         entity.id,
         entity.accountId,
@@ -651,7 +596,13 @@ export class TransactionService {
     totalElements: number;
     totalPages: number;
   }> {
-    const repoFilters: RepoFilters = {};
+    const repoFilters: RepoFilters = {
+      search: filters?.search,
+      accountIds: filters?.accountIds,
+      categoryIds: filters?.categoryIds,
+      types: filters?.types,
+      statuses: filters?.statuses,
+    };
     if (filters) {
       if (filters.status) repoFilters.status = filters.status;
       if (filters.startDate) {

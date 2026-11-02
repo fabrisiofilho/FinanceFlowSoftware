@@ -1,7 +1,7 @@
 # Contabily — instruções para desenvolvimento
 
 - O produto utiliza somente dark neutro. Não reintroduzir modo claro, seletor de tema ou superfícies verdes extensas. Verde é destaque; fontes usam Segoe UI do sistema.
-- Cards novos devem reutilizar ExpandableCard/ContentSurface e o modal compartilhado com busca e rolagem. Não animar posição/escala dos cards. Formularios em modal não precisam de busca.
+- Cards novos devem reutilizar ExpandableCard/ContentSurface. Expansão é opcional e restrita a listagens relevantes; busca e paginação devem consultar o backend. Não animar posição/escala dos cards. Formularios em modal não precisam de busca.
 - Investimentos: valores em centavos, um rendimento por competência, projeções separadas de realizados e contas. Não assumir taxas de mercado, impostos ou rentabilidade garantida.
 
 Leia docs/DIRETRIZES.md e docs/PLANO.md antes de alterar funcionalidades.
