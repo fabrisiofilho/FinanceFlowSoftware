@@ -19,6 +19,7 @@ export function HeaderDesktop() {
         <Button
           component={Link}
           to="/panel/transactions?new=income"
+          data-tour="income-create"
           color="success"
           size="small"
         >
@@ -27,6 +28,7 @@ export function HeaderDesktop() {
         <Button
           component={Link}
           to="/panel/transactions?new=expense"
+          data-tour="expense-create"
           color="error"
           size="small"
           variant="outlined"

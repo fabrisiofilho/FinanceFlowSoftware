@@ -1,4 +1,5 @@
 import type { OnboardingAPI } from '@shared/interfaces/types/onboarding.types';
+import type { ExternalDataAPI } from '@shared/interfaces/types/external-data.types';
 import type { ListingAPI } from '@shared/interfaces/types/listing.types';
 import type { BackupAPI } from '@shared/interfaces/types/backup.types';
 import type { InvestmentAPI } from '@shared/interfaces/types/investment.types';
@@ -97,6 +98,9 @@ const api: CustomElectronAPI = {
   onboarding: createControllerFromConfig<OnboardingAPI>('onboarding', [
     'state',
     'advance',
+  ]),
+  externalData: createControllerFromConfig<ExternalDataAPI>('externalData', [
+    'snapshot',
   ]),
   listing: createControllerFromConfig<ListingAPI>('listing', ['query']),
   backup: createControllerFromConfig<BackupAPI>(

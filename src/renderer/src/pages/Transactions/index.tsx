@@ -397,6 +397,7 @@ export function TransactionsPage() {
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleNewTransaction}
+                data-tour="transaction-create"
                 sx={{ borderRadius: '0.5rem' }}
               >
                 Nova Transação

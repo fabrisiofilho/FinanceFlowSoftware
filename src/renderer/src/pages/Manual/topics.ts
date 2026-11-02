@@ -5,11 +5,26 @@ export const manualTopics = [
     description:
       'Um guia que acompanha o cadastro inicial e permite retomar de onde parou.',
     steps: [
-      'Na visão geral, clique em Retomar guia. Cada etapa abre a tela correspondente e explica o que cadastrar. A etapa fica salva no seu perfil mesmo ao fechar o programa.',
+      'Na visão geral, clique em Retomar guia. O tour destaca os botões e formulários de cada etapa, com dicas, progresso e verificação do cadastro. A etapa fica salva no seu perfil mesmo ao fechar o programa.',
+      'Use Abrir cadastro para preencher o formulário durante o tour. Voltar revisita uma etapa; Continuar depois pausa o guia. Em Configurações, Fazer tour guiado permite revê-lo mesmo depois da conclusão, sem apagar o progresso.',
       'Depois de cadastrar, conclua a etapa para avançar. A verificação exige os registros necessários; orçamento é uma etapa opcional.',
       'Ao criar uma transação, abra a seleção de categoria ou conta e escolha Cadastrar agora. O cadastro abre em outro modal e o novo item é selecionado sem apagar os valores já preenchidos.',
       'Recorrências, transferências, orçamento, alertas, cartões, investimentos e importação também permitem criar os cadastros necessários dentro do formulário.',
       'As categorias iniciais já incluem ícones. Em Contas, escolha uma cor de identificação ou envie uma imagem PNG, JPEG ou WebP de até 500 KB. As imagens são guardadas localmente e incluídas no backup.',
+    ],
+  },
+  {
+    title: 'Dados externos: câmbio, juros e inflação',
+    route: '/panel/external-data',
+    description:
+      'Consulte dólar, euro, meta Selic, CDI diário e IPCA mensal publicados pelo Banco Central.',
+    steps: [
+      'Abra Dados externos na barra lateral. Cada indicador mostra sua unidade e a data de referência; a data da consulta não representa uma cotação em tempo real.',
+      'Selecione um indicador para ver o histórico disponível, a explicação e o link da fonte oficial. O CDI é diário, a meta Selic é anual e o IPCA é mensal; as taxas não são diretamente equivalentes.',
+      'No dólar ou euro, informe um valor para estimar a conversão em reais. A referência não inclui spread, tarifas ou impostos e não altera suas contas.',
+      'O IPCA acumulado em 12 meses é calculado por composição de 12 observações mensais consecutivas. Se não houver dados suficientes, a estimativa fica indisponível.',
+      'Os dados ficam em cache local por 30 minutos. Atualizar consulta novamente, com intervalo mínimo de um minuto. Sem conexão, o último dado disponível permanece identificado como salvo; sem histórico, o aplicativo mostra indisponível em vez de zero.',
+      'A consulta envia somente as séries públicas e o período ao Banco Central. Seus registros financeiros não são enviados.',
     ],
   },
   {

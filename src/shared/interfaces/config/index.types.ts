@@ -31,6 +31,7 @@ export interface IpcResultEvent {
 }
 
 export interface CustomElectronAPI {
+  externalData: import('../types/external-data.types').ExternalDataAPI;
   onboarding: import('../types/onboarding.types').OnboardingAPI;
   listing: import('../types/listing.types').ListingAPI;
   backup: BackupAPI;

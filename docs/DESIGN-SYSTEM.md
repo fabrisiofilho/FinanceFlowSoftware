@@ -1,5 +1,11 @@
 # Padrões de interface do Contabily
 
+## Tour guiado e indicadores externos — 2.2.0
+
+O tour usa máscara escura com recorte no controle ou modal ativo, borda menta, seta e painel de instruções. Manter o alvo utilizável, posicionar a dica no viewport e permitir recolher, pausar, voltar e retomar. Revisitar o guia não reinicia o progresso persistido. Respeitar movimento reduzido e não animar posição ou escala dos cards.
+
+Indicadores externos usam ContentSurface, data de referência, unidade explícita e estados de consulta/cache/indisponível. Nunca substituir ausência por zero. Conversões e índices derivados ficam separados dos saldos; gráficos devem ter tabela de valores e fonte acessível.
+
 ## Identidade
 
 Revisão 2.0.1: receitas usam verde #89E5B1, despesas/erros coral #FF9CAA, avisos âmbar e informação azul. Estados selecionados combinam texto, borda visível e fundo semântico; preservar contraste mínimo de 4,5:1 para texto normal. Não usar tokens inexistentes como error.lighter. Em botões semânticos preenchidos, texto escuro e hover claro preservam leitura. Chips e avisos usam tom translúcido com texto na cor principal do estado.

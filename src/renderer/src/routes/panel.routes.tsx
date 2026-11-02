@@ -1,3 +1,5 @@
+import { ExternalDataPage } from '@renderer/pages/ExternalData';
+import PublicRounded from '@mui/icons-material/PublicRounded';
 import { SettingsPage } from '@renderer/pages/Settings/Overview';
 import { IncomeTaxPage } from '@renderer/pages/IncomeTax';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
@@ -45,6 +47,14 @@ type WithRouteProps<T> = T & {
 };
 
 const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
+  {
+    label: 'Dados externos',
+    path: '/panel/external-data',
+    icon: <PublicRounded />,
+    canAccess: true,
+    routeElement: <ExternalDataPage />,
+    routePath: '/external-data',
+  },
   {
     label: 'Simulação de IR',
     path: '/panel/income-tax',

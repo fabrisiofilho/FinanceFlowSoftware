@@ -182,6 +182,7 @@ export function BudgetPage() {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
+                data-tour="budget-create"
                 onClick={() => {
                   setEditingBudget(null);
                   setFormData({ categoryId: 0, plannedAmount: 0 });

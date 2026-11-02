@@ -298,6 +298,7 @@ export function AccountsPage() {
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleNewAccount}
+                data-tour="account-create"
                 sx={{ borderRadius: '0.5rem' }}
               >
                 Nova Conta
@@ -376,7 +377,7 @@ export function AccountsPage() {
           loading={formLoading}
           setMaxWidth="500px"
         >
-          <FormContainer>
+          <FormContainer data-tour="account-form">
             {error && <AppAlert severity="error">{error}</AppAlert>}
             <Controller
               name="name"

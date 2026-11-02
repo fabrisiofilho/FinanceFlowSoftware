@@ -12,6 +12,7 @@ export const navigationAreas = [
     routes: ['accounts', 'credit-cards', 'bank-import'],
   },
   { label: 'Investimentos', routes: ['investments'] },
+  { label: 'Dados externos', routes: ['external-data'] },
   {
     label: 'Planejamento',
     routes: ['budget', 'cash-flow', 'goals', 'income-tax'],

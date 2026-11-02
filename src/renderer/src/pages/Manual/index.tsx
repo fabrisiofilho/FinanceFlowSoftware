@@ -31,6 +31,7 @@ import {
   TimelineOutlined,
   SyncOutlined,
   SettingsOutlined,
+  PublicOutlined,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { ContentSurface, PageContainer } from '@renderer/components/PageLayout';
@@ -53,6 +54,7 @@ const icons: Record<string, typeof MenuBookOutlined> = {
   '/panel/advanced-reports': AssessmentOutlined,
   '/panel/bank-import': SyncOutlined,
   '/panel/settings': SettingsOutlined,
+  '/panel/external-data': PublicOutlined,
 };
 const normalize = (value: string): string =>
   value

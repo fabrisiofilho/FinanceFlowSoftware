@@ -13,6 +13,7 @@ fs.mkdirSync(__dirname, { recursive: true });
 app.setPath('userData', path.join(__dirname, 'ui-loading-user-data'));
 const configuration = {};
 const requests = [];
+let guideCompleted = false;
 const accountRows = Array.from({ length: 30 }, (_, index) => ({
   id: 1000 + index,
   name: 'Conta paginada ' + index,
@@ -41,6 +42,41 @@ for (const { prefix, methods } of Object.values(
   for (const method of methods)
     ipcMain.handle(`${prefix}:${method}`, async (_, ...args) => {
       requests.push({ prefix, method, input: args[0] });
+      if (prefix === 'externalData')
+        return {
+          success: true,
+          data: {
+            nextRefreshAt: null,
+            indicators: ['usd', 'eur', 'selic', 'cdi', 'ipca'].map(
+              (id, index) => ({
+                id,
+                status: id === 'eur' ? 'cached' : 'fresh',
+                checkedAt: '2026-11-02T12:00:00Z',
+                error:
+                  id === 'eur'
+                    ? 'Exibindo a última consulta salva.'
+                    : undefined,
+                points:
+                  id === 'ipca'
+                    ? Array.from({ length: 12 }, (_, month) => {
+                        const d = new Date(2025, 10 + month, 1);
+                        return {
+                          date:
+                            d.getFullYear() +
+                            '-' +
+                            String(d.getMonth() + 1).padStart(2, '0') +
+                            '-01',
+                          value: 0.5,
+                        };
+                      })
+                    : [
+                        { date: '2026-10-29', value: [5, 6, 10, 0.04][index] },
+                        { date: '2026-10-30', value: [5, 6, 10, 0.04][index] },
+                      ],
+              }),
+            ),
+          },
+        };
       if (prefix === 'category' && method === 'findAll')
         return {
           success: true,
@@ -72,11 +108,36 @@ for (const { prefix, methods } of Object.values(
       if (prefix === 'onboarding')
         return {
           success: true,
-          data: { step: 0, completed: false, ready: false },
+          data: {
+            step: guideCompleted ? 5 : 0,
+            completed: guideCompleted,
+            ready: guideCompleted,
+          },
         };
       if (prefix === 'listing') {
         const query = args[0],
-          rows = (query.kind === 'accounts' ? accountRows : []).filter(
+          rows = (
+            query.kind === 'accounts'
+              ? accountRows
+              : query.kind === 'categories'
+                ? [
+                    {
+                      id: 100,
+                      name: 'Alimentação',
+                      type: 'expense',
+                      isDefault: true,
+                      icon: 'Restaurant',
+                    },
+                    {
+                      id: 101,
+                      name: 'Salário',
+                      type: 'income',
+                      isDefault: true,
+                      icon: 'Payments',
+                    },
+                  ]
+                : []
+          ).filter(
             (row) =>
               (!query.search || row.name.includes(query.search)) &&
               (!query.types?.length || query.types.includes(row.type)),
@@ -317,6 +378,7 @@ app
     for (const route of [
       'dashboard',
       'investments',
+      'external-data',
       'accounts',
       'categories',
       'goals',
@@ -342,6 +404,40 @@ app
       console.log(route, state);
       assert(!!state.title, 'cabeçalho ' + route);
       assert(!state.emptyErrors, 'sem alerta vazio ' + route);
+      if (route === 'external-data') {
+        assert(
+          await run(
+            "Array.from(document.querySelectorAll('a')).some(link=>link.textContent==='Dados externos'&&link.classList.contains('active'))",
+          ),
+          'dados externos disponíveis no menu',
+        );
+        assert(
+          await run("document.body.innerText.includes('500,00')"),
+          'conversor usa cotação da referência selecionada',
+        );
+        assert(
+          await run("document.body.innerText.includes('Em cache')"),
+          'consulta salva identificada',
+        );
+        await run(
+          'document.querySelector(\'button[aria-label="Ver histórico de CDI diário"]\').click()',
+        );
+        await sleep(100);
+        assert(
+          await run(
+            "document.querySelector('table').textContent.includes('% a.d.')",
+          ),
+          'CDI mantém unidade diária no histórico',
+        );
+        await run(
+          'document.querySelector(\'button[aria-label="Ver histórico de Dólar americano"]\').click()',
+        );
+        await sleep(100);
+        fs.writeFileSync(
+          path.join(__dirname, 'external-data.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+      }
       if (route === 'income-tax') {
         await run(
           "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Calcular simulação').click()",
@@ -448,6 +544,32 @@ app
             "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Concluir etapa e avançar').disabled",
           ),
           'guia exige cadastro antes de avançar',
+        );
+        assert(
+          await run("document.querySelector('[data-tour-spotlight]')!==null"),
+          'tour destaca o controle da tela',
+        );
+        fs.writeFileSync(
+          path.join(__dirname, 'tour-guided-account.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
+        await run(
+          "Array.from(document.querySelectorAll('[aria-label=\"Tour guiado\"] button')).find(button=>button.textContent==='Abrir cadastro').click()",
+        );
+        await sleep(250);
+        assert(
+          await run(
+            "document.querySelector('[role=dialog]')!==null&&Number(document.querySelector('[data-tour-spotlight]').getAttribute('width'))>300",
+          ),
+          'tour acompanha o formulário em modal',
+        );
+        await run(
+          "Array.from(document.querySelectorAll('[role=dialog] button')).find(button=>button.textContent==='Cancelar').click()",
+        );
+        await sleep(100);
+        assert(
+          await run("document.querySelector('[data-guided-tour]')!==null"),
+          'fechar formulário preserva o tour',
         );
         await run(
           "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Continuar depois').click();location.hash='/panel/dashboard'",
@@ -594,6 +716,46 @@ app
         await sleep(150);
       }
     }
+    guideCompleted = true;
+    await run("location.hash='/panel/settings'");
+    await sleep(400);
+    const advancesBefore = requests.filter(
+      (request) =>
+        request.prefix === 'onboarding' && request.method === 'advance',
+    ).length;
+    await run(
+      "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Fazer tour guiado').click()",
+    );
+    await sleep(250);
+    assert(
+      await run(
+        "document.querySelector('[aria-label=\"Tour guiado\"]').textContent.includes('Modo de apresentação')",
+      ),
+      'tour pode ser revisto após conclusão',
+    );
+    await run(
+      "Array.from(document.querySelectorAll('[aria-label=\"Tour guiado\"] button')).find(button=>button.textContent==='Próxima etapa').click()",
+    );
+    await sleep(150);
+    await run(
+      "Array.from(document.querySelectorAll('[aria-label=\"Tour guiado\"] button')).find(button=>button.textContent==='Voltar').click()",
+    );
+    await sleep(150);
+    assert(
+      await run("location.hash.includes('/panel/accounts')"),
+      'tour permite voltar à etapa anterior',
+    );
+    assert(
+      requests.filter(
+        (request) =>
+          request.prefix === 'onboarding' && request.method === 'advance',
+      ).length === advancesBefore,
+      'rever tour não apaga nem regrava progresso concluído',
+    );
+    await run(
+      'document.querySelector(\'button[aria-label="Pausar tour"]\').click()',
+    );
+    await sleep(100);
     await run(
       "Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='Nova receita').click()",
     );

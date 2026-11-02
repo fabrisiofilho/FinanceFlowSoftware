@@ -1,5 +1,13 @@
 # Histórico de validação do Contabily
 
+## Dados externos e tour guiado — 2.2.0, 2026-11-02
+
+Passaram 36 testes unitários, typecheck, build, SQLite e ORM. Lint: zero erros e 16 avisos preexistentes. Testes novos cobrem parsing das séries, datas futuras/inválidas, publicações conflitantes, composição do IPCA, cache, indisponibilidade, concorrência de consultas, intervalo mínimo de atualização, falha de disco e posicionamento do tour no viewport.
+
+Consulta real em Electron isolado retornou as cinco séries: dólar/euro/CDI com referência 30/10/2026, Selic 02/11/2026 e IPCA 09/2026. O teste online depende da disponibilidade do Banco Central; a aplicação mantém dados salvos em falhas posteriores.
+
+O ensaio Electron com preload real e IPC fictício cobre 19 telas, acesso pelo menu, conversor, unidade diária do CDI, identificação do cache, destaque do alvo, abertura/fechamento de modal durante o tour, revisão após conclusão e navegação anterior sem regravar o progresso concluído. Capturas locais `.qa/external-data.png` e `.qa/tour-guided-account.png` foram inspecionadas. Não acessa o banco pessoal. Não equivale a homologação integral de todo formulário ou ciclo de atualização em outro computador.
+
 ## Usabilidade e fundação financeira — 2.1.0, 2026-11-02
 
 Passaram `npm run typecheck`, os 31 testes unitários, `npm run test:sqlite`, `npm run test:orm`, build e o ensaio Electron das 18 telas. Lint: zero erros e os 16 avisos preexistentes.

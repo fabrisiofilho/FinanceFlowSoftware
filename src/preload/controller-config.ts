@@ -10,6 +10,7 @@ import type { IImportController } from '@shared/interfaces/controllers/import.co
 import type { IAutoUpdaterController } from '@shared/interfaces/types/auto-updater.types';
 
 export const CONTROLLER_CONFIG = {
+  externalData: { prefix: 'externalData', methods: ['snapshot'] as const },
   onboarding: { prefix: 'onboarding', methods: ['state', 'advance'] as const },
   listing: { prefix: 'listing', methods: ['query'] as const },
   backup: { prefix: 'backup', methods: ['export', 'restore'] as const },

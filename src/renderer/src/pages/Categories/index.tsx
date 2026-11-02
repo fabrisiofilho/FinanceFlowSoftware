@@ -241,6 +241,7 @@ export function CategoriesPage() {
 
         {categories.length > 0 ? (
           <Paper
+            data-tour="categories-list"
             sx={{ width: '100%', overflow: 'hidden', borderRadius: '1rem' }}
           >
             <TableContainer>
@@ -358,7 +359,7 @@ export function CategoriesPage() {
           loading={formLoading}
           setMaxWidth="400px"
         >
-          <FormContainer>
+          <FormContainer data-tour="category-form">
             {error && <AppAlert severity="error">{error}</AppAlert>}
             <Controller
               name="name"

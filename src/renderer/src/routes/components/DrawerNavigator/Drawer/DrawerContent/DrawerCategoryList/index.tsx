@@ -15,6 +15,7 @@ const groups = [
       'transactions',
       'accounts',
       'investments',
+      'external-data',
       'budget',
       'reports',
     ],

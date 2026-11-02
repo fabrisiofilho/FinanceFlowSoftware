@@ -363,7 +363,7 @@ export function TransactionForm({
         setMaxWidth="600px"
         width="100%"
       >
-        <FormContainer>
+        <FormContainer data-tour="transaction-form">
           {}
           {submitError && (
             <Alert severity="error" onClose={() => setSubmitError(null)}>

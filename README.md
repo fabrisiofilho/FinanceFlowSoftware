@@ -17,7 +17,7 @@ npm run dev
 
 No primeiro acesso, crie um usuário local. O guia de primeiros passos orienta o cadastro da conta; as categorias comuns já vêm com ícones. Use Transações para registrar receitas e despesas. O painel permite selecionar o mês de referência. Os dados são locais, sem integração bancária.
 
-Consulte as [novidades da versão 2.1.0](docs/RELEASE-2.1.0.md): cadastros em modal, filtros múltiplos, rolagem contínua, imagens e cores de contas, categorias iniciais, guia persistente e fundação financeira compartilhada. A migração de 2.0.x preserva os dados do esquema 3.
+Consulte as [novidades da versão 2.2.0](docs/RELEASE-2.2.0.md): dados externos do Banco Central (dólar, euro, Selic, CDI e IPCA), conversor de referência e tour guiado com destaque dos controles, formulários e retomada. As funcionalidades da [2.1.0](docs/RELEASE-2.1.0.md) permanecem disponíveis. Esta atualização não altera o esquema do banco.
 
 ## Funcionalidades disponíveis no código
 
@@ -51,7 +51,7 @@ npm run build:win
 
 O último comando gera o instalador em dist. Dependências nativas podem exigir ferramentas de compilação C++ para Windows quando não houver binário compatível. O canal próprio é [fabrisiofilho/contabily/releases](https://github.com/fabrisiofilho/contabily/releases). O updater consulta esse destino, solicita o download e permite instalar após concluir. Releases incluem instalador, blockmap e latest.yml. Versões que tinham o updater desativado precisam da primeira instalação manual.
 
-Após o build, `npm run test:ui` verifica as 18 telas, simulação de IR, carregamento ao trocar filtros, respostas fora de ordem e animação do login em Electron oculto. Usa IPC fictício e dados isolados em `.qa`, sem acessar o banco pessoal. `test:orm` verifica colunas e consultas contra SQLite real, saldos, pagamentos, recorrência e isolamento.
+Após o build, `npm run test:ui` verifica as 19 telas, tour guiado, conversor, simulação de IR, carregamento ao trocar filtros, respostas fora de ordem e animação do login em Electron oculto. Usa IPC fictício e dados isolados em `.qa`, sem acessar o banco pessoal. `test:orm` verifica colunas e consultas contra SQLite real, saldos, pagamentos, recorrência e isolamento. `test:external:live` consulta as cinco séries reais do Banco Central em perfil isolado; requer internet e disponibilidade da fonte.
 
 O menu **Ajuda → Manual do sistema** explica as funções e permite buscar assuntos. A barra superior integrada controla a janela. Após mudanças no processo main ou preload, encerre e reinicie o aplicativo para carregar os novos controles.
 

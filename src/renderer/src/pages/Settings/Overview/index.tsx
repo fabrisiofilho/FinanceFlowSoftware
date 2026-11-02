@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AutoAwesomeRounded } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
@@ -40,6 +41,15 @@ export function SettingsPage() {
         description="Organize suas preferências e proteja os dados locais."
       />
       <ContentSurface sx={{ p: 3, mb: 3 }}>
+        <Button
+          startIcon={<AutoAwesomeRounded />}
+          onClick={() =>
+            window.dispatchEvent(new Event('contabily:start-tour'))
+          }
+          sx={{ mb: 2 }}
+        >
+          Fazer tour guiado
+        </Button>
         <Stack direction="row" gap={2} flexWrap="wrap">
           <Button component={Link} to="/panel/categories" variant="outlined">
             Categorias
@@ -52,7 +62,7 @@ export function SettingsPage() {
           </Button>
         </Stack>
       </ContentSurface>
-      <ContentSurface sx={{ p: 3 }}>
+      <ContentSurface data-tour="backup-section" sx={{ p: 3 }}>
         <Stack spacing={2}>
           <Typography variant="h6">Backup e restauração</Typography>
           <Typography color="text.secondary">
