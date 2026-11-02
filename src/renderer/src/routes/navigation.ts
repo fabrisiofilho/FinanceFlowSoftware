@@ -18,7 +18,7 @@ export const navigationAreas = [
     routes: ['budget', 'cash-flow', 'goals', 'financing', 'income-tax'],
   },
   { label: 'Análises', routes: ['reports', 'advanced-reports'] },
-  { label: 'Configurações', routes: ['settings', 'categories', 'alerts'] },
+  { label: 'Configurações', routes: ['settings', 'categories', 'alerts', 'diagnostics'] },
   { label: 'Manual do sistema', routes: ['manual'] },
 ] as const;
 

@@ -1,3 +1,4 @@
+import { AlertOccurrenceService } from './alert-occurrence-service';
 import { getDataSource } from '@main/infrastructure/database/data-source';
 import { NotificationService } from './notification-service';
 import { AlertService } from './alert-service';
@@ -40,6 +41,7 @@ export class NotificationEvaluationService {
       period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const settings = await this.notifications.getSettings(userId);
     const alerts = await new AlertService().checkAlerts(userId);
+    await new AlertOccurrenceService().evaluate(userId, period, alerts);
     for (const alert of alerts.filter((item) => item.status !== 'ok'))
       await this.once(userId, {
         type: 'custom',

@@ -1,3 +1,4 @@
+import { AlertOccurrences } from './Occurrences';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { QuickCreate } from '@renderer/components/QuickCreate';
@@ -241,6 +242,7 @@ export function AlertsPage() {
         title="Alertas"
         description={
           <>Configure limites de gastos por categoria e monitore seus gastos</>
+      <AlertOccurrences />
         }
         actions={
           <>

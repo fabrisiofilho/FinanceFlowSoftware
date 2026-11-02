@@ -51,6 +51,7 @@ export function SettingsPage() {
           Fazer tour guiado
         </Button>
         <Stack direction="row" gap={2} flexWrap="wrap">
+          <Button component={Link} to="/panel/diagnostics" variant="outlined">Diagnóstico local</Button>
           <Button component={Link} to="/panel/categories" variant="outlined">
             Categorias
           </Button>

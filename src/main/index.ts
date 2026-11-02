@@ -1,3 +1,4 @@
+import { markInitializationComplete } from './application/controllers/diagnostics-controller';
 process.env.TZ = 'America/Sao_Paulo';
 
 import dotenv from 'dotenv';
@@ -81,6 +82,7 @@ if (!gotTheLock) {
         throw new Error('Failed to create main window');
       }
 
+      markInitializationComplete();
       logger.info('Main window created successfully');
 
       setupLifecycle(() => initializer.getWindow());

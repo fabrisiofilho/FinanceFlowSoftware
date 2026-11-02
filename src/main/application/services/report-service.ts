@@ -12,7 +12,7 @@ import {
 } from '@shared/interfaces/types/report.types';
 import { CategoryExpense } from '@shared/interfaces/types/transaction.types';
 import { TransactionEntity } from '../entities/transaction.entity';
-import { app } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { repositoryCache } from '../repositories/repository-cache';
@@ -313,11 +313,17 @@ export class ReportService {
         filters,
       );
       const exportDir = this.getExportDirectory();
-      const filename = this.generateFilename('relatorio', 'html');
+      const filename = this.generateFilename('relatorio', 'pdf');
       const filePath = path.join(exportDir, filename);
-      fs.writeFileSync(filePath, htmlContent, 'utf8');
+      const printer = new BrowserWindow({ show: false, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: false } });
+      try {
+        printer.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+        await printer.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent));
+        const pdf = await printer.webContents.printToPDF({ printBackground: true, pageSize: 'A4' });
+        fs.writeFileSync(filePath, pdf);
+      } finally { printer.destroy(); }
       const stats = fs.statSync(filePath);
-      logger.success('Relatório PDF (HTML) exportado com sucesso:', filePath);
+      logger.success('Relatório PDF exportado com sucesso:', filePath);
       return {
         success: true,
         filePath,

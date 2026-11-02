@@ -10,6 +10,7 @@ import type { IImportController } from '@shared/interfaces/controllers/import.co
 import type { IAutoUpdaterController } from '@shared/interfaces/types/auto-updater.types';
 
 export const CONTROLLER_CONFIG = {
+  diagnostics: {prefix:'diagnostics',methods:['snapshot'] as const},
   financing: { prefix: 'financing', methods: ['list','create','detail','pay','reverse','adjust'] as const },
   externalData: { prefix: 'externalData', methods: ['snapshot'] as const },
   onboarding: { prefix: 'onboarding', methods: ['state', 'advance'] as const },
@@ -99,6 +100,7 @@ export const CONTROLLER_CONFIG = {
   alert: {
     prefix: 'alert',
     methods: [
+      'occurrences','dismissOccurrence',
       'create',
       'update',
       'delete',

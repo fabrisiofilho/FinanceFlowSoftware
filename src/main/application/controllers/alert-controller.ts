@@ -1,3 +1,5 @@
+import { AlertOccurrenceService } from '../services/alert-occurrence-service';
+import { NotificationEvaluationService } from '../services/notification-evaluation-service';
 import { IAlertController } from '@shared/interfaces/controllers/alert.controller.interface';
 import { AlertService } from '../services/alert-service';
 import { FinanceAuthService } from '../services/finance-auth-service';
@@ -12,6 +14,13 @@ import { IpcMethod } from '@main/infrastructure/decorators/ipc.decorator';
 import { BaseHandler } from './config/base-handler';
 import { wrap } from '@main/infrastructure/utils/try-catch';
 export class AlertController extends BaseHandler implements IAlertController {
+  @IpcMethod('alert:occurrences') occurrences(state?: string, page?: number) {
+    return wrap(async () => { const id=this.getUserId(); await new NotificationEvaluationService().refresh(id); return new AlertOccurrenceService().list(id,state,page); })();
+  }
+  @IpcMethod('alert:dismissOccurrence') dismissOccurrence(id: number) {
+    return wrap(() => new AlertOccurrenceService().dismiss(this.getUserId(),id))();
+  }
+
   private _alertService: AlertService | null = null;
   private financeAuthService = FinanceAuthService.getInstance();
   private get alertService(): AlertService {

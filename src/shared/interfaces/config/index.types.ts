@@ -31,6 +31,7 @@ export interface IpcResultEvent {
 }
 
 export interface CustomElectronAPI {
+  diagnostics: import('../types/diagnostics.types').DiagnosticsAPI;
   financing: import('../types/financing.types').FinancingAPI;
   externalData: import('../types/external-data.types').ExternalDataAPI;
   onboarding: import('../types/onboarding.types').OnboardingAPI;

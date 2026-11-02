@@ -1,3 +1,4 @@
+import { DiagnosticsPage } from '@renderer/pages/Diagnostics';
 import { FinancingPage } from '@renderer/pages/Financing';
 import { ExternalDataPage } from '@renderer/pages/ExternalData';
 import PublicRounded from '@mui/icons-material/PublicRounded';
@@ -48,6 +49,7 @@ type WithRouteProps<T> = T & {
 };
 
 const ROUTES_ITEMS: WithRouteProps<IDrawerItem>[] = [
+  {label:'Diagnóstico',path:'/panel/diagnostics',icon:<SettingsOutlined />,canAccess:true,routeElement:<DiagnosticsPage />,routePath:'/diagnostics'},
   { label: 'Financiamentos', path: '/panel/financing', icon: <AccountBalanceOutlinedIcon />, canAccess: true, routeElement: <FinancingPage />, routePath: '/financing' },
   {
     label: 'Dados externos',
