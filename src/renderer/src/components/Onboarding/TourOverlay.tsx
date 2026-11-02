@@ -208,9 +208,15 @@ export function TourOverlay({
             position.side === 'right'
               ? position.left - 3
               : position.left + position.width + 3,
-          y1: position.top + 70,
+          y1: Math.max(
+            position.top + 24,
+            Math.min(
+              rect.top + rect.height / 2,
+              position.top + panelHeight - 24,
+            ),
+          ),
           x2: position.side === 'right' ? rect.right + 5 : rect.left - 5,
-          y2: rect.top + Math.min(50, rect.height / 2),
+          y2: rect.top + rect.height / 2,
         }
       : null;
   return createPortal(
@@ -240,8 +246,8 @@ export function TourOverlay({
           </mask>
           <marker
             id={mask + 'arrow'}
-            markerWidth="8"
-            markerHeight="8"
+            markerWidth="6"
+            markerHeight="6"
             refX="6"
             refY="3"
             orient="auto"
@@ -271,11 +277,12 @@ export function TourOverlay({
         )}
         {connector && (
           <path
-            d={`M${connector.x1},${connector.y1} C${(connector.x1 + connector.x2) / 2},${connector.y1} ${(connector.x1 + connector.x2) / 2},${connector.y2} ${connector.x2},${connector.y2}`}
+            data-tour-connector
+            d={`M${connector.x1},${connector.y1} L${connector.x2},${connector.y2}`}
             fill="none"
             stroke="#9bd9b5"
             strokeWidth="2"
-            strokeDasharray="4 4"
+            strokeLinecap="round"
             markerEnd={`url(#${mask}arrow)`}
           />
         )}
@@ -343,9 +350,14 @@ export function TourOverlay({
           >
             <Icon />
           </Box>
-          <Box flex={1}>
-            <Typography variant="caption" color="primary" fontWeight={700}>
-              SEU FINANCEIRO, PASSO A PASSO
+          <Box flex={1} minWidth={0}>
+            <Typography
+              variant="caption"
+              color="primary"
+              fontWeight={700}
+              sx={{ display: 'block', lineHeight: 1.5 }}
+            >
+              SEU GUIA PESSOAL
             </Typography>
             <Typography
               variant="caption"
@@ -400,12 +412,18 @@ export function TourOverlay({
               direction="row"
               gap={1}
               alignItems="center"
+              justifyContent="center"
               sx={{ mt: 2, mb: 2 }}
             >
               <Chip
                 size="small"
                 icon={ready ? <CheckCircleRounded /> : <AutoAwesomeRounded />}
                 color={ready ? 'success' : 'default'}
+                sx={{
+                  height: 28,
+                  '& .MuiChip-label': { lineHeight: 1.3 },
+                  '& .MuiChip-icon': { display: 'block', ml: 1 },
+                }}
                 label={
                   replay
                     ? 'Modo de apresentação'
@@ -425,7 +443,20 @@ export function TourOverlay({
               value={((index + 1) / ONBOARDING_STEPS.length) * 100}
               sx={{ height: 5, borderRadius: 3, mb: 2 }}
             />
-            <Stack direction="row" gap={1} flexWrap="wrap" mb={1}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 1,
+                mb: 1,
+                '& .MuiButton-root': {
+                  minHeight: 40,
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  lineHeight: 1.35,
+                },
+              }}
+            >
               <Button
                 disabled={busy || index === 0 || inForm}
                 startIcon={<ArrowBackRounded />}
@@ -443,11 +474,21 @@ export function TourOverlay({
                     ? 'Finalizar tour'
                     : 'Próxima etapa'
                   : index === 5
-                    ? 'Concluir primeiros passos'
-                    : 'Concluir etapa e avançar'}
+                    ? 'Concluir guia'
+                    : 'Avançar'}
               </Button>
-            </Stack>
-            <Stack spacing={0.5}>
+            </Box>
+            <Stack
+              spacing={0.5}
+              sx={{
+                '& .MuiButton-root': {
+                  minHeight: 40,
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  lineHeight: 1.35,
+                },
+              }}
+            >
               <Button variant="outlined" disabled={busy} onClick={onOpen}>
                 {!onRoute
                   ? 'Abrir tela da etapa'

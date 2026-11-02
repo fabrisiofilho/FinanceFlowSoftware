@@ -1,5 +1,9 @@
 # Histórico de validação do Contabily
 
+## Alinhamento do tour e valores nos gráficos — 2.2.1, 2026-11-02
+
+Typecheck, build e 36 testes unitários aprovados. Lint sem erros, com 16 avisos anteriores. Ensaio Electron com IPC fictício das 19 telas verifica centro horizontal do chip, larguras iguais dos botões Voltar/Avançar, seta contínua, seleção de ponto por foco, consulta por setas e exibição dos valores sobre a linha. Capturas locais do tour e do gráfico ficam em `.qa/tour-guided-account.png` e `.qa/external-chart-values.png`. Em janela oculta, o teste despacha eventos de foco e teclado para exercitar os handlers React. Não houve alteração de regras financeiras ou banco.
+
 ## Dados externos e tour guiado — 2.2.0, 2026-11-02
 
 Passaram 36 testes unitários, typecheck, build, SQLite e ORM. Lint: zero erros e 16 avisos preexistentes. Testes novos cobrem parsing das séries, datas futuras/inválidas, publicações conflitantes, composição do IPCA, cache, indisponibilidade, concorrência de consultas, intervalo mínimo de atualização, falha de disco e posicionamento do tour no viewport.

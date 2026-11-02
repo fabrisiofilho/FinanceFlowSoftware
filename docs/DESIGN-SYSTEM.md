@@ -2,6 +2,8 @@
 
 ## Tour guiado e indicadores externos — 2.2.0
 
+Ajuste 2.2.1: cabeçalho curto, chip centralizado e botões de navegação em duas colunas iguais. A seta contínua liga a borda da dica ao centro do controle. Gráficos externos exibem data, valor e unidade do ponto selecionado, com seleção por mouse, toque ou teclado e opção de rótulos sobre a linha.
+
 O tour usa máscara escura com recorte no controle ou modal ativo, borda menta, seta e painel de instruções. Manter o alvo utilizável, posicionar a dica no viewport e permitir recolher, pausar, voltar e retomar. Revisitar o guia não reinicia o progresso persistido. Respeitar movimento reduzido e não animar posição ou escala dos cards.
 
 Indicadores externos usam ContentSurface, data de referência, unidade explícita e estados de consulta/cache/indisponível. Nunca substituir ausência por zero. Conversões e índices derivados ficam separados dos saldos; gráficos devem ter tabela de valores e fonte acessível.

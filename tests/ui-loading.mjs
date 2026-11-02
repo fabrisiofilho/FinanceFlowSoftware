@@ -429,6 +429,47 @@ app
           ),
           'CDI mantém unidade diária no histórico',
         );
+        await run("document.querySelector('[data-chart-point]').focus()");
+        await sleep(50);
+        await run(
+          "document.querySelector('[data-chart-point]').dispatchEvent(new FocusEvent('focusin',{bubbles:true}))",
+        );
+        await sleep(50);
+        assert(
+          await run(
+            "document.querySelector('[data-chart-value]').textContent.includes('% a.d.') && document.querySelector('[data-chart-point]').getAttribute('aria-pressed')==='true'",
+          ),
+          'gráfico exibe data, valor e unidade ao focar um ponto',
+        );
+        await run(
+          "Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Mostrar valores').click()",
+        );
+        await sleep(50);
+        assert(
+          await run(
+            "document.querySelectorAll('[data-chart-point] text').length===2",
+          ),
+          'gráfico permite mostrar valores sobre a linha',
+        );
+        await run("document.querySelector('[data-chart-point]').focus()");
+        await run(
+          "document.querySelector('[data-chart-point]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))",
+        );
+        await sleep(50);
+        assert(
+          await run(
+            "document.querySelectorAll('[data-chart-point]')[1].getAttribute('aria-pressed')==='true'",
+          ),
+          'setas do teclado consultam o próximo valor do gráfico',
+        );
+        await run(
+          "document.querySelector('[data-chart-value]').scrollIntoView({block:'center'})",
+        );
+        await sleep(100);
+        fs.writeFileSync(
+          path.join(__dirname, 'external-chart-values.png'),
+          (await window.webContents.capturePage()).toPNG(),
+        );
         await run(
           'document.querySelector(\'button[aria-label="Ver histórico de Dólar americano"]\').click()',
         );
@@ -541,7 +582,7 @@ app
         );
         assert(
           await run(
-            "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Concluir etapa e avançar').disabled",
+            "Array.from(document.querySelectorAll('[aria-label=\"Tour guiado\"] button')).find(button=>button.textContent==='Avançar').disabled",
           ),
           'guia exige cadastro antes de avançar',
         );
@@ -549,6 +590,17 @@ app
           await run("document.querySelector('[data-tour-spotlight]')!==null"),
           'tour destaca o controle da tela',
         );
+        assert(
+          await run(`(() => {
+          const panel=document.querySelector('[aria-label="Tour guiado"]');
+          const chip=panel.querySelector('.MuiChip-root').getBoundingClientRect();
+          const bounds=panel.getBoundingClientRect();
+          const buttons=Array.from(panel.querySelectorAll('button')).filter(b=>['Voltar','Avançar'].includes(b.textContent));
+          return Math.abs(chip.left+chip.width/2-bounds.left-bounds.width/2)<2 && Math.abs(buttons[0].getBoundingClientRect().width-buttons[1].getBoundingClientRect().width)<2 && !document.querySelector('[data-tour-connector]').hasAttribute('stroke-dasharray');
+        })()`),
+          'tour centraliza chip, equilibra botões e usa seta contínua',
+        );
+        await sleep(250);
         fs.writeFileSync(
           path.join(__dirname, 'tour-guided-account.png'),
           (await window.webContents.capturePage()).toPNG(),

@@ -48,19 +48,51 @@ function number(value: number, digits = 2): string {
 function History({
   points,
   currency,
+  unit,
 }: {
   points: IndicatorPoint[];
   currency: boolean;
+  unit: string;
 }) {
+  const [selected, setSelected] = useState<number | null>(null),
+    [showValues, setShowValues] = useState(false);
   const values = points.slice(-20),
     low = Math.min(...values.map((p) => p.value)),
     high = Math.max(...values.map((p) => p.value)),
     range = high - low || Math.max(Math.abs(high) * 0.01, 0.01);
+  const active = Math.min(selected ?? values.length - 1, values.length - 1),
+    publication = values[active];
+  const label = (point: IndicatorPoint): string =>
+    `${currency ? 'R$ ' : ''}${number(point.value, 4)} ${unit}`;
   return (
     <Box component="figure" sx={{ m: 0, my: 2 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={1}
+        flexWrap="wrap"
+        mb={1}
+      >
+        <Box aria-live="polite" data-chart-value>
+          <Typography variant="caption" color="text.secondary">
+            {formatDateToShow(publication.date)}
+          </Typography>
+          <Typography fontWeight={700} color="primary">
+            {label(publication)}
+          </Typography>
+        </Box>
+        <Button
+          size="small"
+          aria-pressed={showValues}
+          onClick={() => setShowValues(!showValues)}
+        >
+          {showValues ? 'Ocultar valores' : 'Mostrar valores'}
+        </Button>
+      </Stack>
       <svg
         viewBox="0 0 600 170"
-        role="img"
+        role="group"
         aria-label="Histórico das últimas publicações"
         style={{ width: '100%', maxHeight: 200 }}
       >
@@ -87,18 +119,77 @@ function History({
             .join(' ')}
         />
         {values.map((point, i) => (
-          <circle
+          <g
             key={point.date}
-            cx={20 + (i / Math.max(1, values.length - 1)) * 560}
-            cy={140 - ((point.value - low) / range) * 110}
-            r="3"
-            fill="#9bd9b5"
+            data-chart-point
+            tabIndex={0}
+            role="button"
+            aria-label={`${formatDateToShow(point.date)}: ${label(point)}`}
+            aria-pressed={active === i}
+            onPointerEnter={() => setSelected(i)}
+            onFocus={() => setSelected(i)}
+            onClick={() => setSelected(i)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSelected(i);
+              }
+              if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                event.preventDefault();
+                const next = Math.max(
+                  0,
+                  Math.min(
+                    values.length - 1,
+                    i + (event.key === 'ArrowRight' ? 1 : -1),
+                  ),
+                );
+                setSelected(next);
+                event.currentTarget.parentElement
+                  ?.querySelectorAll<SVGGElement>('[data-chart-point]')
+                  [next]?.focus();
+              }
+            }}
+            style={{ cursor: 'pointer', outline: 'none' }}
           >
-            <title>
-              {formatDateToShow(point.date)}:{' '}
-              {number(point.value, currency ? 4 : 3)}
-            </title>
-          </circle>
+            <circle
+              cx={20 + (i / Math.max(1, values.length - 1)) * 560}
+              cy={140 - ((point.value - low) / range) * 110}
+              r="14"
+              fill="transparent"
+            />
+            <circle
+              cx={20 + (i / Math.max(1, values.length - 1)) * 560}
+              cy={140 - ((point.value - low) / range) * 110}
+              r={active === i ? 6 : 3}
+              fill="#9bd9b5"
+              stroke={active === i ? '#e6fff0' : 'none'}
+              strokeWidth="2"
+            >
+              <title>
+                {formatDateToShow(point.date)}: {label(point)}
+              </title>
+            </circle>
+            {showValues && (
+              <text
+                x={20 + (i / Math.max(1, values.length - 1)) * 560}
+                y={Math.max(
+                  14,
+                  128 - ((point.value - low) / range) * 110 - (i % 2) * 16,
+                )}
+                textAnchor={
+                  i === 0 ? 'start' : i === values.length - 1 ? 'end' : 'middle'
+                }
+                fill="#e7edf2"
+                fontSize="11"
+                paintOrder="stroke"
+                stroke="#191c22"
+                strokeWidth="3"
+                strokeLinejoin="round"
+              >
+                {number(point.value, currency ? 4 : 3)}
+              </text>
+            )}
+          </g>
         ))}
       </svg>
       <Stack direction="row" justifyContent="space-between">
@@ -114,7 +205,9 @@ function History({
         variant="caption"
         color="text.secondary"
       >
-        Até 20 publicações da fonte. Dias sem publicação não são preenchidos.
+        Passe o mouse, toque ou use Tab e as setas nos pontos para consultar
+        data e valor. Até 20 publicações; dias sem publicação não são
+        preenchidos.
       </Typography>
     </Box>
   );
@@ -369,7 +462,12 @@ export function ExternalDataPage() {
             )}
             {points.length ? (
               <>
-                <History points={points} currency={spec.group === 'Câmbio'} />
+                <History
+                  key={spec.id}
+                  points={points}
+                  currency={spec.group === 'Câmbio'}
+                  unit={spec.unit}
+                />
                 <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
                   <Table
                     size="small"
