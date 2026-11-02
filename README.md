@@ -30,6 +30,8 @@ Na versão 2.0.0 há backup/restauração integral criptografada em Configuraç�
 
 ## Desenvolvimento
 
+Revisão de 02/11/2026: consulte a [auditoria funcional e arquitetural](docs/REVISAO-COMPLETA-2026-11-02.md) e o [plano Android/iPhone com React Native e Google Sheets optativo](docs/PLANO-MOBILE-GOOGLE-SHEETS.md). A revisão registra defeitos ainda pendentes, custos, etapas e critérios de aceite. Mobile e sincronização não estão implementados na versão 2.0.1. A [decisão proposta](docs/decisions/005-mobile-offline-google-sheets.md) prioriza uso offline e primeiro APK sem servidor próprio.
+
 A reestruturação incremental segue [o plano V2](docs/REESTRUTURACAO-V2.md), com [inventário verificável](docs/INVENTARIO-V2.json). O menu agrupa as telas em Visão geral, Movimentações, Contas e cartões, Investimentos, Planejamento, Análises, Configurações e Ajuda. As rotas especializadas permanecem disponíveis.
 
 Electron + React + TypeScript, electron-vite, Material UI, Redux Toolkit, TypeORM e better-sqlite3. Consulte [diretrizes](docs/DIRETRIZES.md), [plano](docs/PLANO.md) e [decisão inicial](docs/decisions/001-base.md). Instruções para agentes em AGENTS.md.

@@ -51,4 +51,6 @@ Usar repositórios para isolar persistência dos casos de uso. Preferir SQLite s
 
 ## Situação atual
 
+Planejamento adicional de 02/11/2026: Android e iPhone com preferência por React Native, primeiro uso por APK, SQLite local e integração Google Sheets optativa, sem servidor próprio na primeira fase. Consulte [PLANO-MOBILE-GOOGLE-SHEETS.md](PLANO-MOBILE-GOOGLE-SHEETS.md). A [revisão completa](REVISAO-COMPLETA-2026-11-02.md) encontrou falhas adicionais de autorização, concorrência de metas, vínculo de fatura e ajuste de saldo; devem ser corrigidas antes de sincronizar. A aprovação das suítes existentes não representa ausência desses defeitos. Este planejamento não implementa mobile/nuvem.
+
 Em 02/11/2026, a versão 2.0.0 implementa centavos inteiros (esquema 3), competência e liquidação, backup integral criptografado, investimentos e simulação de IR de 2026. Bancos anteriores exigem recriação manual autorizada; não há limpeza automática. O proprietário renomeou o repositório para fabrisiofilho/contabily e autorizou publicação e atualização nesse canal próprio. Consulte README.md, docs/VALIDACAO.md e docs/AVALIACAO-PRODUTO.md para resultados, pesquisa de mercado e prioridades individuais/familiares. As seções iniciais deste plano registram a proposta original, não o inventário atual.

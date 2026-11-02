@@ -1,0 +1,37 @@
+{
+  "sourceRevision": "ad1becec274ac805c3c600ef40e0e980b54471d2",
+  "version": "2.0.1",
+  "date": "2026-11-02",
+  "environment": "SQLite/TypeORM reais, banco temporário, somente dados fictícios",
+  "scope": "Experimentos dirigidos; não representam homologação integral ou teste de invasão",
+  "results": {
+    "balanceAdjustment": { "setReais": 500, "afterRecalculationReais": 0 },
+    "concurrentGoal": {
+      "contributionsSumReais": 30,
+      "storedTotalReais": 10,
+      "note": "valor final depende da ordem concorrente"
+    },
+    "importReadWithoutActor": {
+      "rowsReturned": 1,
+      "note": "serviço aceita importId sem ator; controller inspecionado sem autenticação nessa operação"
+    },
+    "csvFormulaEscape": { "input": "=1+1", "output": "=1+1" },
+    "financialHealthWithoutEntries": { "score": 70 },
+    "crossCardInvoiceLink": {
+      "accepted": true,
+      "oldInvoiceTotalReais": 12.34,
+      "newInvoiceTotalReais": 12.34
+    }
+  },
+  "baseline": {
+    "unitTestsPassed": 26,
+    "sqlite": "passed",
+    "orm": "passed",
+    "typecheck": "passed",
+    "lintErrors": 0,
+    "lintWarnings": 16,
+    "build": "passed",
+    "uiRoutesChecked": 18
+  },
+  "status": "Achados pendentes de correção; planejamento não alterou regras financeiras"
+}
