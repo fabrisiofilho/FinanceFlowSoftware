@@ -32,3 +32,5 @@ Empacotamento, hashes e publicação serão acrescentados após sua execução.
 - SHA-256 do instalador: 984da20144e2e744625a66f37168cca1eba572ddf2954bd20263b0525603250f. latest.yml conferido contra SHA-512 do mesmo arquivo.
 - tests/packaged-real.mjs passou executando o binário empacotado, com banco isolado: migrações, SQLite nativo, IPC, categorias padrão, pagamento idempotente e versão 2.8.1.
 - O instalador não possui certificado de assinatura de código Windows configurado. Isso não é uma assinatura criptográfica de editor certificada.
+
+Publicação concluída: https://github.com/fabrisiofilho/contabily/releases/tag/v2.8.1. Foram enviados instalador x64, blockmap, latest.yml e SHA256SUMS; tamanhos de upload verificados antes de retirar o estado de rascunho. A tag v2.8.1 aponta para o commit 9fe2168. O roteiro tests/packaged-real.mjs não altera banco pessoal.
