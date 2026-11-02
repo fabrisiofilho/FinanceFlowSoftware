@@ -1,3 +1,4 @@
+import { useFinanceRefresh } from '@renderer/hooks/financeRefresh';
 import { MultiFilter, InfiniteMore } from '@renderer/components/BoardListing';
 import { Input } from '@renderer/components/Form/Input';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
@@ -183,6 +184,8 @@ export function TransactionsPage() {
       if (isCurrent(requestId)) setLoading(false);
     }
   }, [filters, page, rowsPerPage, sortField, sortDirection, begin, isCurrent]);
+  useFinanceRefresh(loadTransactions);
+
   useEffect(() => {
     loadCategories();
     loadAccounts();

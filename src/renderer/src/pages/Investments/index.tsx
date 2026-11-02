@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
+  Tabs,
+  Tab,
   Table,
   TableBody,
   TableCell,
@@ -66,6 +68,10 @@ export function InvestmentsPage() {
     [principal, setPrincipal] = useState(0),
     [start, setStart] = useState(today),
     [rate, setRate] = useState('0');
+  const [detailTab, setDetailTab] = useState('summary');
+  const [contribution, setContribution] = useState(0);
+  const [timing, setTiming] = useState<'start' | 'end'>('end');
+  const [projectionPage, setProjectionPage] = useState(0);
   const [month, setMonth] = useState(today),
     [amount, setAmount] = useState(0),
     [loss, setLoss] = useState(false),
@@ -233,6 +239,8 @@ export function InvestmentsPage() {
   const balance = (investment: Investment): number =>
     investmentBalance(investment, portfolio);
   const open = (investment: Investment): void => {
+    setDetailTab('summary');
+    setProjectionPage(0);
     setSelected(investment);
     setRate(String(investment.monthlyRate));
     const entry = portfolio.yields.find(
@@ -258,6 +266,8 @@ export function InvestmentsPage() {
         balance(selected),
         Number(rate),
         Number(horizon),
+        Math.round(contribution * 100),
+        timing,
       );
     } catch (reason) {
       projectionError =
@@ -539,10 +549,16 @@ export function InvestmentsPage() {
           maxWidth="md"
           scroll="paper"
         >
-          <DialogTitle>{selected?.name} · Rendimentos e simulação</DialogTitle>
+          <DialogTitle>{selected?.name} · {money(selected ? balance(selected) : 0)} registrado</DialogTitle>
+          <Tabs value={detailTab} onChange={(_, value) => setDetailTab(value)} variant="scrollable" scrollButtons="auto">
+            <Tab value="summary" label="Resumo" /><Tab value="yields" label="Rendimentos" /><Tab value="simulation" label="Simulação" /><Tab value="events" label="Movimentações" /><Tab value="details" label="Detalhes" />
+          </Tabs>
           <DialogContent dividers>
             <Stack spacing={3}>
               {error && <AppAlert severity="error">{error}</AppAlert>}
+              {detailTab === 'summary' && <Stack gap={2}><Typography>Principal inicial: {money(selected?.principalCents ?? 0)}</Typography><Typography>Saldo registrado: {money(selected ? balance(selected) : 0)}</Typography><AppAlert severity="info">Posição calculada apenas com registros reais. Simulações não movimentam contas.</AppAlert><Button onClick={() => setDetailTab('yields')}>Registrar rendimento</Button><Button onClick={() => setDetailTab('events')}>Aportar ou resgatar</Button></Stack>}
+              {detailTab === 'details' && <Stack gap={1}><Typography>Tipo: {selected?.kind}</Typography><Typography>Competência inicial: {selected?.startMonth}</Typography><Typography>Taxa hipotética cadastrada: {selected?.monthlyRate}% ao mês</Typography><Typography>Instituição, vencimento e liquidez: não informados neste cadastro.</Typography></Stack>}
+              {detailTab === 'events' && <Stack spacing={3}>
               <Typography variant="h6">Movimentar investimento</Typography>
               <SelectInput
                 label="Operação"
@@ -636,6 +652,8 @@ export function InvestmentsPage() {
                     · {money(item.amountCents)}
                   </Typography>
                 ))}
+              </Stack>}
+              {detailTab === 'yields' && <Stack spacing={3}>
               <Typography variant="h6">
                 Registrar rendimento observado
               </Typography>
@@ -693,23 +711,28 @@ export function InvestmentsPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Competência</TableCell>
-                    <TableCell align="right">Rendimento</TableCell>
+                    <TableCell align="right">Rendimento</TableCell><TableCell align="right">Acumulado registrado</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {portfolio.yields
                     .filter((item) => item.investmentId === selected?.id)
+                    .sort((a,b) => a.month.localeCompare(b.month))
                     .map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>{item.month}</TableCell>
                         <TableCell align="right">
                           {money(item.amountCents)}
-                        </TableCell>
+                        </TableCell><TableCell align="right">{money(portfolio.yields.filter((y) => y.investmentId === selected?.id && y.month <= item.month).reduce((sum,y) => sum+y.amountCents,0))}</TableCell>
                       </TableRow>
                     ))}
                 </TableBody>
               </Table>
-              <Typography variant="h6">Projeção hipotética</Typography>
+              </Stack>}
+              {detailTab === 'simulation' && <Stack spacing={3}>
+              <Typography variant="h6">Projeção hipotética · bruta, sem estimativa tributária</Typography>
+              <CurrencyInput label="Aporte mensal hipotético" value={contribution} onChange={setContribution} />
+              <SelectInput label="Momento do aporte" value={timing} items={[{value:'start',label:'Início do mês'},{value:'end',label:'Fim do mês'}]} onChange={(event) => setTiming(event.target.value as 'start' | 'end')} />
               <Stack direction="row" gap={2}>
                 <Input
                   label="Taxa mensal (%)"
@@ -721,7 +744,7 @@ export function InvestmentsPage() {
                   label="Prazo em meses"
                   type="number"
                   value={horizon}
-                  onChange={(event) => setHorizon(event.target.value)}
+                  onChange={(event) => { setHorizon(event.target.value); setProjectionPage(0); }}
                 />
               </Stack>
               {projectionError ? (
@@ -731,9 +754,10 @@ export function InvestmentsPage() {
                   <AppAlert severity="info">
                     Saldo registrado: {money(selected ? balance(selected) : 0)}.
                     Saldo estimado em {horizon} meses:{' '}
-                    {money(projection.at(-1)?.balanceCents || 0)}. Não é
+                    {money(projection.at(-1)?.balanceCents ?? (selected ? balance(selected) : 0))}. Não é
                     garantia de rentabilidade.
                   </AppAlert>
+                  <Stack direction="row" gap={2}><Button disabled={projectionPage === 0} onClick={() => setProjectionPage((p) => p-1)}>Anterior</Button><Typography>Página {projectionPage+1}</Typography><Button disabled={(projectionPage+1)*24 >= projection.length} onClick={() => setProjectionPage((p) => p+1)}>Próxima</Button></Stack>
                   <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
                     <Table stickyHeader size="small">
                       <TableHead>
@@ -742,16 +766,16 @@ export function InvestmentsPage() {
                           <TableCell align="right">
                             Rendimento estimado
                           </TableCell>
-                          <TableCell align="right">Saldo estimado</TableCell>
+                          <TableCell align="right">Rendimento acumulado</TableCell><TableCell align="right">Aportes acumulados</TableCell><TableCell align="right">Saldo estimado</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {projection.map((item) => (
+                        {projection.slice(projectionPage * 24, (projectionPage + 1) * 24).map((item) => (
                           <TableRow key={item.month}>
                             <TableCell>{item.month}</TableCell>
                             <TableCell align="right">
                               {money(item.yieldCents)}
-                            </TableCell>
+                            </TableCell><TableCell align="right">{money(item.accumulatedYieldCents)}</TableCell><TableCell align="right">{money(item.accumulatedContributionCents)}</TableCell>
                             <TableCell align="right">
                               {money(item.balanceCents)}
                             </TableCell>
@@ -762,6 +786,7 @@ export function InvestmentsPage() {
                   </Box>
                 </>
               )}
+              </Stack>}
             </Stack>
           </DialogContent>
           <DialogActions>

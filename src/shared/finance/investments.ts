@@ -12,24 +12,27 @@ export function projectInvestment(
   months: number,
 ): { month: number; balanceCents: number; yieldCents: number }[] {
   assertCents(balanceCents);
+  assertCents(contributionCents);
   if (
     balanceCents < 0 ||
     !Number.isFinite(monthlyRate) ||
     monthlyRate <= -100 ||
     monthlyRate > 100 ||
     !Number.isInteger(months) ||
-    months < 1 ||
+    contributionCents < 0 ||
+    !['start', 'end'].includes(contributionTiming) ||
+    months < 0 ||
     months > 360
   )
     throw new Error(
-      'Use taxa mensal entre -100% e 100% e prazo de 1 a 360 meses',
+      'Use taxa mensal entre -100% e 100% e prazo de 0 a 360 meses',
     );
-  let balance = balanceCents;
+  let balance = balanceCents, accumulatedYieldCents = 0, accumulatedContributionCents = 0;
   return Array.from({ length: months }, (_, index) => {
     const income = Math.round((balance * monthlyRate) / 100);
     balance += income;
     assertCents(balance);
-    return { month: index + 1, balanceCents: balance, yieldCents: income };
+    return { month: index + 1, balanceCents: balance, yieldCents: income, accumulatedYieldCents, accumulatedContributionCents };
   });
 }
 import type {

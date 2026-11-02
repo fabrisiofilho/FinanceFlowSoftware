@@ -1,3 +1,4 @@
+import { useFinanceRefresh } from '@renderer/hooks/financeRefresh';
 import { amountToCents } from '@shared/finance/entry-schedule';
 import { QuickCreate } from '@renderer/components/QuickCreate';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
@@ -92,6 +93,8 @@ export function BudgetPage() {
       if (isCurrent(requestId)) setLoading(false);
     }
   }, [year, month, begin, isCurrent]);
+
+  useFinanceRefresh(loadSummary);
 
   useEffect(() => {
     loadCategories();

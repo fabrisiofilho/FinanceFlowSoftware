@@ -1,3 +1,4 @@
+import { useFinanceRefresh } from '@renderer/hooks/financeRefresh';
 import {
   useBoardListing,
   BoardFilters,
@@ -133,6 +134,8 @@ export function AccountsPage() {
       setLoading(false);
     }
   }, [queryFirst]);
+  useFinanceRefresh(loadAccounts);
+
   useEffect(() => {
     loadAccounts();
   }, [loadAccounts]);

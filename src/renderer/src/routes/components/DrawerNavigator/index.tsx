@@ -1,3 +1,4 @@
+import { QuickTransactionDialog } from '@renderer/components/QuickTransaction';
 import { RouteTransition } from '@renderer/components/PageLayout/RouteTransition';
 import { Onboarding } from '@renderer/components/Onboarding';
 import { type IDrawerItem } from '@renderer/types/drawer/drawerItem';
@@ -34,6 +35,7 @@ export function DrawerNavigator({
 
       <MainContainer>
         <Header />
+        <QuickTransactionDialog />
         <MainContent id={ROUTES_MAIN_SECTION_ID}>
           <Onboarding />
           <RouteTransition>{children}</RouteTransition>

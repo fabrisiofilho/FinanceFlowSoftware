@@ -76,13 +76,8 @@ export function ModalForm({
   const onClose = (_: unknown, reason: string) => {
     if (loading) return;
 
-    if (!disabledCloseOnClickOutside) {
-      handleClose();
-    }
-
-    if (reason !== 'backdropClick') {
-      handleClose();
-    }
+    if (reason === 'backdropClick' && disabledCloseOnClickOutside) return;
+    handleClose();
   };
 
   const onCancel = () => {

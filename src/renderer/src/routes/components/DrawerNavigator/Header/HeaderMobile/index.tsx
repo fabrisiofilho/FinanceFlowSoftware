@@ -1,3 +1,4 @@
+import { QuickTransactionButton } from '@renderer/components/QuickTransaction';
 import { NotificationBell } from '@renderer/components/NotificationBell';
 import { useAppDispatch } from '@renderer/hooks/redux';
 
@@ -38,6 +39,7 @@ export function HeaderMobile() {
           {}
 
           <Box display="flex" alignItems="center" gap="0.5rem">
+            <QuickTransactionButton />
             <NotificationBell />
 
             <IconButton onClick={handleOpenProfileDrawer}>

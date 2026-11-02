@@ -213,7 +213,7 @@ export function TransactionForm({
     watch,
     setValue,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = useForm<TransactionFormData>({
     defaultValues,
     resolver: yupResolver(createValidationSchema(transactionType)) as any,
@@ -360,7 +360,7 @@ export function TransactionForm({
         variant="form"
         open={open}
         title={modalTitle}
-        handleClose={onClose}
+        handleClose={() => { if (!loading && !isSubmitting && (!isDirty || window.confirm('Descartar as alterações não salvas?'))) onClose(); }}
         handleConfirm={handleSubmit(onSubmit)}
         confirmLabel="Salvar"
         cancelLabel="Cancelar"

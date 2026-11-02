@@ -1,6 +1,6 @@
 import { NotificationBell } from '@renderer/components/NotificationBell';
 import { Button, Stack, Typography } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { QuickTransactionButton } from '@renderer/components/QuickTransaction';
 import {} from '@mui/icons-material';
 
 import { SignOutButton } from '../HeaderActions/SignOutButton';
@@ -17,8 +17,7 @@ export function HeaderDesktop() {
 
       <Stack direction="row" alignItems="center" gap="1rem">
         <Button
-          component={Link}
-          to="/panel/transactions?new=income"
+          onClick={() => window.dispatchEvent(new CustomEvent('quick-transaction', {detail: 'income'}))}
           data-tour="income-create"
           color="success"
           size="small"
@@ -26,8 +25,7 @@ export function HeaderDesktop() {
           Nova receita
         </Button>
         <Button
-          component={Link}
-          to="/panel/transactions?new=expense"
+          onClick={() => window.dispatchEvent(new CustomEvent('quick-transaction', {detail: 'expense'}))}
           data-tour="expense-create"
           color="error"
           size="small"
@@ -35,6 +33,7 @@ export function HeaderDesktop() {
         >
           Nova despesa
         </Button>
+        <QuickTransactionButton />
         <NotificationBell />
         <SignOutButton />
       </Stack>

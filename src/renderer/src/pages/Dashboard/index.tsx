@@ -1,3 +1,4 @@
+import { useFinanceRefresh } from '@renderer/hooks/financeRefresh';
 import { TransactionListDetails } from '@renderer/components/TransactionListDetails';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
 import { ContentLoading } from '@renderer/components/ContentLoading';
@@ -199,6 +200,8 @@ export function DashboardPage() {
       if (isCurrent(requestId)) setLoading(false);
     }
   }, [period, begin, isCurrent]);
+  useFinanceRefresh(loadDashboardData);
+
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
