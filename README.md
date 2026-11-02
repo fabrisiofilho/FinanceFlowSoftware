@@ -57,3 +57,20 @@ Em desenvolvimento: database/finance.db dentro do projeto. No aplicativo instala
 Base: https://github.com/fabrisiofilho/FinanceFlowSoftware
 
 Commit inicial: 40921deead2e3dd6b8a6a337505e9ac1e51006fc. Histórico Git e autoria original preservados. O remoto origin ainda aponta para a base; esta entrega não publica alterações nem cria repositório remoto. A base não contém um arquivo de licença identificado; não foi adicionada uma licença nova.
+
+---
+
+<!-- github-standardizer:start -->
+## Overview
+
+Desktop personal finance application for expenses, income, and investment tracking.
+
+## Technology indicators
+
+- Node.js ecosystem
+
+## Getting started
+
+Check the project manifests and existing documentation for supported setup commands. No installation instructions were inferred.
+
+<!-- github-standardizer:end -->
