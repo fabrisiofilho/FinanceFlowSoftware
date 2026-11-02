@@ -547,14 +547,14 @@ function createMuiTheme(colors: typeof styledTheme): Theme {
               color === 'info';
             return {
               borderRadius: '0.5rem',
+              '& .MuiChip-icon, & .MuiChip-deleteIcon': {
+                color: 'inherit',
+              },
               ...(semantic
                 ? {
                     color: theme.palette[color].main,
                     backgroundColor: alpha(theme.palette[color].main, 0.13),
                     border: `1px solid ${alpha(theme.palette[color].main, 0.5)}`,
-                    '& .MuiChip-icon, & .MuiChip-deleteIcon': {
-                      color: 'inherit',
-                    },
                   }
                 : {}),
             };
@@ -600,6 +600,12 @@ function createMuiTheme(colors: typeof styledTheme): Theme {
       MuiSwitch: {
         styleOverrides: {
           root: {
+            '& .MuiSwitch-switchBase:not(.Mui-checked)': {
+              color: colors.COLORS.textSecondary,
+            },
+            '& .MuiSwitch-switchBase.Mui-disabled': {
+              color: colors.COLORS.grey_500,
+            },
             '& .MuiSwitch-switchBase.Mui-checked': {
               color: colors.COLORS.primary,
               '& + .MuiSwitch-track': {

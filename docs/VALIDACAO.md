@@ -1,5 +1,11 @@
 # Histórico de validação do Contabily
 
+## Contraste dos ícones — 2.2.2, 2026-11-02
+
+Corrigida a herança de cor dos ícones e botões de remoção de todos os chips, incluindo os chips padrão do guia. O tema usa uma escala cinza própria em ordem oposta à pressuposta pelo Chip/Switch do MUI; a correção fica nos componentes e preserva as superfícies existentes. Interruptores desmarcados usam texto secundário e desabilitados usam a cor específica de desabilitação.
+
+Typecheck, lint e build aprovados; lint com zero erros e 16 avisos preexistentes. O ensaio das 19 telas verifica contraste mínimo de 3:1 para ícones de chips visíveis, incluindo a estrelinha de Sua próxima ação, além dos testes do tour e gráfico da 2.2.1. Não modifica banco ou regras financeiras.
+
 ## Alinhamento do tour e valores nos gráficos — 2.2.1, 2026-11-02
 
 Typecheck, build e 36 testes unitários aprovados. Lint sem erros, com 16 avisos anteriores. Ensaio Electron com IPC fictício das 19 telas verifica centro horizontal do chip, larguras iguais dos botões Voltar/Avançar, seta contínua, seleção de ponto por foco, consulta por setas e exibição dos valores sobre a linha. Capturas locais do tour e do gráfico ficam em `.qa/tour-guided-account.png` e `.qa/external-chart-values.png`. Em janela oculta, o teste despacha eventos de foco e teclado para exercitar os handlers React. Não houve alteração de regras financeiras ou banco.

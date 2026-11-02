@@ -375,6 +375,22 @@ app
       if (!value) throw new Error(message);
       console.log('OK', message);
     };
+    const checkChipIcons = async () =>
+      run(`(() => {
+      const luminance = color => {
+        const channels = color.match(/[\\d.]+/g).slice(0,3).map(Number).map(value => { const channel=value/255; return channel<=.04045?channel/12.92:((channel+.055)/1.055)**2.4; });
+        return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+      };
+      const icons=Array.from(document.querySelectorAll('.MuiChip-icon,.MuiChip-deleteIcon')).filter(icon=>icon.getClientRects().length);
+      return icons.every(icon=>{
+        const chip=icon.closest('.MuiChip-root'), style=getComputedStyle(icon);
+        const layers=[];
+        for(let node=chip;node;node=node.parentElement) layers.push(getComputedStyle(node).backgroundColor.match(/[\\d.]+/g).map(Number));
+        const rgb=layers.reverse().reduce((base,layer)=>{const alpha=layer[3]??1;return base.map((channel,index)=>layer[index]*alpha+channel*(1-alpha));},[16,18,22]);
+        const foreground=luminance(style.color), background=luminance('rgb('+rgb.join(',')+')');
+        return style.fill===style.color && (Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05)>=3;
+      });
+    })()`);
     for (const route of [
       'dashboard',
       'investments',
@@ -404,6 +420,7 @@ app
       console.log(route, state);
       assert(!!state.title, 'cabeçalho ' + route);
       assert(!state.emptyErrors, 'sem alerta vazio ' + route);
+      assert(await checkChipIcons(), 'ícones de chips legíveis ' + route);
       if (route === 'external-data') {
         assert(
           await run(
@@ -589,6 +606,10 @@ app
         assert(
           await run("document.querySelector('[data-tour-spotlight]')!==null"),
           'tour destaca o controle da tela',
+        );
+        assert(
+          await checkChipIcons(),
+          'estrelinha do tour tem contraste mínimo de 3:1',
         );
         assert(
           await run(`(() => {
