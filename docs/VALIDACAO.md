@@ -18,6 +18,12 @@ A versão 2 exige banco novo em instalações antigas: esquema 3, sem conversão
 
 Limites: ensaios de UI usam dados fictícios; não equivalem à homologação integral de todos os formulários com banco real. Instalação, desinstalação, assinatura comercial e ciclo completo de atualização em uma instalação antiga não foram homologados. Simulação fiscal cobre o ajuste ordinário de 2026, não todos os regimes; avaliação de usabilidade é heurística, sem entrevistas. Pesquisa e prioridades em AVALIACAO-PRODUTO.md.
 
+### Pacote Windows 2.0.0
+
+Electron Builder gerou NSIS x64, blockmap e latest.yml. Instalador: 121.510.006 bytes; SHA-256 `b65883d67a8ba74c8ea4c126c14491a0f376bea3a180d98e56491a62df311ee5`. Conferência do app.asar confirmou versão 2.0.0 e igualdade byte a byte de main, preload, HTML e assets com o build validado. Dez migrações e ícone externo conferidos; nenhuma pasta de banco pessoal, .qa ou arquivo .env no arquivo empacotado. app-update.yml aponta para fabrisiofilho/contabily e o SHA-512 de latest.yml corresponde ao instalador.
+
+SQLite nativo carregado diretamente do pacote e exercitado em memória. O ensaio visual das 18 telas, IR, atalhos e loading passou novamente usando renderer e preload de app.asar (`CONTABILY_QA_APP_ROOT`), com dados fictícios. Executável identifica Contabily 2.0.0.0. Assinatura comercial ausente; não foi executada instalação/desinstalação no computador pessoal. O primeiro empacotamento foi descartado após atualização concorrente do build; o pacote final foi criado com arquivos estáveis e aprovado nas conferências acima.
+
 ## Base de lançamentos — 2026-11-01
 
 18 testes passaram, incluindo conservação de centavos em milhares de divisões, datas bissextas, âncora mensal, recorrência semanal e datas inválidas. Serviço testado com falha simulada na segunda parcela e reversão do grupo/saldo em driver fictício. Typecheck e build passaram; lint com zero erros e 17 avisos existentes. Integração SQLite existente e teste Electron das 16 telas com IPC fictício passaram. Nenhuma alteração no esquema ou no banco pessoal. Pendências de liquidação, armazenamento monetário e integração real ORM continuam no plano V2.
