@@ -565,8 +565,28 @@ export function InvestmentsPage() {
             <Tab value="events" label="Movimentações" />
             <Tab value="details" label="Detalhes" />
           </Tabs>
-          <DialogContent dividers>
-            <Stack spacing={3}>
+          <DialogContent
+            key={detailTab}
+            dividers
+            sx={{
+              height: 'min(60dvh, 560px)',
+              flex: '0 1 auto',
+              scrollbarGutter: 'stable',
+            }}
+          >
+            <Stack
+              spacing={3}
+              sx={{
+                '@keyframes investmentTabFade': {
+                  from: { opacity: 0.65 },
+                  to: { opacity: 1 },
+                },
+                animation: 'investmentTabFade 160ms ease-out',
+                '@media (prefers-reduced-motion: reduce)': {
+                  animation: 'none',
+                },
+              }}
+            >
               {error && <AppAlert severity="error">{error}</AppAlert>}
               {detailTab === 'summary' && (
                 <Stack gap={2}>
