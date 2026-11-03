@@ -569,7 +569,7 @@ export function InvestmentsPage() {
             key={detailTab}
             dividers
             sx={{
-              height: 'min(60dvh, 560px)',
+              maxHeight: 'min(60dvh, 560px)',
               flex: '0 1 auto',
               scrollbarGutter: 'stable',
             }}
@@ -600,12 +600,20 @@ export function InvestmentsPage() {
                     Posição calculada apenas com registros reais. Simulações não
                     movimentam contas.
                   </AppAlert>
-                  <Button onClick={() => setDetailTab('yields')}>
-                    Registrar rendimento
-                  </Button>
-                  <Button onClick={() => setDetailTab('events')}>
-                    Aportar ou resgatar
-                  </Button>
+                  <Stack direction="row" gap={1} flexWrap="wrap">
+                    <Button
+                      variant="contained"
+                      onClick={() => setDetailTab('yields')}
+                    >
+                      Registrar rendimento
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => setDetailTab('events')}
+                    >
+                      Aportar ou resgatar
+                    </Button>
+                  </Stack>
                 </Stack>
               )}
               {detailTab === 'details' && (
