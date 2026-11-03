@@ -1,6 +1,6 @@
 {
   "name": "contabily",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "Aplicação de controle financeiro pessoal desenvolvida em Electron.",
   "main": "./out/main/index.js",
   "homepage": "./",

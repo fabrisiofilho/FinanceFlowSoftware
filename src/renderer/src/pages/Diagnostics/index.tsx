@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Stack, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { PageContainer, ContentSurface } from '@renderer/components/PageLayout';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { AppAlert } from '@renderer/components/Feedback';
@@ -63,37 +63,87 @@ export function DiagnosticsPage() {
       {copied && <AppAlert severity="info">Relatório copiado.</AppAlert>}
       {data && (
         <ContentSurface sx={{ p: 3 }}>
-          <Stack gap={1}>
-            <Typography>
-              Contabily {data.version} · Electron {data.electron} · Chromium{' '}
-              {data.chromium}
-            </Typography>
-            <Typography>
-              Inicialização do main: {data.initializationMs ?? 'não medida'} ms
-              · Ativo: {Math.round(data.uptimeSeconds)} s
-            </Typography>
-            <Typography>
-              Consulta de controle SELECT 1: {data.queryMs.toFixed(2)} ms · Heap
-              main: {mb(data.mainHeapBytes)}
-            </Typography>
-            {data.processes.map((p, i) => (
-              <Typography key={i}>
-                {p.type}: working set {mb(p.workingSetKb * 1024)} · privado{' '}
-                {p.privateBytesKb === null
-                  ? 'indisponível'
-                  : mb(p.privateBytesKb * 1024)}
-              </Typography>
-            ))}
-            <Typography>
-              SQLite {mb(data.sqliteBytes)} · WAL {mb(data.walBytes)} · SHM{' '}
-              {mb(data.shmBytes)}
-            </Typography>
-            <Typography>
-              Anexos {mb(data.attachmentBytes)} · cache {mb(data.cacheBytes)}
-            </Typography>
-            <Typography sx={{ overflowWrap: 'anywhere' }}>
-              Diretório local: {data.dataDirectory}
-            </Typography>
+          <Stack useFlexGap gap={3}>
+            <Box
+              component="dl"
+              sx={{
+                m: 0,
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  lg: 'repeat(3, minmax(0, 1fr))',
+                },
+                gap: 2,
+              }}
+            >
+              {[
+                ['Contabily', data.version],
+                ['Electron', data.electron],
+                ['Chromium', data.chromium],
+                [
+                  'Inicialização do main',
+                  data.initializationMs == null
+                    ? 'Não medida'
+                    : data.initializationMs + ' ms',
+                ],
+                ['Tempo ativo', Math.round(data.uptimeSeconds) + ' s'],
+                ['Consulta SELECT 1', data.queryMs.toFixed(2) + ' ms'],
+                ['Heap main', mb(data.mainHeapBytes)],
+                ['SQLite', mb(data.sqliteBytes)],
+                ['WAL', mb(data.walBytes)],
+                ['SHM', mb(data.shmBytes)],
+                ['Anexos', mb(data.attachmentBytes)],
+                ['Cache', mb(data.cacheBytes)],
+                ['Diretório local', data.dataDirectory],
+              ].map(([label, value]) => (
+                <Box
+                  key={label}
+                  sx={{
+                    minWidth: 0,
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  <Typography
+                    component="dt"
+                    variant="body2"
+                    color="text.secondary"
+                  >
+                    {label}
+                  </Typography>
+                  <Typography component="dd" sx={{ m: 0, mt: 0.5 }}>
+                    {value}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+            <Stack useFlexGap gap={1.5}>
+              <Typography variant="subtitle1">Memória por processo</Typography>
+              {data.processes.map((process, index) => (
+                <Stack
+                  key={index}
+                  direction={{ xs: 'column', sm: 'row' }}
+                  useFlexGap
+                  gap={{ xs: 0.5, sm: 2 }}
+                  sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 1 }}
+                >
+                  <Typography>{process.type}</Typography>
+                  <Typography color="text.secondary">
+                    Working set {mb(process.workingSetKb * 1024)}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Privado{' '}
+                    {process.privateBytesKb === null
+                      ? 'indisponível'
+                      : mb(process.privateBytesKb * 1024)}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
             <AppAlert severity="info">
               Working set inclui páginas compartilhadas; somar processos não
               representa memória exclusiva. Tempo de inicialização do main não

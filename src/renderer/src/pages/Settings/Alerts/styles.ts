@@ -30,7 +30,7 @@ const getStatusBgColor = (theme: any, status: AlertStatus): string => {
 export const AlertsContainer = PageContainer;
 export const AlertsGrid = styled(Box)`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
   gap: 1.5rem;
   @media ${({ theme }) => theme.SIZES.xs} {
     grid-template-columns: 1fr;
@@ -60,12 +60,15 @@ export const AlertCardHeader = styled(Stack).attrs({
   justifyContent: 'space-between',
   alignItems: 'flex-start',
 })`
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 `;
 export const AlertIcon = styled(Box)<{ $status: AlertStatus }>`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 3rem;
   height: 3rem;
   border-radius: 1.25rem;
@@ -77,6 +80,7 @@ export const AlertIcon = styled(Box)<{ $status: AlertStatus }>`
 `;
 export const AlertInfo = styled(Box)`
   flex: 1;
+  min-width: 0;
   margin-left: 0.75rem;
 `;
 export const AlertCategoryName = styled.h3`
@@ -84,9 +88,7 @@ export const AlertCategoryName = styled.h3`
   font-weight: 600;
   margin: 0;
   color: ${({ theme }) => theme.COLORS.text};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 `;
 export const AlertLimit = styled.span`
   font-size: 0.75rem;

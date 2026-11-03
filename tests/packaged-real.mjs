@@ -5,6 +5,9 @@ import assert from 'node:assert/strict';
 const root = process.cwd(),
   directory = fs.mkdtempSync(path.join(root, '.qa', 'packaged-real-'));
 const port = 19381;
+const version = JSON.parse(
+  fs.readFileSync(path.join(root, 'package.json'), 'utf8'),
+).version;
 const executable = path.join(root, 'dist/win-unpacked/contabily.exe');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
@@ -23,7 +26,9 @@ try {
         await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()
       ).find((t) => t.type === 'page');
       if (target) break;
-    } catch {}
+    } catch {
+      // A janela ainda está iniciando.
+    }
     await pause(200);
   }
   assert.ok(target, 'Janela de produção iniciou');
@@ -83,15 +88,15 @@ try {
   const diagnostic=ok(await api.diagnostics.snapshot());
   return {version:diagnostic.version,expenseCents:report.rows.reduce((sum,r)=>sum+r.totalCents,0),balance:ok(await api.account.findAll()).find(r=>r.id===a.id).balance};
  })()`);
-  assert.equal(result.version, '2.8.1');
+  assert.equal(result.version, version);
   assert.equal(result.expenseCents, 1000);
   assert.equal(result.balance, 890);
   fs.writeFileSync(
-    path.join(root, '.qa/roadmap-2026-11-02/packaged-real.json'),
+    path.join(directory, 'packaged-real.json'),
     JSON.stringify(result, null, 2),
   );
   console.log(
-    'Executável empacotado: migrações, SQLite nativo, IPC, categorias padrão, pagamento idempotente e versão 2.8.1: OK',
+    `Executável empacotado: migrações, SQLite nativo, IPC, categorias padrão, pagamento idempotente e versão ${version}: OK`,
   );
   await evaluate('window.electronAPI.windowControls.close();true').catch(
     () => {},

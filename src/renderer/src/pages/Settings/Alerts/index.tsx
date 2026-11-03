@@ -237,7 +237,7 @@ export function AlertsPage() {
   };
 
   return (
-    <AlertsContainer>
+    <AlertsContainer sx={{ gap: 3 }}>
       <PageHeader
         title="Alertas"
         description={
@@ -277,7 +277,12 @@ export function AlertsPage() {
             {alertsWithStatus.map((alert) => (
               <AlertCard key={alert.alertId} $status={alert.status}>
                 <AlertCardHeader>
-                  <Stack direction="row" alignItems="center" flex={1}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    flex={1}
+                    minWidth={0}
+                  >
                     <AlertIcon $status={alert.status}>
                       {alert.status === 'critical' ? (
                         <NotificationsActiveIcon />
@@ -447,7 +452,10 @@ export function AlertsPage() {
               helperText="Defina o valor máximo de gastos para esta categoria"
               rules={{
                 required: 'Limite é obrigatório',
-                min: { value: 0.01, message: 'Limite deve ser maior que zero' },
+                min: {
+                  value: 0.01,
+                  message: 'Limite deve ser maior que zero',
+                },
               }}
             />
 
