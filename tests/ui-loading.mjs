@@ -1007,9 +1007,34 @@ app
       ),
       'atalho Nova receita abre formulário',
     );
+    const editAmount = (digits) =>
+      run(`(() => {
+      const input = document.querySelector('[role=dialog] input[inputmode=numeric]');
+      input.focus();
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '${digits}');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`);
+    await editAmount('12345');
     await run(
       "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Cancelar').click()",
     );
+    await run(
+      "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Continuar editando').click()",
+    );
+    await editAmount('67890');
+    assert(
+      await run(
+        "document.querySelector('[role=dialog] input[inputmode=numeric]').value.includes('678,90')",
+      ),
+      'Valor continua editável após cancelar descarte',
+    );
+    await run(
+      "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Cancelar').click()",
+    );
+    await run(
+      "Array.from(document.querySelectorAll('[role=dialog] button')).find(b=>b.textContent==='Descartar').click()",
+    );
+
     await run(
       "Array.from(document.querySelectorAll('button,a')).find(a=>a.textContent==='Nova despesa').click()",
     );

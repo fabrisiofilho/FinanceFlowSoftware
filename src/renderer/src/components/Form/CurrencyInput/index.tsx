@@ -34,7 +34,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     const handleFocus = useCallback(
       (event: React.FocusEvent<HTMLInputElement>) => {
-        setTimeout(() => event.target.select(), 0);
+        event.target.select();
       },
       [],
     );
@@ -42,7 +42,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
     return (
       <TextField
         {...props}
-        ref={ref}
+        inputRef={ref}
         value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}

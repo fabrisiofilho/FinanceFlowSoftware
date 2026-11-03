@@ -184,6 +184,7 @@ export function TransactionForm({
   const [quick, setQuick] = useState<'account' | 'category' | null>(null);
   const [createdAccounts, setCreatedAccounts] = useState<Account[]>([]);
   const [createdCategories, setCreatedCategories] = useState<Category[]>([]);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [transactionType, setTransactionType] = useState<TransactionType>(
     transaction?.type ?? initialType,
@@ -365,12 +366,9 @@ export function TransactionForm({
         open={open}
         title={modalTitle}
         handleClose={() => {
-          if (
-            !loading &&
-            !isSubmitting &&
-            (!isDirty || window.confirm('Descartar as alterações não salvas?'))
-          )
-            onClose();
+          if (loading || isSubmitting) return;
+          if (isDirty) setDiscardOpen(true);
+          else onClose();
         }}
         handleConfirm={handleSubmit(onSubmit)}
         confirmLabel="Salvar"
@@ -617,6 +615,20 @@ export function TransactionForm({
             </AccordionDetails>
           </Accordion>
         </FormContainer>
+      </Modal>
+      <Modal
+        variant="danger"
+        open={open && discardOpen}
+        title="Descartar alterações?"
+        confirmLabel="Descartar"
+        cancelLabel="Continuar editando"
+        handleClose={() => setDiscardOpen(false)}
+        handleConfirm={() => {
+          setDiscardOpen(false);
+          onClose();
+        }}
+      >
+        <Typography>As alterações não salvas serão perdidas.</Typography>
       </Modal>
       {quick && (
         <QuickCreate
