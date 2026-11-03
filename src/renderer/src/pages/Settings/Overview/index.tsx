@@ -41,27 +41,40 @@ export function SettingsPage() {
         description="Organize suas preferências e proteja os dados locais."
       />
       <ContentSurface sx={{ p: 3, mb: 3 }}>
-        <Button
-          startIcon={<AutoAwesomeRounded />}
-          onClick={() =>
-            window.dispatchEvent(new Event('contabily:start-tour'))
-          }
-          sx={{ mb: 2 }}
+        <Stack
+          direction="row"
+          gap={2}
+          alignItems="center"
+          justifyContent="space-between"
+          flexWrap="wrap"
         >
-          Fazer tour guiado
-        </Button>
-        <Stack direction="row" gap={2} flexWrap="wrap">
-          <Button component={Link} to="/panel/diagnostics" variant="outlined">
-            Diagnóstico local
-          </Button>
-          <Button component={Link} to="/panel/categories" variant="outlined">
-            Categorias
-          </Button>
-          <Button component={Link} to="/panel/alerts" variant="outlined">
-            Regras de alertas
-          </Button>
-          <Button component={Link} to="/panel/manual" variant="outlined">
-            Manual do sistema
+          <Stack
+            direction="row-reverse"
+            gap={2}
+            flexWrap="wrap"
+            justifyContent="flex-end"
+          >
+            <Button component={Link} to="/panel/diagnostics" variant="outlined">
+              Diagnóstico local
+            </Button>
+            <Button component={Link} to="/panel/categories" variant="outlined">
+              Categorias
+            </Button>
+            <Button component={Link} to="/panel/alerts" variant="outlined">
+              Regras de alertas
+            </Button>
+            <Button component={Link} to="/panel/manual" variant="outlined">
+              Manual do sistema
+            </Button>
+          </Stack>
+          <Button
+            startIcon={<AutoAwesomeRounded />}
+            onClick={() =>
+              window.dispatchEvent(new Event('contabily:start-tour'))
+            }
+            sx={{ flexShrink: 0, ml: 'auto' }}
+          >
+            Fazer tour guiado
           </Button>
         </Stack>
       </ContentSurface>

@@ -59,8 +59,20 @@ export function DiagnosticsPage() {
           </Button>
         }
       />
-      {error && <AppAlert severity="error">{error}</AppAlert>}
-      {copied && <AppAlert severity="info">Relatório copiado.</AppAlert>}
+      {error && (
+        <AppAlert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </AppAlert>
+      )}
+      {copied && (
+        <AppAlert
+          severity="info"
+          sx={{ mb: 2 }}
+          onClose={() => setCopied(false)}
+        >
+          Relatório copiado.
+        </AppAlert>
+      )}
       {data && (
         <ContentSurface sx={{ p: 3 }}>
           <Stack useFlexGap gap={3}>
