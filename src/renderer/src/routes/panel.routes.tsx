@@ -1,3 +1,4 @@
+import { DashboardPage } from '@renderer/pages/Dashboard';
 import { lazy, Suspense } from 'react';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 const DiagnosticsPage = lazy(() =>
@@ -58,11 +59,6 @@ import { DrawerNavigator } from './components/DrawerNavigator';
 import { IDrawerItem } from '@renderer/types/drawer/drawerItem';
 import { JSX } from 'react';
 
-const DashboardPage = lazy(() =>
-  import('@renderer/pages/Dashboard').then((module) => ({
-    default: module.DashboardPage,
-  })),
-);
 const TransactionsPage = lazy(() =>
   import('@renderer/pages/Transactions').then((module) => ({
     default: module.TransactionsPage,
