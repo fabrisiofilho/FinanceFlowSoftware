@@ -224,6 +224,15 @@ function serializeArgs(args: unknown[]): unknown {
   });
 }
 
+// A detached Electron process can outlive the terminal that owns its pipes.
+if (typeof process !== 'undefined' && process.type !== 'renderer') {
+  for (const stream of [process.stdout, process.stderr]) {
+    stream?.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code !== 'EPIPE') throw error;
+    });
+  }
+}
+
 class Logger {
   private isRenderer: boolean;
   private context: string;
