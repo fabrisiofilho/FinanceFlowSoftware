@@ -6,6 +6,7 @@ import {
   type TextFieldProps,
 } from '@mui/material';
 import { type ChangeEvent, type Ref, forwardRef } from 'react';
+import { CheckRounded, KeyboardArrowDownRounded } from '@mui/icons-material';
 
 export const SELECT_MENU_ITEMS_MAX_HEIGHT = 300;
 
@@ -150,7 +151,9 @@ export const SelectInput = forwardRef(function SelectInput(
       onChange={handleChange}
       onBlur={onBlur}
       slotProps={{
+        ...rest.slotProps,
         select: {
+          IconComponent: KeyboardArrowDownRounded,
           displayEmpty: true,
           sx: {
             minWidth: 0,
@@ -158,14 +161,22 @@ export const SelectInput = forwardRef(function SelectInput(
               minHeight: '20px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              paddingRight: '40px',
             },
+            '& .MuiSelect-icon': { right: 12 },
           },
-          renderValue: (selected) =>
-            items.find(
-              (item) =>
-                String(handleGetItemKeyAndValue(item).value) ===
-                String(selected),
-            )?.label ?? 'Selecione',
+          renderValue: (selected) => (
+            <Stack
+              component="span"
+              sx={{ color: selected === '' ? 'text.secondary' : 'inherit' }}
+            >
+              {items.find(
+                (item) =>
+                  String(handleGetItemKeyAndValue(item).value) ===
+                  String(selected),
+              )?.label ?? (loading ? 'Carregando…' : 'Selecione')}
+            </Stack>
+          ),
           ...rest?.slotProps?.select,
           MenuProps: {
             slotProps: {
@@ -174,6 +185,12 @@ export const SelectInput = forwardRef(function SelectInput(
                   maxHeight: SELECT_MENU_ITEMS_MAX_HEIGHT,
                   overflowY: 'auto',
                   colorScheme: 'dark',
+                  mt: 0.75,
+                  '& .MuiMenuItem-root.Mui-focusVisible': {
+                    outline: '2px solid',
+                    outlineColor: 'primary.main',
+                    outlineOffset: -2,
+                  },
                 },
               },
             },
@@ -182,26 +199,34 @@ export const SelectInput = forwardRef(function SelectInput(
         inputLabel: {
           shrink: true,
           required,
+          ...rest.slotProps?.inputLabel,
         },
       }}
     >
       {handleRenderEmptyMessage()}
 
       {items.map((item: SelectInputItem) => {
-        const { key, value } = handleGetItemKeyAndValue(item);
+        const { key, value: itemValue } = handleGetItemKeyAndValue(item);
 
         return (
           <MenuItem
             key={String(key)}
-            value={value}
+            value={itemValue}
             sx={{
-              minHeight: 42,
+              minHeight: 44,
               py: 1,
+              gap: 1.5,
+              justifyContent: 'space-between',
               whiteSpace: 'normal',
               overflowWrap: 'anywhere',
             }}
           >
-            {item.label}
+            <span>{item.label}</span>
+            {String(handleGetValue(value)) === String(itemValue) && (
+              <CheckRounded
+                sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }}
+              />
+            )}
           </MenuItem>
         );
       })}

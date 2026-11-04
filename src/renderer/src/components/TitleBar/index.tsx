@@ -16,10 +16,10 @@ const Bar = styled.header`
   user-select: none;
   button {
     -webkit-app-region: no-drag;
-    border-radius: 6px;
-    margin: 2px;
-    width: 36px;
-    height: 30px;
+    border-radius: 0;
+    margin: 0;
+    width: 46px;
+    height: 40px;
   }
   button:last-child:hover {
     background: #c42b1c;

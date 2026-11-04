@@ -238,8 +238,8 @@ export function AlertsPage() {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 3,
-        '& > [data-page-header]': { mb: 1 },
+        gap: { xs: 3, md: 4 },
+        '& > [data-page-header]': { mb: 0 },
       }}
     >
       <PageHeader
@@ -251,7 +251,11 @@ export function AlertsPage() {
           <>
             <Stack direction="row" spacing={1}>
               <Tooltip title="Atualizar">
-                <IconButton onClick={loadAlerts} size="small">
+                <IconButton
+                  onClick={loadAlerts}
+                  disabled={loading}
+                  aria-label="Atualizar alertas"
+                >
                   <RefreshIcon />
                 </IconButton>
               </Tooltip>
@@ -269,6 +273,12 @@ export function AlertsPage() {
         }
       />
       <AlertOccurrences />
+      <Stack gap={0.5}>
+        <Typography variant="h6">Limites por categoria</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Acompanhe o consumo de cada limite mensal.
+        </Typography>
+      </Stack>
       <ContentLoading loading={loading} initial="cards">
         {error && (
           <AppAlert severity="error" sx={{ mb: 3 }}>
@@ -307,6 +317,7 @@ export function AlertsPage() {
                     <Tooltip title="Editar">
                       <IconButton
                         size="small"
+                        aria-label={`Editar alerta de ${alert.categoryName}`}
                         onClick={() => handleEditAlert(alert)}
                       >
                         <EditIcon />
@@ -315,6 +326,7 @@ export function AlertsPage() {
                     <Tooltip title="Excluir">
                       <IconButton
                         size="small"
+                        aria-label={`Excluir alerta de ${alert.categoryName}`}
                         onClick={() => handleDeleteAlert(alert)}
                         color="error"
                       >
@@ -454,7 +466,7 @@ export function AlertsPage() {
               sx={{
                 p: 2,
                 borderRadius: 1,
-                bgcolor: 'grey.100',
+                bgcolor: 'background.default',
                 mt: 1,
               }}
             >

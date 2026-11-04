@@ -30,7 +30,7 @@ export function AlertOccurrences() {
         p: { xs: 2, sm: 3 },
         display: 'flex',
         flexDirection: 'column',
-        gap: 2,
+        gap: 2.5,
       }}
     >
       <Stack gap={0.5}>
@@ -69,7 +69,13 @@ export function AlertOccurrences() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
         >
           <AppAlert
-            sx={{ flex: 1 }}
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              my: 0,
+              alignItems: 'center',
+              '& .MuiAlert-message': { overflowWrap: 'anywhere' },
+            }}
             severity={r.severity === 'critical' ? 'error' : 'warning'}
           >
             {r.severity === 'critical' ? 'Crítico' : 'Atenção'} ·{' '}

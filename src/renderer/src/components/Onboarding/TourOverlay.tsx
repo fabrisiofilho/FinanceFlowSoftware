@@ -158,7 +158,16 @@ export function TourOverlay({
     const schedule = (): void => {
       if (!frame) frame = requestAnimationFrame(measure);
     };
-    const observer = new MutationObserver(schedule);
+    const observer = new MutationObserver((mutations) => {
+      if (
+        mutations.some(
+          (mutation) =>
+            !(mutation.target instanceof Element) ||
+            !mutation.target.closest('[data-guided-tour]'),
+        )
+      )
+        schedule();
+    });
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -232,9 +241,11 @@ export function TourOverlay({
         pointerEvents: 'none',
         '& svg rect': {
           transition:
-            'x 220ms ease-out, y 220ms ease-out, width 220ms ease-out, height 220ms ease-out',
+            'x 360ms cubic-bezier(0.22, 1, 0.36, 1), y 360ms cubic-bezier(0.22, 1, 0.36, 1), width 360ms cubic-bezier(0.22, 1, 0.36, 1), height 360ms cubic-bezier(0.22, 1, 0.36, 1)',
         },
-        '& [data-tour-connector]': { transition: 'd 220ms ease-out' },
+        '& [data-tour-connector]': {
+          transition: 'd 360ms cubic-bezier(0.22, 1, 0.36, 1)',
+        },
         '@media (prefers-reduced-motion: reduce)': {
           '& svg rect, & [data-tour-connector], & [data-tour-label], & [data-tour-panel]':
             { transition: 'none' },
@@ -308,7 +319,8 @@ export function TourOverlay({
         <Box
           data-tour-label
           sx={{
-            transition: 'left 220ms ease-out, top 220ms ease-out',
+            transition:
+              'left 360ms cubic-bezier(0.22, 1, 0.36, 1), top 360ms cubic-bezier(0.22, 1, 0.36, 1)',
             position: 'absolute',
             left: rect.left + 12,
             top: Math.max(44, rect.top - 14),
@@ -335,7 +347,8 @@ export function TourOverlay({
         aria-live="polite"
         sx={{
           position: 'absolute',
-          transition: 'left 220ms ease-out, top 220ms ease-out',
+          transition:
+            'left 360ms cubic-bezier(0.22, 1, 0.36, 1), top 360ms cubic-bezier(0.22, 1, 0.36, 1)',
           left: position.left,
           top: position.top,
           width: position.width,
@@ -357,7 +370,7 @@ export function TourOverlay({
               from: { opacity: 0.65 },
               to: { opacity: 1 },
             },
-            animation: 'tourStepFade 180ms ease-out',
+            animation: 'tourStepFade 260ms ease-out',
             '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
           }}
         >

@@ -10,3 +10,7 @@
 - Cabeçalhos das telas montam na primeira navegação, com carregamento dentro da área de conteúdo.
 - Logger trata a desconexão do terminal.
 - CSV fictício com 120 lançamentos e instruções em docs/exemplos.
+- Refinamento final de seletores e alertas: indicação da opção selecionada, foco de teclado, rolagem até o último filtro, espaçamento e contraste no tema escuro.
+- Tour evita observar suas próprias atualizações e usa transições mais suaves. Botões da barra da janela com área de interação ampliada.
+
+Sem alteração de esquema nesta versão; não exige limpeza do banco. Instalador Windows x64 sem certificado de assinatura de código.

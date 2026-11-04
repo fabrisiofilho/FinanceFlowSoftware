@@ -49,26 +49,34 @@ export function MultiFilter({
             display: 'flex',
             flex: '0 1 auto',
             minWidth: 0,
-            maxWidth: 'calc(100% - 80px)',
+            maxWidth: 'calc(100% - 36px)',
             overflowX: 'auto',
             whiteSpace: 'nowrap',
             py: 0.25,
             colorScheme: 'dark',
-            gap: 0.5,
+            // Autocomplete limits tag width by default, truncating text before scrolling.
+            '& .MuiAutocomplete-tag': {
+              maxWidth: 'none',
+              flexShrink: 0,
+            },
           }}
         >
-          {selected.map((item, index) => {
-            const { key, ...tagProps } = getTagProps({ index });
-            return (
-              <Chip
-                key={key}
-                {...tagProps}
-                label={item.label}
-                size="small"
-                sx={{ flexShrink: 0, maxWidth: 'none' }}
-              />
-            );
-          })}
+          <Box
+            sx={{ display: 'flex', width: 'max-content', gap: 0.5, pr: 0.5 }}
+          >
+            {selected.map((item, index) => {
+              const { key, ...tagProps } = getTagProps({ index });
+              return (
+                <Chip
+                  key={key}
+                  {...tagProps}
+                  label={item.label}
+                  size="small"
+                  sx={{ flexShrink: 0, maxWidth: 'none' }}
+                />
+              );
+            })}
+          </Box>
         </Box>
       )}
       slotProps={{

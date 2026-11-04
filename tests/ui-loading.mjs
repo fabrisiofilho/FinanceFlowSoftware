@@ -842,6 +842,12 @@ app
           ),
           'seleção múltipla mantém uma linha e permite rolagem lateral',
         );
+        assert(
+          await run(
+            "(()=>{const row=qaMulti.querySelector('[data-multi-values]');row.scrollLeft=row.scrollWidth;const last=row.querySelector('.MuiChip-root:last-child');const viewport=row.getBoundingClientRect();const chip=last.getBoundingClientRect();return row.scrollLeft>0 && chip.right<=viewport.right+1 && chip.left>=viewport.left && last.querySelector('.MuiChip-deleteIcon').getBoundingClientRect().right<=viewport.right+1;})()",
+          ),
+          'rolagem chega ao último chip e ao seu botão de remover',
+        );
         await run(
           "if(qaMulti.querySelector('[role=combobox]').getAttribute('aria-expanded')==='true')qaMulti.querySelector('.MuiAutocomplete-popupIndicator')?.click()",
         );

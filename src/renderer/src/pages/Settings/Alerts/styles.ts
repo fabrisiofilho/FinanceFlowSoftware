@@ -30,7 +30,7 @@ const getStatusBgColor = (theme: any, status: AlertStatus): string => {
 export const AlertsContainer = PageContainer;
 export const AlertsGrid = styled(Box)`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
   gap: 1.5rem;
   @media ${({ theme }) => theme.SIZES.xs} {
     grid-template-columns: 1fr;
@@ -47,8 +47,9 @@ export const AlertCard = styled(ExpandableCard)<{ $status: AlertStatus }>`
   border: 1px solid ${({ theme }) => theme.COLORS.border};
   border-left: 4px solid
     ${({ theme, $status }) => getStatusColor(theme, $status)};
+  min-width: 0;
   transition:
-    transform 0.2s ease,
+    border-color 0.2s ease,
     box-shadow 0.2s ease;
   &:hover {
     filter: brightness(1.04);
@@ -61,8 +62,7 @@ export const AlertCardHeader = styled(Stack).attrs({
   alignItems: 'flex-start',
 })`
   gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 `;
 export const AlertIcon = styled(Box)<{ $status: AlertStatus }>`
   display: flex;
@@ -71,7 +71,7 @@ export const AlertIcon = styled(Box)<{ $status: AlertStatus }>`
   flex-shrink: 0;
   width: 3rem;
   height: 3rem;
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   background-color: ${({ theme, $status }) => getStatusBgColor(theme, $status)};
   svg {
     font-size: 1.5rem;
@@ -82,6 +82,9 @@ export const AlertInfo = styled(Box)`
   flex: 1;
   min-width: 0;
   margin-left: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 `;
 export const AlertCategoryName = styled.h3`
   font-size: 1.125rem;
@@ -99,14 +102,18 @@ export const AlertActions = styled(Stack).attrs({
   direction: 'row',
   spacing: 0.5,
 })`
-  opacity: 0.7;
+  flex-shrink: 0;
+  align-self: flex-start;
+  opacity: 1;
   transition: opacity 0.2s ease;
   ${AlertCard}:hover & {
     opacity: 1;
   }
 `;
 export const StatusSection = styled(Box)`
-  margin-top: 1rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid ${({ theme }) => theme.COLORS.border};
 `;
 export const AlertProgressBar = styled(LinearProgress)<{
   $status: AlertStatus;
@@ -125,16 +132,21 @@ export const ValuesContainer = styled(Stack).attrs({
   justifyContent: 'space-between',
   alignItems: 'center',
 })`
-  margin-top: 0.5rem;
+  margin-top: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 `;
 export const ValueItem = styled(Box)<{ $align?: 'left' | 'right' }>`
+  min-width: 0;
   text-align: ${({ $align }) => $align || 'left'};
+  overflow-wrap: anywhere;
 `;
 export const ValueLabel = styled.span`
   font-size: 0.75rem;
   font-weight: 500;
   color: ${({ theme }) => theme.COLORS.textSecondary};
   display: block;
+  margin-bottom: 0.375rem;
 `;
 export const ValueAmount = styled.span<{ $variant?: 'current' | 'limit' }>`
   font-size: 1rem;
@@ -150,8 +162,12 @@ export const PercentageDisplay = styled.span<{ $status: AlertStatus }>`
 export const StatusBadge = styled(Box)<{ $status: AlertStatus }>`
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.75rem;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  line-height: 1.5;
+  svg {
+    flex-shrink: 0;
+  }
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   background-color: ${({ theme, $status }) => getStatusBgColor(theme, $status)};
@@ -187,7 +203,7 @@ export const EmptyStateContainer = styled(Box)`
   border: 1px solid ${({ theme }) => theme.COLORS.border};
 `;
 export const FormContainer = styled(Stack).attrs({
-  spacing: 2,
+  spacing: 3,
 })`
   padding: 0.5rem 0;
 `;
