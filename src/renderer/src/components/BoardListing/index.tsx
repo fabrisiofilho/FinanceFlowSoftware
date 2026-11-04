@@ -37,6 +37,11 @@ export function MultiFilter({
   return (
     <Autocomplete
       multiple
+      disableCloseOnSelect
+      noOptionsText="Nenhuma opção encontrada"
+      clearText="Limpar seleção"
+      openText="Abrir opções"
+      closeText="Fechar opções"
       renderTags={(selected, getTagProps) => (
         <Box
           data-multi-values
@@ -44,10 +49,11 @@ export function MultiFilter({
             display: 'flex',
             flex: '0 1 auto',
             minWidth: 0,
-            maxWidth: 'calc(100% - 48px)',
+            maxWidth: 'calc(100% - 80px)',
             overflowX: 'auto',
             whiteSpace: 'nowrap',
-            scrollbarWidth: 'thin',
+            py: 0.25,
+            colorScheme: 'dark',
             gap: 0.5,
           }}
         >
@@ -65,6 +71,18 @@ export function MultiFilter({
           })}
         </Box>
       )}
+      slotProps={{
+        listbox: {
+          sx: {
+            maxHeight: 300,
+            py: 0.5,
+            '& .MuiAutocomplete-option': {
+              minHeight: '42px !important',
+              overflowWrap: 'anywhere',
+            },
+          },
+        },
+      }}
       options={options}
       value={options.filter((o) => value.includes(o.id))}
       isOptionEqualToValue={(a, b) => a.id === b.id}
@@ -75,7 +93,11 @@ export function MultiFilter({
         minWidth: 0,
         width: '100%',
         flex: 1,
-        '& .MuiAutocomplete-inputRoot': { flexWrap: 'nowrap' },
+        '& .MuiAutocomplete-inputRoot': {
+          flexWrap: 'nowrap',
+          minHeight: 48,
+          py: 0.5,
+        },
         '& .MuiAutocomplete-input': {
           minWidth: '24px !important',
           flex: '1 1 24px',

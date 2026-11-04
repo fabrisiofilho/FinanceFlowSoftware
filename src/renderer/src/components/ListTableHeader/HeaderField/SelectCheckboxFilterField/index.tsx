@@ -81,7 +81,9 @@ export function SelectCheckboxFilterField({
     <Autocomplete
       multiple
       disableClearable
-      noOptionsText="Nenhuma opção"
+      noOptionsText="Nenhuma opção encontrada"
+      openText="Abrir opções"
+      closeText="Fechar opções"
       openOnFocus
       loadingText={LoadingContainer}
       options={memoizedItems}
@@ -98,7 +100,10 @@ export function SelectCheckboxFilterField({
       renderOption={(props, option) => (
         <li {...props}>
           <Checkbox checked={isChecked(option)} />
-          <Typography variant="body1" whiteSpace="nowrap" overflow="visible">
+          <Typography
+            variant="body1"
+            sx={{ overflowWrap: 'anywhere', whiteSpace: 'normal' }}
+          >
             {option.name}
           </Typography>
         </li>
@@ -120,9 +125,10 @@ export function SelectCheckboxFilterField({
           sx={{
             whiteSpace: 'nowrap',
             overflowX: 'auto',
+            py: 0.5,
+            colorScheme: 'dark',
             flexShrink: 1,
             minWidth: 0,
-            scrollbarWidth: 'thin',
           }}
         >
           {renderValue(selectedItems)}

@@ -1,3 +1,4 @@
+import { ListPagination } from '@renderer/components/ListPagination';
 import { InfiniteMore, MultiFilter } from '@renderer/components/BoardListing';
 import { QuickCreate } from '@renderer/components/QuickCreate';
 import { useRequestSequence } from '@renderer/hooks/requestSequence';
@@ -882,23 +883,12 @@ export function InvestmentsPage() {
                         )}
                         . Não é garantia de rentabilidade.
                       </AppAlert>
-                      <Stack direction="row" gap={2}>
-                        <Button
-                          disabled={projectionPage === 0}
-                          onClick={() => setProjectionPage((p) => p - 1)}
-                        >
-                          Anterior
-                        </Button>
-                        <Typography>Página {projectionPage + 1}</Typography>
-                        <Button
-                          disabled={
-                            (projectionPage + 1) * 24 >= projection.length
-                          }
-                          onClick={() => setProjectionPage((p) => p + 1)}
-                        >
-                          Próxima
-                        </Button>
-                      </Stack>
+                      <ListPagination
+                        count={projection.length}
+                        page={projectionPage}
+                        rowsPerPage={24}
+                        onPageChange={(_, next) => setProjectionPage(next)}
+                      />
                       <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
                         <Table stickyHeader size="small">
                           <TableHead>

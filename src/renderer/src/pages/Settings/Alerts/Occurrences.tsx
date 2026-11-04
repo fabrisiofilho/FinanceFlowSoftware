@@ -1,3 +1,4 @@
+import { ListPagination } from '@renderer/components/ListPagination';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { ContentSurface } from '@renderer/components/PageLayout';
@@ -106,17 +107,13 @@ export function AlertOccurrences() {
           Reavaliar
         </Button>
         {(page > 0 || rows.length >= 24) && (
-          <Stack direction="row" gap={1}>
-            <Button disabled={!page} onClick={() => setPage(page - 1)}>
-              Anterior
-            </Button>
-            <Button
-              disabled={rows.length < 24}
-              onClick={() => setPage(page + 1)}
-            >
-              Próxima
-            </Button>
-          </Stack>
+          <ListPagination
+            count={-1}
+            page={page}
+            rowsPerPage={24}
+            hasNext={rows.length >= 24}
+            onPageChange={(_, next) => setPage(next)}
+          />
         )}
       </Stack>
     </ContentSurface>

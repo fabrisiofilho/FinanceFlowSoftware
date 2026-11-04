@@ -1,3 +1,4 @@
+import { ListPagination } from '@renderer/components/ListPagination';
 import { PageHeader } from '@renderer/components/PageHeader';
 import { QuickCreate } from '@renderer/components/QuickCreate';
 import { ExpandableCard as Card } from '@renderer/components/ExpandableCard';
@@ -30,7 +31,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TablePagination,
 } from '@mui/material';
 import {
   CloudUploadOutlined as UploadIcon,
@@ -802,18 +802,13 @@ export function BankImportPage() {
                   ))}
                 </TableBody>
               </Table>
-              <TablePagination
-                component="div"
+              <ListPagination
                 count={transactions.length}
                 page={page}
                 onPageChange={handlePageChange}
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-                labelRowsPerPage="Linhas por página:"
-                labelDisplayedRows={({ from, to, count }) =>
-                  `${from}-${to} de ${count}`
-                }
               />
             </Paper>
           </Card>

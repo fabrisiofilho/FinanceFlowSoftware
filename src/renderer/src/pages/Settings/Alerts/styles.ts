@@ -178,7 +178,8 @@ export const EmptyStateContainer = styled(Box)`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: clamp(1.5rem, 3vw, 3rem) 1.5rem;
+  gap: 0.5rem;
   text-align: center;
   background-color: ${({ theme }) => theme.COLORS.surface};
   border-radius: 1rem;

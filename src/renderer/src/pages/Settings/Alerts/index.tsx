@@ -1,3 +1,4 @@
+import { SelectInput } from '@renderer/components/Form/SelectInput';
 import { AlertOccurrences } from './Occurrences';
 import { ContentLoading } from '@renderer/components/ContentLoading';
 import { PageHeader } from '@renderer/components/PageHeader';
@@ -12,10 +13,6 @@ import {
   IconButton,
   Tooltip,
   Stack,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
 } from '@mui/material';
 import {
   AddOutlined as AddIcon,
@@ -237,7 +234,14 @@ export function AlertsPage() {
   };
 
   return (
-    <AlertsContainer sx={{ gap: 3 }}>
+    <AlertsContainer
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+        '& > [data-page-header]': { mb: 1 },
+      }}
+    >
       <PageHeader
         title="Alertas"
         description={
@@ -413,33 +417,20 @@ export function AlertsPage() {
                 validate: (value) => value > 0 || 'Selecione uma categoria',
               }}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.categoryId}>
-                  <InputLabel id="category-label">Categoria</InputLabel>
-                  <Select
-                    {...field}
-                    labelId="category-label"
-                    label="Categoria"
-                    disabled={!!selectedAlert}
-                  >
-                    <MenuItem value={0} disabled>
-                      Selecione uma categoria
-                    </MenuItem>
-                    {getAvailableCategories().map((category) => (
-                      <MenuItem key={category.id} value={category.id}>
-                        {category.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.categoryId && (
-                    <Typography
-                      variant="caption"
-                      color="error"
-                      sx={{ mt: 0.5, ml: 1.5 }}
-                    >
-                      {errors.categoryId.message}
-                    </Typography>
-                  )}
-                </FormControl>
+                <SelectInput
+                  {...field}
+                  value={field.value || ''}
+                  label="Categoria"
+                  fullWidth
+                  required
+                  error={!!errors.categoryId}
+                  helperText={errors.categoryId?.message}
+                  disabled={!!selectedAlert}
+                  items={getAvailableCategories().map((category) => ({
+                    value: category.id,
+                    label: category.name,
+                  }))}
+                />
               )}
             />
 

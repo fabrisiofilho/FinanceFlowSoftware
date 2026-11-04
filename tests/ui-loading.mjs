@@ -828,7 +828,7 @@ app
           'Outros',
         ]) {
           await run(
-            "qaMulti.querySelector('.MuiAutocomplete-popupIndicator')?.click()",
+            "if(qaMulti.querySelector('[role=combobox]').getAttribute('aria-expanded')!=='true')qaMulti.querySelector('.MuiAutocomplete-popupIndicator')?.click()",
           );
           await sleep(40);
           await run(
@@ -841,6 +841,9 @@ app
             "(()=>{const row=qaMulti.querySelector('[data-multi-values]');return row.scrollWidth>row.clientWidth && getComputedStyle(qaMulti.querySelector('.MuiAutocomplete-inputRoot')).flexWrap==='nowrap' && qaMulti.getBoundingClientRect().height<=qaMultiHeight+8;})()",
           ),
           'seleção múltipla mantém uma linha e permite rolagem lateral',
+        );
+        await run(
+          "if(qaMulti.querySelector('[role=combobox]').getAttribute('aria-expanded')==='true')qaMulti.querySelector('.MuiAutocomplete-popupIndicator')?.click()",
         );
         fs.writeFileSync(
           path.join(__dirname, 'multi-filter-single-line.png'),
@@ -1068,7 +1071,7 @@ app
       }
       if (!value) return;
       await run(
-        "Array.from(document.querySelectorAll('[role=combobox]')).at(-1).closest('.MuiAutocomplete-root').querySelector('.MuiAutocomplete-popupIndicator').click()",
+        "(()=>{const input=Array.from(document.querySelectorAll('[role=combobox]')).at(-1);if(input.getAttribute('aria-expanded')!=='true')input.closest('.MuiAutocomplete-root').querySelector('.MuiAutocomplete-popupIndicator').click();})()",
       );
       await sleep(70);
       const label = value === 'income' ? 'Receitas' : 'Despesas';

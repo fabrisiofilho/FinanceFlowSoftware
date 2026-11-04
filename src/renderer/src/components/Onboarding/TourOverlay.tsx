@@ -125,7 +125,10 @@ export function TourOverlay({
         target.scrollIntoView({
           block: 'nearest',
           inline: 'nearest',
-          behavior: 'instant',
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
+            .matches
+            ? 'instant'
+            : 'smooth',
         });
       }
       const bounds = target.getBoundingClientRect(),
@@ -222,7 +225,21 @@ export function TourOverlay({
   return createPortal(
     <Box
       data-guided-tour
-      sx={{ position: 'fixed', inset: 0, zIndex: 1450, pointerEvents: 'none' }}
+      sx={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1450,
+        pointerEvents: 'none',
+        '& svg rect': {
+          transition:
+            'x 220ms ease-out, y 220ms ease-out, width 220ms ease-out, height 220ms ease-out',
+        },
+        '& [data-tour-connector]': { transition: 'd 220ms ease-out' },
+        '@media (prefers-reduced-motion: reduce)': {
+          '& svg rect, & [data-tour-connector], & [data-tour-label], & [data-tour-panel]':
+            { transition: 'none' },
+        },
+      }}
     >
       <svg
         width="100%"
@@ -289,7 +306,9 @@ export function TourOverlay({
       </svg>
       {rect && (
         <Box
+          data-tour-label
           sx={{
+            transition: 'left 220ms ease-out, top 220ms ease-out',
             position: 'absolute',
             left: rect.left + 12,
             top: Math.max(44, rect.top - 14),
@@ -307,6 +326,7 @@ export function TourOverlay({
         </Box>
       )}
       <Paper
+        data-tour-panel
         ref={panel}
         tabIndex={-1}
         elevation={12}
@@ -315,6 +335,7 @@ export function TourOverlay({
         aria-live="polite"
         sx={{
           position: 'absolute',
+          transition: 'left 220ms ease-out, top 220ms ease-out',
           left: position.left,
           top: position.top,
           width: position.width,
@@ -329,202 +350,214 @@ export function TourOverlay({
           '&:focus': { outline: 'none' },
         }}
       >
-        <Stack
-          direction="row"
-          gap={1}
-          alignItems="center"
-          mb={collapsed ? 0 : 2}
+        <Box
+          key={index}
+          sx={{
+            '@keyframes tourStepFade': {
+              from: { opacity: 0.65 },
+              to: { opacity: 1 },
+            },
+            animation: 'tourStepFade 180ms ease-out',
+            '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+          }}
         >
-          <Box
-            sx={{
-              width: 44,
-              height: 44,
-              borderRadius: 2,
-              bgcolor: '#9bd9b515',
-              border: '1px solid #9bd9b540',
-              display: 'grid',
-              placeItems: 'center',
-              color: 'primary.main',
-              flexShrink: 0,
-            }}
+          <Stack
+            direction="row"
+            gap={1}
+            alignItems="center"
+            mb={collapsed ? 0 : 2}
           >
-            <Icon />
-          </Box>
-          <Box flex={1} minWidth={0}>
-            <Typography
-              variant="caption"
-              color="primary"
-              fontWeight={700}
-              sx={{ display: 'block', lineHeight: 1.5 }}
-            >
-              SEU GUIA PESSOAL
-            </Typography>
-            <Typography
-              variant="caption"
-              display="block"
-              color="text.secondary"
-            >
-              Etapa {index + 1} de {ONBOARDING_STEPS.length}
-            </Typography>
-          </Box>
-          <IconButton
-            size="small"
-            aria-label={collapsed ? 'Expandir dica' : 'Recolher dica'}
-            onClick={() => setCollapsed(!collapsed)}
-          >
-            {collapsed ? (
-              <KeyboardArrowUpRounded />
-            ) : (
-              <KeyboardArrowDownRounded />
-            )}
-          </IconButton>
-          <IconButton size="small" aria-label="Pausar tour" onClick={onPause}>
-            <CloseRounded />
-          </IconButton>
-        </Stack>
-        {!collapsed && (
-          <>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 700, lineHeight: 1.3, mb: 1 }}
-            >
-              {step.title}
-            </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ lineHeight: 1.7 }}
-            >
-              {step.description}
-            </Typography>
-            {!onRoute && (
-              <AppAlert severity="info" sx={{ mt: 2 }}>
-                Abra a tela desta etapa para ver o destaque.
-              </AppAlert>
-            )}
-            {inForm && (
-              <Typography variant="body2" sx={{ mt: 1.5 }}>
-                Preencha o formulário destacado e salve. Você pode recolher esta
-                dica enquanto cadastra.
-              </Typography>
-            )}
-            <Stack
-              direction="row"
-              gap={1}
-              alignItems="center"
-              justifyContent="center"
-              sx={{ mt: 2, mb: 2 }}
-            >
-              <Chip
-                size="small"
-                icon={ready ? <CheckCircleRounded /> : <AutoAwesomeRounded />}
-                color={ready ? 'success' : 'default'}
-                sx={{
-                  height: 28,
-                  '& .MuiChip-label': { lineHeight: 1.3 },
-                  '& .MuiChip-icon': { display: 'block', ml: 1 },
-                }}
-                label={
-                  replay
-                    ? 'Modo de apresentação'
-                    : ready
-                      ? 'Tudo certo para avançar'
-                      : 'Sua próxima ação'
-                }
-              />
-            </Stack>
-            {error && (
-              <AppAlert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </AppAlert>
-            )}
-            <LinearProgress
-              variant="determinate"
-              value={((index + 1) / ONBOARDING_STEPS.length) * 100}
-              sx={{ height: 5, borderRadius: 3, mb: 2 }}
-            />
             <Box
               sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                bgcolor: '#9bd9b515',
+                border: '1px solid #9bd9b540',
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 1,
-                mb: 1,
-                '& .MuiButton-root': {
-                  minHeight: 40,
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  lineHeight: 1.35,
-                },
+                placeItems: 'center',
+                color: 'primary.main',
+                flexShrink: 0,
               }}
             >
-              <Button
-                disabled={busy || index === 0 || inForm}
-                startIcon={<ArrowBackRounded />}
-                onClick={onBack}
-              >
-                Voltar
-              </Button>
-              <Button
-                variant="contained"
-                disabled={busy || !ready || inForm}
-                onClick={onNext}
-              >
-                {replay
-                  ? index === 5
-                    ? 'Finalizar tour'
-                    : 'Próxima etapa'
-                  : index === 5
-                    ? 'Concluir guia'
-                    : 'Avançar'}
-              </Button>
+              <Icon />
             </Box>
-            <Stack
-              spacing={0.5}
-              sx={{
-                '& .MuiButton-root': {
-                  minHeight: 40,
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  lineHeight: 1.35,
-                },
-              }}
+            <Box flex={1} minWidth={0}>
+              <Typography
+                variant="caption"
+                color="primary"
+                fontWeight={700}
+                sx={{ display: 'block', lineHeight: 1.5 }}
+              >
+                SEU GUIA PESSOAL
+              </Typography>
+              <Typography
+                variant="caption"
+                display="block"
+                color="text.secondary"
+              >
+                Etapa {index + 1} de {ONBOARDING_STEPS.length}
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              aria-label={collapsed ? 'Expandir dica' : 'Recolher dica'}
+              onClick={() => setCollapsed(!collapsed)}
             >
-              <Button variant="outlined" disabled={busy} onClick={onOpen}>
-                {!onRoute
-                  ? 'Abrir tela da etapa'
-                  : inForm
-                    ? 'Continuar no formulário'
+              {collapsed ? (
+                <KeyboardArrowUpRounded />
+              ) : (
+                <KeyboardArrowDownRounded />
+              )}
+            </IconButton>
+            <IconButton size="small" aria-label="Pausar tour" onClick={onPause}>
+              <CloseRounded />
+            </IconButton>
+          </Stack>
+          {!collapsed && (
+            <>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, lineHeight: 1.3, mb: 1 }}
+              >
+                {step.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ lineHeight: 1.7 }}
+              >
+                {step.description}
+              </Typography>
+              {!onRoute && (
+                <AppAlert severity="info" sx={{ mt: 2 }}>
+                  Abra a tela desta etapa para ver o destaque.
+                </AppAlert>
+              )}
+              {inForm && (
+                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                  Preencha o formulário destacado e salve. Você pode recolher
+                  esta dica enquanto cadastra.
+                </Typography>
+              )}
+              <Stack
+                direction="row"
+                gap={1}
+                alignItems="center"
+                justifyContent="center"
+                sx={{ mt: 2, mb: 2 }}
+              >
+                <Chip
+                  size="small"
+                  icon={ready ? <CheckCircleRounded /> : <AutoAwesomeRounded />}
+                  color={ready ? 'success' : 'default'}
+                  sx={{
+                    height: 28,
+                    '& .MuiChip-label': { lineHeight: 1.3 },
+                    '& .MuiChip-icon': { display: 'block', ml: 1 },
+                  }}
+                  label={
+                    replay
+                      ? 'Modo de apresentação'
+                      : ready
+                        ? 'Tudo certo para avançar'
+                        : 'Sua próxima ação'
+                  }
+                />
+              </Stack>
+              {error && (
+                <AppAlert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </AppAlert>
+              )}
+              <LinearProgress
+                variant="determinate"
+                value={((index + 1) / ONBOARDING_STEPS.length) * 100}
+                sx={{ height: 5, borderRadius: 3, mb: 2 }}
+              />
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 1,
+                  mb: 1,
+                  '& .MuiButton-root': {
+                    minHeight: 40,
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    lineHeight: 1.35,
+                  },
+                }}
+              >
+                <Button
+                  disabled={busy || index === 0 || inForm}
+                  startIcon={<ArrowBackRounded />}
+                  onClick={onBack}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={busy || !ready || inForm}
+                  onClick={onNext}
+                >
+                  {replay
+                    ? index === 5
+                      ? 'Finalizar tour'
+                      : 'Próxima etapa'
                     : index === 5
-                      ? 'Ver backup e preferências'
-                      : index === 1
-                        ? 'Conhecer categorias'
-                        : 'Abrir cadastro'}
-              </Button>
-              {!ready && (
-                <Button size="small" disabled={busy} onClick={onRefresh}>
-                  Verificar cadastro
+                      ? 'Concluir guia'
+                      : 'Avançar'}
                 </Button>
-              )}
-              {index === 4 && !replay && (
-                <Button size="small" disabled={busy} onClick={onSkip}>
-                  Configurar orçamento depois
+              </Box>
+              <Stack
+                spacing={0.5}
+                sx={{
+                  '& .MuiButton-root': {
+                    minHeight: 40,
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    lineHeight: 1.35,
+                  },
+                }}
+              >
+                <Button variant="outlined" disabled={busy} onClick={onOpen}>
+                  {!onRoute
+                    ? 'Abrir tela da etapa'
+                    : inForm
+                      ? 'Continuar no formulário'
+                      : index === 5
+                        ? 'Ver backup e preferências'
+                        : index === 1
+                          ? 'Conhecer categorias'
+                          : 'Abrir cadastro'}
                 </Button>
-              )}
-              <Button size="small" color="inherit" onClick={onPause}>
-                Continuar depois
-              </Button>
-            </Stack>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              display="block"
-              textAlign="center"
-              sx={{ mt: 1 }}
-            >
-              Seu progresso fica salvo. Retome quando quiser.
-            </Typography>
-          </>
-        )}
+                {!ready && (
+                  <Button size="small" disabled={busy} onClick={onRefresh}>
+                    Verificar cadastro
+                  </Button>
+                )}
+                {index === 4 && !replay && (
+                  <Button size="small" disabled={busy} onClick={onSkip}>
+                    Configurar orçamento depois
+                  </Button>
+                )}
+                <Button size="small" color="inherit" onClick={onPause}>
+                  Continuar depois
+                </Button>
+              </Stack>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                textAlign="center"
+                sx={{ mt: 1 }}
+              >
+                Seu progresso fica salvo. Retome quando quiser.
+              </Typography>
+            </>
+          )}
+        </Box>
       </Paper>
     </Box>,
     document.body,

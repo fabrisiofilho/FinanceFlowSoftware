@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Menu, MenuItem, Snackbar } from '@mui/material';
+import { Button, Menu, MenuItem } from '@mui/material';
+import { enqueueSnackbar } from 'notistack';
 import { TransactionForm } from '../TransactionForm';
 import type { Account } from '@shared/interfaces/types/account.types';
 import type { Category } from '@shared/interfaces/types/category.types';
@@ -41,8 +42,7 @@ export function QuickTransactionDialog() {
   const [type, setType] = useState<'income' | 'expense' | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]),
     [categories, setCategories] = useState<Category[]>([]);
-  const [busy, setBusy] = useState(false),
-    [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
   const opening = useRef(false),
     trigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -71,10 +71,11 @@ export function QuickTransactionDialog() {
         }
       } catch (reason) {
         if (active)
-          setMessage(
+          enqueueSnackbar(
             reason instanceof Error
               ? reason.message
               : 'Falha ao abrir formulário',
+            { variant: 'error' },
           );
       } finally {
         opening.current = false;
@@ -110,7 +111,7 @@ export function QuickTransactionDialog() {
       if (!result.success)
         throw new Error(result.error || 'Não foi possível salvar');
       window.dispatchEvent(new Event('finance-data-changed'));
-      setMessage('Lançamento salvo');
+      enqueueSnackbar('Lançamento salvo', { variant: 'success' });
     } finally {
       setBusy(false);
     }
@@ -131,12 +132,6 @@ export function QuickTransactionDialog() {
           }}
         />
       )}
-      <Snackbar
-        open={!!message}
-        message={message}
-        autoHideDuration={5000}
-        onClose={() => setMessage('')}
-      />
     </>
   );
 }

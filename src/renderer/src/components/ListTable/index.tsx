@@ -1,5 +1,6 @@
+import { ListPagination } from '@renderer/components/ListPagination';
 import type { IPageSort } from '@renderer/types/page/sort';
-import { TableBody, TablePagination, Tooltip } from '@mui/material';
+import { TableBody, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import TableCell from '@mui/material/TableCell';
 import { type ChangeEvent, type MouseEvent, type ReactNode } from 'react';
@@ -15,17 +16,6 @@ import {
   CustomTableHeader,
   CustomTableRow,
 } from './styles';
-
-interface LabelDisplayedRowsArgs {
-  from: number;
-  to: number;
-  count: number;
-  page: number;
-}
-
-function defaultLabelDisplayedRows({ from, to }: LabelDisplayedRowsArgs) {
-  return `${from}–${to}`;
-}
 
 export type ContentProps = {
   [key: string]: string | ReactNode;
@@ -240,23 +230,11 @@ export function ListTable({
         <Show.When isTrue={!!showList}>{renderTableBody()}</Show.When>
       </CustomTableContainer>
 
-      <TablePagination
-        component="div"
-        labelRowsPerPage={
-          !rowsPerPageOptions?.length ? '' : 'Resultados por página:'
-        }
-        slotProps={{
-          select: {
-            sx: {
-              display: !rowsPerPageOptions?.length ? 'none' : 'flex',
-            },
-          },
-        }}
+      <ListPagination
         count={totalElements}
         page={page}
         rowsPerPageOptions={rowsPerPageOptions}
         rowsPerPage={rowsPerPage}
-        labelDisplayedRows={defaultLabelDisplayedRows}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />

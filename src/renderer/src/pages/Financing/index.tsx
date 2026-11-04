@@ -1,3 +1,4 @@
+import { ListPagination } from '@renderer/components/ListPagination';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
@@ -195,18 +196,12 @@ export function FinancingPage() {
       {!contracts.length && (
         <AppAlert severity="info">Nenhum contrato para esta busca.</AppAlert>
       )}
-      <Stack direction="row" gap={2}>
-        <Button disabled={!page} onClick={() => setPage(page - 1)}>
-          Anterior
-        </Button>
-        <Typography>{total} contratos</Typography>
-        <Button
-          disabled={(page + 1) * 24 >= total}
-          onClick={() => setPage(page + 1)}
-        >
-          Próxima
-        </Button>
-      </Stack>
+      <ListPagination
+        count={total}
+        page={page}
+        rowsPerPage={24}
+        onPageChange={(_, next) => setPage(next)}
+      />
       <Dialog
         open={creating}
         onClose={() => !busy && setCreating(false)}
@@ -491,24 +486,15 @@ export function FinancingPage() {
               </Button>
             </Stack>
           ))}
-          <Stack direction="row">
-            <Button
-              disabled={busy || !detailPage}
-              onClick={() =>
-                detail && void open(detail.contract.id, detailPage - 1)
-              }
-            >
-              Anterior
-            </Button>
-            <Button
-              disabled={busy || (detailPage + 1) * 24 >= (detail?.total ?? 0)}
-              onClick={() =>
-                detail && void open(detail.contract.id, detailPage + 1)
-              }
-            >
-              Próxima
-            </Button>
-          </Stack>
+          {detail && (
+            <ListPagination
+              count={detail.total}
+              page={detailPage}
+              rowsPerPage={24}
+              disabled={busy}
+              onPageChange={(_, next) => void open(detail.contract.id, next)}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button

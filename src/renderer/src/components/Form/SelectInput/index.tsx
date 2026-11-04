@@ -144,6 +144,7 @@ export const SelectInput = forwardRef(function SelectInput(
       name={name}
       required={required}
       select
+      disabled={rest.disabled || loading}
       value={handleGetValue(value) ?? ''}
       defaultValue={handleGetValue(defaultValue) ?? ''}
       onChange={handleChange}
@@ -151,6 +152,14 @@ export const SelectInput = forwardRef(function SelectInput(
       slotProps={{
         select: {
           displayEmpty: true,
+          sx: {
+            minWidth: 0,
+            '& .MuiSelect-select': {
+              minHeight: '20px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            },
+          },
           renderValue: (selected) =>
             items.find(
               (item) =>
@@ -164,6 +173,7 @@ export const SelectInput = forwardRef(function SelectInput(
                 sx: {
                   maxHeight: SELECT_MENU_ITEMS_MAX_HEIGHT,
                   overflowY: 'auto',
+                  colorScheme: 'dark',
                 },
               },
             },
@@ -181,13 +191,36 @@ export const SelectInput = forwardRef(function SelectInput(
         const { key, value } = handleGetItemKeyAndValue(item);
 
         return (
-          <MenuItem key={String(key)} value={value}>
+          <MenuItem
+            key={String(key)}
+            value={value}
+            sx={{
+              minHeight: 42,
+              py: 1,
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
+            }}
+          >
             {item.label}
           </MenuItem>
         );
       })}
 
-      {onCreate && <MenuItem value="__create__">+ {createLabel}</MenuItem>}
+      {onCreate && (
+        <MenuItem
+          value="__create__"
+          sx={{
+            minHeight: 44,
+            mt: 0.5,
+            borderTop: 1,
+            borderColor: 'divider',
+            color: 'primary.main',
+            whiteSpace: 'normal',
+          }}
+        >
+          + {createLabel}
+        </MenuItem>
+      )}
       {handleRenderLoading()}
     </TextField>
   );
